@@ -2,7 +2,7 @@ package main
 
 import (
 	"log"
-	Http "meu-servico-agenda/internal/adapters/http"
+	Http "meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/services"
 	"net/http"
@@ -15,12 +15,9 @@ func main() {
 	clienteRepo := repository.NewFakeClienteRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
-	// Tipo do retorno: *services.CadastroDeCliente
 	cadastradorService := services.NovoCadastradoDeCliente(clienteRepo)
 
 	// 3. Camada de Adaptador HTTP (Controller)
-	// Passamos *services.CadastroDeCliente para uma função que espera *services.CadastroDeCliente.
-	// O erro será resolvido após a correção do Controller (Passo 1).
 	clienteController := Http.NovoClienteController(cadastradorService)
 
 	// --- 2. Inicialização do Servidor Gin ---
@@ -31,9 +28,9 @@ func main() {
 	{
 		apiV1.POST("/clientes", clienteController.PostCliente)
 	}
-	
-	router.GET("/saudacao", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"mensagem": "Serviço rodando e pronto para rotas!"})
+
+	router.GET("/ping", func(c *gin.Context) {
+		c.JSON(http.StatusOK, gin.H{"mensagem": "Pong"})
 	})
 
 	// 4. Inicia o Servidor
