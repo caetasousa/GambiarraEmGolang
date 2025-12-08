@@ -1,0 +1,72 @@
+basePath: /api/v1
+definitions:
+  domain.Cliente:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
+    type: object
+  domain.ErrorResponse:
+    properties:
+      error:
+        type: string
+    type: object
+  request.ClienteRequest:
+    properties:
+      email:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
+    required:
+    - nome
+    - telefone
+    type: object
+host: localhost:8080
+info:
+  contact: {}
+  description: API para gestão de clientes e serviços.
+  title: API de Agendamentos
+  version: "1.0"
+paths:
+  /clientes:
+    post:
+      consumes:
+      - application/json
+      description: Recebe dados de nome, email e telefone para registrar um novo cliente.
+      parameters:
+      - description: Dados do Cliente
+        in: body
+        name: cliente
+        required: true
+        schema:
+          $ref: '#/definitions/request.ClienteRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Cliente criado com sucesso
+          schema:
+            $ref: '#/definitions/domain.Cliente'
+        "400":
+          description: Dados inválidos (erro de validação do binding)
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: 'Cliente já cadastrado (Regra de negócio: Email duplicado)'
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Falha na persistência de dados ou erro interno" // <--- NOVO
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Cadastra um novo cliente
+      tags:
+      - Clientes
+swagger: "2.0"

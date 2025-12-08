@@ -8,7 +8,7 @@ import (
 
 type ClienteRequest struct {
 	Nome     string `json:"nome" binding:"required"`
-	Email    string `json:"email" binding:"email"`
+	Email    string `json:"email" binding:"omitempty,email"`
 	Telefone string `json:"telefone" binding:"required"`
 }
 
