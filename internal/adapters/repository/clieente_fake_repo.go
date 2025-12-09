@@ -6,7 +6,8 @@ import (
 
 // FakeClienteRepositorio é uma implementação de ClienteRepositorio que armazena dados em memória.
 type FakeClienteRepositorio struct {
-	Clientes map[string]*domain.Cliente 
+	// A chave do mapa DEVE ser o ID do cliente
+	Clientes map[string]*domain.Cliente
 }
 
 // NewFakeClienteRepositorio cria e inicializa o repositório fake.
@@ -16,18 +17,19 @@ func NewFakeClienteRepositorio() *FakeClienteRepositorio {
 	}
 }
 
-// Salvar simula a persistência.
+// Salvar simula a persistência, usando o ID do cliente como chave.
 func (r *FakeClienteRepositorio) Salvar(cliente *domain.Cliente) error {
-	r.Clientes[cliente.Email] = cliente
+	// CORREÇÃO: Usar o ID como chave (índice)
+	r.Clientes[cliente.ID] = cliente
 	return nil
 }
 
-// BuscarPorEmail simula a busca por um email.
-func (r *FakeClienteRepositorio) BuscarPorEmail(email string) (*domain.Cliente, error) {
-	cliente, ok := r.Clientes[email]
+// BuscarPorId simula a busca por um id.
+func (r *FakeClienteRepositorio) BuscarPorId(id string) (*domain.Cliente, error) {
+	// CORRETO: Agora a busca por 'id' funcionará, pois o mapa é indexado por ID.
+	cliente, ok := r.Clientes[id]
 	if !ok {
-		// Retornar nil, nil para "não encontrado" é um padrão comum em repositórios Go.
-		return nil, nil 
+		return nil, nil
 	}
 	return cliente, nil
 }

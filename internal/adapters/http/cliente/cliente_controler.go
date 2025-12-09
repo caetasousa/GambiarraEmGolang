@@ -10,10 +10,10 @@ import (
 )
 
 type ClienteController struct {
-	novoCliente *services.CadastroDeCliente
+	novoCliente *services.ServiceCliente
 }
 
-func NovoClienteController(novoCliente *services.CadastroDeCliente) *ClienteController {
+func NovoClienteController(novoCliente *services.ServiceCliente) *ClienteController {
 	return &ClienteController{novoCliente: novoCliente}
 }
 
@@ -37,7 +37,7 @@ func (ctrl *ClienteController) PostCliente(c *gin.Context) {
 		return
 	}
 
-	cliente, err := ctrl.novoCliente.Executar(input)
+	cliente, err := ctrl.novoCliente.Cadastra(input)
 
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
@@ -45,4 +45,43 @@ func (ctrl *ClienteController) PostCliente(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusCreated, cliente)
+}
+
+// @Summary Busca um cliente pelo ID
+// @Description Retorna os dados de um cliente específico usando seu ID.
+// @Tags Clientes
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do Cliente"
+// @Success 200 {object} domain.Cliente "Cliente encontrado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "ID inválido fornecido (ex: formato incorreto se houver validação de formato de ID)"
+// @Failure 404 {object} domain.ErrorResponse "Cliente não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor ou falha de infraestrutura"
+// @Router /clientes/{id} [get]
+func (ctrl *ClienteController) GetCliente(c *gin.Context) {
+	id := c.Param("id")
+
+	cliente, err := ctrl.novoCliente.BuscarPorId(id)
+
+	if err != nil {
+		errorMessage := err.Error()
+
+		// 1. TRATAMENTO DO 404: Se o erro for a mensagem específica de "não encontrado"
+		if errorMessage == "cliente não encontrado" {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Cliente não encontrado"})
+			return
+		}
+
+		// 2. TRATAMENTO DO 500: Qualquer outro erro é tratado como falha de infraestrutura
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao buscar cliente: " + errorMessage})
+		return
+	}
+
+	// Se o serviço não retorna erro, mas retorna nil (caso o serviço seja simplificado)
+	if cliente == nil {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Cliente não encontrado"})
+		return
+	}
+
+	c.JSON(http.StatusOK, cliente)
 }

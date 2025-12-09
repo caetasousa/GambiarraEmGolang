@@ -3,6 +3,7 @@ package teste
 import (
 	"bytes"
 	"encoding/json"
+	"fmt"
 
 	Http "meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
@@ -18,43 +19,51 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SetupRouterCliente() (*gin.Engine, *repository.FakeClienteRepositorio, *Http.ClienteController) {
+func SetupRouterCliente() (*gin.Engine, *repository.FakeClienteRepositorio) {
 	gin.SetMode(gin.TestMode)
 
-	// 1. Camada de Repositório (Infraestrutura)
 	clienteRepo := repository.NewFakeClienteRepositorio()
-
-	// 2. Camada de Aplicação (Serviços/Casos de Uso)
-	cadastradorService := services.NovoCadastradoDeCliente(clienteRepo)
-
-	// 3. Camada de Adaptador HTTP (Controller)
+	cadastradorService := services.NovoServiceCliente(clienteRepo)
 	clienteController := Http.NovoClienteController(cadastradorService)
 
-	// 🔥 Router REAL
 	router := gin.Default()
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/clientes", clienteController.PostCliente)
+		apiV1.GET("/clientes/:id", clienteController.GetCliente)
 	}
 
-	return router, clienteRepo, clienteController
+	return router, clienteRepo
+}
+
+func SetupPostClienteRequest(router *gin.Engine, input request.ClienteRequest) *httptest.ResponseRecorder {
+	// 1. Converte o corpo (input) para JSON
+	body, _ := json.Marshal(input)
+
+	// 2. Cria a Requisição HTTP
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/clientes", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+
+	// 3. Cria o Response Recorder (rr)
+	rr := httptest.NewRecorder()
+
+	// 4. Executa a Requisição no Router
+	// router.ServeHTTP(rr, req) não retorna nada, mas modifica o 'rr'
+	router.ServeHTTP(rr, req)
+
+	// 5. Retorna o ResponseRecorder com o resultado do teste
+	return rr
 }
 
 func TestPostCliente_ResultadoEsperado(t *testing.T) {
-	router, _, _ := SetupRouterCliente()
+	router, _ := SetupRouterCliente()
 
 	input := request.ClienteRequest{
 		Nome:     "Ana",
 		Email:    "ana@example.com",
 		Telefone: "6299697481",
 	}
-
-	body, _ := json.Marshal(input)
-	req, _ := http.NewRequest(http.MethodPost, "/api/v1/clientes", bytes.NewBuffer(body))
-	req.Header.Set("Content-Type", "application/json")
-
-	rr := httptest.NewRecorder()
-	router.ServeHTTP(rr, req)
+	rr := SetupPostClienteRequest(router, input)
 
 	// 	// === Validações === //
 
@@ -72,4 +81,131 @@ func TestPostCliente_ResultadoEsperado(t *testing.T) {
 
 	// O serviço real deve gerar ID
 	assert.NotZero(t, resp.ID, "O serviço real deve gerar ID")
+}
+
+func TestPostCliente_EmailInvalido(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	input := request.ClienteRequest{
+		Nome:     "Carlos",
+		Email:    "email-invalido", // Email inválido para simular erro de validação
+		Telefone: "6299697482",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	// === Validações === //
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 Bad Request para email inválido")
+	var resp map[string]string
+	err := json.Unmarshal(rr.Body.Bytes(), &resp)
+	assert.NoError(t, err, "Resposta deve ser um JSON válido")
+	// Verifica se a mensagem de erro contém informações sobre o email inválido
+	errorMsg, exists := resp["error"]
+	assert.True(t, exists, "Deve conter campo 'error' na resposta")
+	fmt.Println(errorMsg)
+	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag")
+}
+
+func TestPostCliente_NomeRequerido(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	input := request.ClienteRequest{
+		Nome:     "",
+		Email:    "email@invalido.com",
+		Telefone: "6299697482",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	// === Validações === //
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 Bad Request para email inválido")
+	var resp map[string]string
+	err := json.Unmarshal(rr.Body.Bytes(), &resp)
+	assert.NoError(t, err, "Resposta deve ser um JSON válido")
+
+	errorMsg, exists := resp["error"]
+	assert.True(t, exists, "Deve conter campo 'error' na resposta")
+	fmt.Println(errorMsg)
+	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Nome' Error:Field validation for 'Nome' failed on the 'required' tag")
+}
+
+func TestPostCliente_TelefoneReequerido(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	input := request.ClienteRequest{
+		Nome:     "eduardo",
+		Email:    "email@invalido.com",
+		Telefone: "",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	// === Validações === //
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 Bad Request para email inválido")
+	var resp map[string]string
+	err := json.Unmarshal(rr.Body.Bytes(), &resp)
+	assert.NoError(t, err, "Resposta deve ser um JSON válido")
+
+	errorMsg, exists := resp["error"]
+	assert.True(t, exists, "Deve conter campo 'error' na resposta")
+	fmt.Println(errorMsg)
+	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Telefone' Error:Field validation for 'Telefone' failed on the 'required' tag")
+}
+
+func SetupGetClienteRequest(router *gin.Engine, id string) *httptest.ResponseRecorder {
+	// 1. Cria a Requisição HTTP
+	url := fmt.Sprintf("/api/v1/clientes/%s", id)
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+
+	// 2. Cria o Response Recorder (rr)
+	rr := httptest.NewRecorder()
+
+	// 3. Executa a Requisição no Router
+	// router.ServeHTTP(rr, req) não retorna nada, mas modifica o 'rr'
+	router.ServeHTTP(rr, req)
+
+	// 4. Retorna o ResponseRecorder com o resultado do teste
+	return rr
+}
+
+func TestGetCliente_Sucesso(t *testing.T) {
+	// Garante que a rota GET está mapeada no SetupRouterCliente!
+	router, _ := SetupRouterCliente()
+
+	// 1. Ação de Setup (Cadastro de um Cliente Real)
+	input := request.ClienteRequest{
+		Nome:     "Beatriz",
+		Email:    "caetaasousa@gmail.com",
+		Telefone: "6299977848",
+	}
+	rrPost := SetupPostClienteRequest(router, input)
+	var clienteCriado domain.Cliente
+	err := json.Unmarshal(rrPost.Body.Bytes(), &clienteCriado)
+	assert.NoError(t, err, "Resposta do POST deve ser um JSON válido")
+
+	// 2. Execução (Busca pelo Cliente Recém-Criado)
+	rrGet := SetupGetClienteRequest(router, clienteCriado.ID)
+	// === Validações === //
+	assert.Equal(t, http.StatusOK, rrGet.Code, "Esperado 200 OK para cliente existente")
+
+	var clienteBuscado domain.Cliente
+	err = json.Unmarshal(rrGet.Body.Bytes(), &clienteBuscado)
+	assert.NoError(t, err, "Resposta do GET deve ser um JSON válido")
+	// 3. Valida os Dados do Cliente Buscado
+	assert.Equal(t, clienteCriado.ID, clienteBuscado.ID, "IDs devem ser iguais")
+	assert.Equal(t, clienteCriado.Nome, clienteBuscado.Nome, "Nomes devem ser iguais")
+	assert.Equal(t, clienteCriado.Email, clienteBuscado.Email, "Emails devem ser iguais")
+	assert.Equal(t, clienteCriado.Telefone, clienteBuscado.Telefone, "Telefones devem ser iguais")
+}
+
+func TestGetCliente_NaoEncontrado(t *testing.T) {
+	// Garante que a rota GET está mapeada no SetupRouterCliente!
+	router, _ := SetupRouterCliente()
+	// 1. Execução (Busca por um ID que não existe)
+	// O ID "id-inexistente" é um ID que o sistema com certeza não gerou.
+	rr := SetupGetClienteRequest(router, "id-inexistente")
+
+	// === Validações === //
+
+	// 3. Verifica o Status Code (Deve ser 404)
+	assert.Equal(t, http.StatusNotFound, rr.Code, "Esperado 404 Not Found para cliente inexistente")
 }

@@ -47,13 +47,63 @@
                         }
                     },
                     "409": {
-                        "description": "Cliente já cadastrado (Regra de negócio: Email duplicado)",
+                        "description": "Cliente já cadastrado (Email ou Telefone já existe)",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Falha na persistência de dados ou erro interno\" // \u003c--- NOVO",
+                        "description": "Falha na persistência de dados ou erro interno",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/clientes/{id}": {
+            "get": {
+                "description": "Retorna os dados de um cliente específico usando seu ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Clientes"
+                ],
+                "summary": "Busca um cliente pelo ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do Cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Cliente encontrado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Cliente"
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido fornecido (ex: formato incorreto se houver validação de formato de ID)",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Cliente não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor ou falha de infraestrutura",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }

@@ -23,10 +23,10 @@ func main() {
 	clienteRepo := repository.NewFakeClienteRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
-	cadastradorService := services.NovoCadastradoDeCliente(clienteRepo)
+	cadastradoService := services.NovoServiceCliente(clienteRepo)
 
 	// 3. Camada de Adaptador HTTP (Controller)
-	clienteController := Http.NovoClienteController(cadastradorService)
+	clienteController := Http.NovoClienteController(cadastradoService)
 
 	// --- 4. Inicialização do Servidor Gin ---
 	router := gin.Default()
@@ -37,6 +37,7 @@ func main() {
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/clientes", clienteController.PostCliente)
+		apiV1.GET("/clientes/:id", clienteController.GetCliente)
 	}
 
 	router.GET("/ping", func(c *gin.Context) {
