@@ -2,7 +2,7 @@ package Http
 
 import (
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
-	"meu-servico-agenda/internal/core/application/services"
+	"meu-servico-agenda/internal/core/application/service"
 
 	"net/http"
 
@@ -10,10 +10,10 @@ import (
 )
 
 type ClienteController struct {
-	novoCliente *services.ServiceCliente
+	novoCliente *service.ServiceCliente
 }
 
-func NovoClienteController(novoCliente *services.ServiceCliente) *ClienteController {
+func NovoClienteController(novoCliente *service.ServiceCliente) *ClienteController {
 	return &ClienteController{novoCliente: novoCliente}
 }
 

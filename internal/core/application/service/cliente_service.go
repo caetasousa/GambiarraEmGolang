@@ -1,18 +1,18 @@
-package services
+package service
 
 import (
 	"errors"
 
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
-	"meu-servico-agenda/internal/core/application/ports"
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
 
 type ServiceCliente struct {
-	repo ports.ClienteRepositorio
+	repo port.ClienteRepositorio
 }
 
-func NovoServiceCliente(r ports.ClienteRepositorio) *ServiceCliente {
+func NovoServiceCliente(r port.ClienteRepositorio) *ServiceCliente {
 	return &ServiceCliente{repo: r}
 }
 

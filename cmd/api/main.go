@@ -5,7 +5,7 @@ import (
 	_ "meu-servico-agenda/docs"
 	Http "meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/repository"
-	"meu-servico-agenda/internal/core/application/services"
+	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -23,7 +23,7 @@ func main() {
 	clienteRepo := repository.NewFakeClienteRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
-	cadastradoService := services.NovoServiceCliente(clienteRepo)
+	cadastradoService := service.NovoServiceCliente(clienteRepo)
 
 	// 3. Camada de Adaptador HTTP (Controller)
 	clienteController := Http.NovoClienteController(cadastradoService)

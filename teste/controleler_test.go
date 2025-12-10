@@ -8,7 +8,7 @@ import (
 	Http "meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
 	"meu-servico-agenda/internal/adapters/repository"
-	"meu-servico-agenda/internal/core/application/services"
+	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 
 	"net/http"
@@ -23,7 +23,7 @@ func SetupRouterCliente() (*gin.Engine, *repository.FakeClienteRepositorio) {
 	gin.SetMode(gin.TestMode)
 
 	clienteRepo := repository.NewFakeClienteRepositorio()
-	cadastradorService := services.NovoServiceCliente(clienteRepo)
+	cadastradorService := service.NovoServiceCliente(clienteRepo)
 	clienteController := Http.NovoClienteController(cadastradorService)
 
 	router := gin.Default()
