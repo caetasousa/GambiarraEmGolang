@@ -1,6 +1,6 @@
 package domain
 
-type PrestadorDeServico struct {
+type Prestador struct {
 	ID            string
 	Nome          string
 	Email         string

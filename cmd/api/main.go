@@ -3,7 +3,10 @@ package main
 import (
 	"log"
 	_ "meu-servico-agenda/docs"
-	Http "meu-servico-agenda/internal/adapters/http/cliente"
+
+	"meu-servico-agenda/internal/adapters/http/cliente"
+	"meu-servico-agenda/internal/adapters/http/prestador"
+
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
@@ -21,12 +24,15 @@ import (
 func main() {
 	// 1. Camada de Repositório (Infraestrutura)
 	clienteRepo := repository.NewFakeClienteRepositorio()
+	prestadorRepo := repository.NovoFakePrestadorRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
 	cadastradoService := service.NovoServiceCliente(clienteRepo)
+	cadastroService := service.NovoPrestadorService(prestadorRepo)
 
 	// 3. Camada de Adaptador HTTP (Controller)
-	clienteController := Http.NovoClienteController(cadastradoService)
+	clienteController := cliente.NovoClienteController(cadastradoService)
+	prestadorController := prestador.NovoPrestadorController(cadastroService)
 
 	// --- 4. Inicialização do Servidor Gin ---
 	router := gin.Default()
@@ -38,6 +44,8 @@ func main() {
 	{
 		apiV1.POST("/clientes", clienteController.PostCliente)
 		apiV1.GET("/clientes/:id", clienteController.GetCliente)
+
+		apiV1.POST("/prestadores", prestadorController.PostPrestador)
 	}
 
 	router.GET("/ping", func(c *gin.Context) {

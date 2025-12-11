@@ -1,4 +1,4 @@
-package Http
+package cliente
 
 import (
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
@@ -17,7 +17,7 @@ func NovoClienteController(novoCliente *service.ServiceCliente) *ClienteControll
 	return &ClienteController{novoCliente: novoCliente}
 }
 
-// PostCliente é o handler para a rota POST /clientes
+// PostCliente é o handler para a rota POST /cliente
 // @Summary Cadastra um novo cliente
 // @Description Recebe dados de nome, email e telefone para registrar um novo cliente.
 // @Tags Clientes

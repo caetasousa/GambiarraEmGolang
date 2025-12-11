@@ -116,6 +116,58 @@ const docTemplate = `{
                     }
                 }
             }
+        },
+        "/prestadores": {
+            "post": {
+                "description": "Recebe os dados necessários para registrar um novo prestador.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Cadastra um novo prestadores",
+                "parameters": [
+                    {
+                        "description": "Dados do Prestador",
+                        "name": "prestador",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.PrestadorRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Prestador criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Prestador"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos (erro de validação do binding)",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Prestador já cadastrado ou conflito de dados",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Falha na persistência de dados ou erro interno",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -144,6 +196,32 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.Prestador": {
+            "type": "object",
+            "properties": {
+                "ativo": {
+                    "type": "boolean"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "servicosIDs": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
         "request.ClienteRequest": {
             "type": "object",
             "required": [
@@ -156,6 +234,31 @@ const docTemplate = `{
                 },
                 "nome": {
                     "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
+        "request.PrestadorRequest": {
+            "type": "object",
+            "required": [
+                "nome",
+                "servicos_ids",
+                "telefone"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "servicos_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 },
                 "telefone": {
                     "type": "string"
