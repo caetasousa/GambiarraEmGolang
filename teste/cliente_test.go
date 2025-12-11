@@ -36,8 +36,8 @@ func SetupRouterCliente() (*gin.Engine, *repository.FakeClienteRepositorio) {
 	return router, clienteRepo
 }
 
-func SetupPostClienteRequest(router *gin.Engine, input request.ClienteRequest) *httptest.ResponseRecorder {
-	// 1. Converte o corpo (input) para JSON
+func SetupPostClienteRequest(router *gin.Engine, input interface{}) *httptest.ResponseRecorder {
+	// 1. Converte o corpo (input) para JSON (aceita structs ou map[string]interface{})
 	body, _ := json.Marshal(input)
 
 	// 2. Cria a Requisição HTTP
@@ -48,7 +48,6 @@ func SetupPostClienteRequest(router *gin.Engine, input request.ClienteRequest) *
 	rr := httptest.NewRecorder()
 
 	// 4. Executa a Requisição no Router
-	// router.ServeHTTP(rr, req) não retorna nada, mas modifica o 'rr'
 	router.ServeHTTP(rr, req)
 
 	// 5. Retorna o ResponseRecorder com o resultado do teste
@@ -101,7 +100,6 @@ func TestPostCliente_EmailInvalido(t *testing.T) {
 	// Verifica se a mensagem de erro contém informações sobre o email inválido
 	errorMsg, exists := resp["error"]
 	assert.True(t, exists, "Deve conter campo 'error' na resposta")
-	fmt.Println(errorMsg)
 	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Email' Error:Field validation for 'Email' failed on the 'email' tag")
 }
 
@@ -124,7 +122,6 @@ func TestPostCliente_NomeRequerido(t *testing.T) {
 
 	errorMsg, exists := resp["error"]
 	assert.True(t, exists, "Deve conter campo 'error' na resposta")
-	fmt.Println(errorMsg)
 	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Nome' Error:Field validation for 'Nome' failed on the 'required' tag")
 }
 
@@ -147,7 +144,6 @@ func TestPostCliente_TelefoneReequerido(t *testing.T) {
 
 	errorMsg, exists := resp["error"]
 	assert.True(t, exists, "Deve conter campo 'error' na resposta")
-	fmt.Println(errorMsg)
 	assert.Equal(t, errorMsg, "Dados inválidos: Key: 'ClienteRequest.Telefone' Error:Field validation for 'Telefone' failed on the 'required' tag")
 }
 
@@ -208,4 +204,77 @@ func TestGetCliente_NaoEncontrado(t *testing.T) {
 
 	// 3. Verifica o Status Code (Deve ser 404)
 	assert.Equal(t, http.StatusNotFound, rr.Code, "Esperado 404 Not Found para cliente inexistente")
+}
+
+func TestPostCliente_NomeMuitoCurto_DeveRetornar400(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	// Nome com menos de 3 caracteres
+	input := request.ClienteRequest{
+		Nome:     "AB",
+		Email:    "ab@example.com",
+		Telefone: "62999974848",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para nome com < 3 caracteres")
+	var resp map[string]string
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
+	_, exists := resp["error"]
+	assert.True(t, exists, "Resposta deve conter campo 'error'")
+}
+
+func TestPostCliente_TelefoneMuitoCurto_DeveRetornar400(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	// Telefone com menos de 8 dígitos
+	input := request.ClienteRequest{
+		Nome:     "João",
+		Email:    "joao@example.com",
+		Telefone: "1234567",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para telefone com < 8 dígitos")
+	var resp map[string]string
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
+	_, exists := resp["error"]
+	assert.True(t, exists, "Resposta deve conter campo 'error'")
+}
+
+func TestPostCliente_TelefoneComTipoInvalido_DeveRetornar400(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	// Telefone como número em vez de string
+	input := map[string]interface{}{
+		"nome":     "Carlos",
+		"telefone": 6299974848,
+		"email":    "carlos@example.com",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para tipo inválido de telefone")
+	var resp map[string]string
+	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
+	_, exists := resp["error"]
+	assert.True(t, exists, "Resposta deve conter campo 'error'")
+}
+
+func TestPostCliente_EmailOmitido_DeveRetornar201(t *testing.T) {
+	router, _ := SetupRouterCliente()
+
+	// Email é omitempty, então não é obrigatório
+	input := request.ClienteRequest{
+		Nome:     "Maria",
+		Email:    "",
+		Telefone: "62999974848",
+	}
+	rr := SetupPostClienteRequest(router, input)
+
+	assert.Equal(t, http.StatusCreated, rr.Code, "Email omitido deveria ser aceito (201)")
+	var resp domain.Cliente
+	err := json.Unmarshal(rr.Body.Bytes(), &resp)
+	assert.NoError(t, err, "Resposta deve ser um JSON válido")
+	assert.Equal(t, input.Nome, resp.Nome)
+	assert.Equal(t, "", resp.Email)
 }

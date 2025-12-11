@@ -1,5 +1,20 @@
 basePath: /api/v1
 definitions:
+  domain.Catalogo:
+    properties:
+      categoria:
+        type: string
+      duracaoPadrao:
+        description: DuracaoPadrao em minutos
+        type: integer
+      id:
+        type: string
+      nome:
+        type: string
+      preco:
+        format: float64
+        type: number
+    type: object
   domain.Cliente:
     properties:
       email:
@@ -20,26 +35,50 @@ definitions:
     properties:
       ativo:
         type: boolean
+      catalogoIDs:
+        items:
+          $ref: '#/definitions/domain.Catalogo'
+        type: array
       email:
         type: string
       id:
         type: string
       nome:
         type: string
-      servicosIDs:
-        items:
-          type: string
-        type: array
       telefone:
         type: string
+    type: object
+  request.CatalogoRequest:
+    properties:
+      categoria:
+        maxLength: 50
+        minLength: 3
+        type: string
+      duracao_padrao:
+        type: integer
+      nome:
+        maxLength: 100
+        minLength: 3
+        type: string
+      preco:
+        type: number
+    required:
+    - categoria
+    - duracao_padrao
+    - nome
+    - preco
     type: object
   request.ClienteRequest:
     properties:
       email:
         type: string
       nome:
+        maxLength: 100
+        minLength: 3
         type: string
       telefone:
+        maxLength: 15
+        minLength: 8
         type: string
     required:
     - nome
@@ -47,19 +86,23 @@ definitions:
     type: object
   request.PrestadorRequest:
     properties:
-      email:
-        type: string
-      nome:
-        type: string
-      servicos_ids:
+      catalogo_ids:
         items:
           type: string
         type: array
+      email:
+        type: string
+      nome:
+        maxLength: 100
+        minLength: 3
+        type: string
       telefone:
+        maxLength: 15
+        minLength: 8
         type: string
     required:
+    - catalogo_ids
     - nome
-    - servicos_ids
     - telefone
     type: object
 host: localhost:8080
@@ -69,6 +112,73 @@ info:
   title: API de Agendamentos
   version: "1.0"
 paths:
+  /catalogos:
+    post:
+      consumes:
+      - application/json
+      description: Recebe os dados necessários para registrar um novo serviço no catálogo.
+      parameters:
+      - description: Dados do Catálogo
+        in: body
+        name: catalogo
+        required: true
+        schema:
+          $ref: '#/definitions/request.CatalogoRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Catálogo criado com sucesso
+          schema:
+            $ref: '#/definitions/domain.Catalogo'
+        "400":
+          description: Dados inválidos (erro de validação do binding)
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: Catálogo já cadastrado ou conflito de dados
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Falha na persistência de dados ou erro interno
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Cadastra um novo catálogo
+      tags:
+      - Catálogos
+  /catalogos/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna os dados de um catálogo específico usando seu ID.
+      parameters:
+      - description: ID do Catálogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Catálogo encontrado com sucesso
+          schema:
+            $ref: '#/definitions/domain.Catalogo'
+        "400":
+          description: ID inválido fornecido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Catálogo não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor ou falha de infraestrutura
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Busca um catálogo pelo ID
+      tags:
+      - Catálogos
   /clientes:
     post:
       consumes:

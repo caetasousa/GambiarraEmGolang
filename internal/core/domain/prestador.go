@@ -6,5 +6,5 @@ type Prestador struct {
 	Email         string
 	Telefone      string
 	Ativo         bool
-	ServicosIDs []string
+	Catalogo []Catalogo
 }

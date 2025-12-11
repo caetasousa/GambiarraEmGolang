@@ -1,7 +1,6 @@
 package service
 
 import (
-	"meu-servico-agenda/internal/adapters/http/prestador/request"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -14,10 +13,8 @@ func NovoPrestadorService(r port.PrestadorDeServicoRepositorio) *PrestadorServic
 	return &PrestadorService{repo: r}
 }
 
-func (s *PrestadorService) Cadastra(input request.PrestadorRequest) (*domain.Prestador, error) {
-	prestador := input.ToPrestador()
-	err := s.repo.Salvar(prestador)
-	if err != nil {
+func (s *PrestadorService) Cadastra(prestador *domain.Prestador) (*domain.Prestador, error) {
+	if err := s.repo.Salvar(prestador); err != nil {
 		return nil, err
 	}
 	return prestador, nil

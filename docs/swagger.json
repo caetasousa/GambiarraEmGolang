@@ -9,6 +9,108 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
+        "/catalogos": {
+            "post": {
+                "description": "Recebe os dados necessários para registrar um novo serviço no catálogo.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catálogos"
+                ],
+                "summary": "Cadastra um novo catálogo",
+                "parameters": [
+                    {
+                        "description": "Dados do Catálogo",
+                        "name": "catalogo",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.CatalogoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Catálogo criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Catalogo"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos (erro de validação do binding)",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Catálogo já cadastrado ou conflito de dados",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Falha na persistência de dados ou erro interno",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/catalogos/{id}": {
+            "get": {
+                "description": "Retorna os dados de um catálogo específico usando seu ID.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catálogos"
+                ],
+                "summary": "Busca um catálogo pelo ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do Catálogo",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Catálogo encontrado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/domain.Catalogo"
+                        }
+                    },
+                    "400": {
+                        "description": "ID inválido fornecido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Catálogo não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor ou falha de infraestrutura",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/clientes": {
             "post": {
                 "description": "Recebe dados de nome, email e telefone para registrar um novo cliente.",
@@ -165,6 +267,28 @@
         }
     },
     "definitions": {
+        "domain.Catalogo": {
+            "type": "object",
+            "properties": {
+                "categoria": {
+                    "type": "string"
+                },
+                "duracaoPadrao": {
+                    "description": "DuracaoPadrao em minutos",
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "preco": {
+                    "type": "number",
+                    "format": "float64"
+                }
+            }
+        },
         "domain.Cliente": {
             "type": "object",
             "properties": {
@@ -196,6 +320,12 @@
                 "ativo": {
                     "type": "boolean"
                 },
+                "catalogoIDs": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.Catalogo"
+                    }
+                },
                 "email": {
                     "type": "string"
                 },
@@ -205,14 +335,35 @@
                 "nome": {
                     "type": "string"
                 },
-                "servicosIDs": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
                 "telefone": {
                     "type": "string"
+                }
+            }
+        },
+        "request.CatalogoRequest": {
+            "type": "object",
+            "required": [
+                "categoria",
+                "duracao_padrao",
+                "nome",
+                "preco"
+            ],
+            "properties": {
+                "categoria": {
+                    "type": "string",
+                    "maxLength": 50,
+                    "minLength": 3
+                },
+                "duracao_padrao": {
+                    "type": "integer"
+                },
+                "nome": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3
+                },
+                "preco": {
+                    "type": "number"
                 }
             }
         },
@@ -227,35 +378,43 @@
                     "type": "string"
                 },
                 "nome": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3
                 },
                 "telefone": {
-                    "type": "string"
+                    "type": "string",
+                    "maxLength": 15,
+                    "minLength": 8
                 }
             }
         },
         "request.PrestadorRequest": {
             "type": "object",
             "required": [
+                "catalogo_ids",
                 "nome",
-                "servicos_ids",
                 "telefone"
             ],
             "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "nome": {
-                    "type": "string"
-                },
-                "servicos_ids": {
+                "catalogo_ids": {
                     "type": "array",
                     "items": {
                         "type": "string"
                     }
                 },
-                "telefone": {
+                "email": {
                     "type": "string"
+                },
+                "nome": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3
+                },
+                "telefone": {
+                    "type": "string",
+                    "maxLength": 15,
+                    "minLength": 8
                 }
             }
         }

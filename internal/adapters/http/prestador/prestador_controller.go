@@ -2,6 +2,7 @@ package prestador
 
 import (
 	"meu-servico-agenda/internal/adapters/http/prestador/request"
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
 
@@ -10,10 +11,11 @@ import (
 
 type PrestadorController struct {
 	criarPrestadorService *service.PrestadorService
+	catalogoRepo          port.CatalogoRepositorio
 }
 
-func NovoPrestadorController(criarPrestadorService *service.PrestadorService) *PrestadorController {
-	return &PrestadorController{criarPrestadorService: criarPrestadorService}
+func NovoPrestadorController(criarPrestadorService *service.PrestadorService, catalogoRepo port.CatalogoRepositorio) *PrestadorController {
+	return &PrestadorController{criarPrestadorService: criarPrestadorService, catalogoRepo: catalogoRepo}
 }
 
 // PostPrestador é o handler para a rota POST /prestador
@@ -36,7 +38,14 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 		return
 	}
 
-	prestador, err := prc.criarPrestadorService.Cadastra(input)
+	prestador, err := input.ToPrestador(prc.catalogoRepo)
+
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	prestador, err = prc.criarPrestadorService.Cadastra(prestador)
 
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
