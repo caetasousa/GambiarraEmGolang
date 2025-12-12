@@ -36,7 +36,7 @@ func (ctl *CatalogoController) PostPrestador(c *gin.Context) {
 		return
 	}
 
-	catalogo, err := ctl.criarCatalogoService.Cadastra(input)
+	catalogo, err := ctl.criarCatalogoService.Cadastra(*input.ToCatalogo())
 
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})

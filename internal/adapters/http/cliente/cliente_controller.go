@@ -37,7 +37,7 @@ func (ctrl *ClienteController) PostCliente(c *gin.Context) {
 		return
 	}
 
-	cliente, err := ctrl.novoCliente.Cadastra(input)
+	cliente, err := ctrl.novoCliente.Cadastra(*input.ToCliente())
 
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})

@@ -15,6 +15,58 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agendas": {
+            "post": {
+                "description": "Registra uma agenda diária contendo data e intervalos de horário disponíveis.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendas"
+                ],
+                "summary": "Cadastra uma nova agenda diária",
+                "parameters": [
+                    {
+                        "description": "Dados da Agenda Diária",
+                        "name": "agenda",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AgendaDiariaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Agenda criada com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/response.AgendaDiariaResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos (erro de validação)",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito ao cadastrar agenda",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno ao criar agenda",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/catalogos": {
             "post": {
                 "description": "Recebe os dados necessários para registrar um novo serviço no catálogo.",
@@ -273,6 +325,25 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "domain.AgendaDiaria": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "description": "Ex: \"2026-01-15\" (A data em que o trabalho ocorre)",
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "intervalos": {
+                    "description": "Lista de horários disponíveis naquele dia",
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.IntervaloDiario"
+                    }
+                }
+            }
+        },
         "domain.Catalogo": {
             "type": "object",
             "properties": {
@@ -320,13 +391,33 @@ const docTemplate = `{
                 }
             }
         },
+        "domain.IntervaloDiario": {
+            "type": "object",
+            "properties": {
+                "horaFim": {
+                    "type": "string"
+                },
+                "horaInicio": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
         "domain.Prestador": {
             "type": "object",
             "properties": {
+                "agenda": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/domain.AgendaDiaria"
+                    }
+                },
                 "ativo": {
                     "type": "boolean"
                 },
-                "catalogoIDs": {
+                "catalogo": {
                     "type": "array",
                     "items": {
                         "$ref": "#/definitions/domain.Catalogo"
@@ -343,6 +434,25 @@ const docTemplate = `{
                 },
                 "telefone": {
                     "type": "string"
+                }
+            }
+        },
+        "request.AgendaDiariaRequest": {
+            "type": "object",
+            "required": [
+                "data",
+                "intervalos"
+            ],
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "example": "2025-01-03"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request.IntervaloDiarioRequest"
+                    }
                 }
             }
         },
@@ -395,6 +505,23 @@ const docTemplate = `{
                 }
             }
         },
+        "request.IntervaloDiarioRequest": {
+            "type": "object",
+            "required": [
+                "hora_fim",
+                "hora_inicio"
+            ],
+            "properties": {
+                "hora_fim": {
+                    "type": "string",
+                    "example": "12:00"
+                },
+                "hora_inicio": {
+                    "type": "string",
+                    "example": "08:00"
+                }
+            }
+        },
         "request.PrestadorRequest": {
             "type": "object",
             "required": [
@@ -421,6 +548,40 @@ const docTemplate = `{
                     "type": "string",
                     "maxLength": 15,
                     "minLength": 8
+                }
+            }
+        },
+        "response.AgendaDiariaResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string"
+                },
+                "dia_semana": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.IntervaloDiarioResponse"
+                    }
+                }
+            }
+        },
+        "response.IntervaloDiarioResponse": {
+            "type": "object",
+            "properties": {
+                "hora_fim": {
+                    "type": "string"
+                },
+                "hora_inicio": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         }

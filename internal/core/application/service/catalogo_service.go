@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 	"fmt"
-	"meu-servico-agenda/internal/adapters/http/catalogo/request"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -16,14 +15,13 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 	return &CatalogoService{repo: r}
 }
 
-func (s *CatalogoService) Cadastra(input request.CatalogoRequest) (*domain.Catalogo, error) {
-	catalogo := input.ToCatalogo()
+func (s *CatalogoService) Cadastra(input domain.Catalogo) (*domain.Catalogo, error) {
 
-	if err := s.repo.Salvar(catalogo); err != nil {
+	if err := s.repo.Salvar(&input); err != nil {
 		return nil, err
 	}
 
-	return catalogo, nil
+	return &input, nil
 }
 
 func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {

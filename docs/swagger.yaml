@@ -1,5 +1,18 @@
 basePath: /api/v1
 definitions:
+  domain.AgendaDiaria:
+    properties:
+      data:
+        description: 'Ex: "2026-01-15" (A data em que o trabalho ocorre)'
+        type: string
+      id:
+        type: string
+      intervalos:
+        description: Lista de horários disponíveis naquele dia
+        items:
+          $ref: '#/definitions/domain.IntervaloDiario'
+        type: array
+    type: object
   domain.Catalogo:
     properties:
       categoria:
@@ -31,11 +44,24 @@ definitions:
       error:
         type: string
     type: object
+  domain.IntervaloDiario:
+    properties:
+      horaFim:
+        type: string
+      horaInicio:
+        type: string
+      id:
+        type: string
+    type: object
   domain.Prestador:
     properties:
+      agenda:
+        items:
+          $ref: '#/definitions/domain.AgendaDiaria'
+        type: array
       ativo:
         type: boolean
-      catalogoIDs:
+      catalogo:
         items:
           $ref: '#/definitions/domain.Catalogo'
         type: array
@@ -47,6 +73,19 @@ definitions:
         type: string
       telefone:
         type: string
+    type: object
+  request.AgendaDiariaRequest:
+    properties:
+      data:
+        example: "2025-01-03"
+        type: string
+      intervalos:
+        items:
+          $ref: '#/definitions/request.IntervaloDiarioRequest'
+        type: array
+    required:
+    - data
+    - intervalos
     type: object
   request.CatalogoRequest:
     properties:
@@ -84,6 +123,18 @@ definitions:
     - nome
     - telefone
     type: object
+  request.IntervaloDiarioRequest:
+    properties:
+      hora_fim:
+        example: "12:00"
+        type: string
+      hora_inicio:
+        example: "08:00"
+        type: string
+    required:
+    - hora_fim
+    - hora_inicio
+    type: object
   request.PrestadorRequest:
     properties:
       catalogo_ids:
@@ -105,6 +156,28 @@ definitions:
     - nome
     - telefone
     type: object
+  response.AgendaDiariaResponse:
+    properties:
+      data:
+        type: string
+      dia_semana:
+        type: string
+      id:
+        type: string
+      intervalos:
+        items:
+          $ref: '#/definitions/response.IntervaloDiarioResponse'
+        type: array
+    type: object
+  response.IntervaloDiarioResponse:
+    properties:
+      hora_fim:
+        type: string
+      hora_inicio:
+        type: string
+      id:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -112,6 +185,41 @@ info:
   title: API de Agendamentos
   version: "1.0"
 paths:
+  /agendas:
+    post:
+      consumes:
+      - application/json
+      description: Registra uma agenda diária contendo data e intervalos de horário
+        disponíveis.
+      parameters:
+      - description: Dados da Agenda Diária
+        in: body
+        name: agenda
+        required: true
+        schema:
+          $ref: '#/definitions/request.AgendaDiariaRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Agenda criada com sucesso
+          schema:
+            $ref: '#/definitions/response.AgendaDiariaResponse'
+        "400":
+          description: Dados inválidos (erro de validação)
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: Conflito ao cadastrar agenda
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno ao criar agenda
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Cadastra uma nova agenda diária
+      tags:
+      - Agendas
   /catalogos:
     post:
       consumes:

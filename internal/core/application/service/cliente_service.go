@@ -3,7 +3,6 @@ package service
 import (
 	"errors"
 
-	"meu-servico-agenda/internal/adapters/http/cliente/request"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -16,14 +15,13 @@ func NovoServiceCliente(r port.ClienteRepositorio) *ServiceCliente {
 	return &ServiceCliente{repo: r}
 }
 
-func (s *ServiceCliente) Cadastra(input request.ClienteRequest) (*domain.Cliente, error) {
-	novoCliente := input.ToCliente()
+func (s *ServiceCliente) Cadastra(input domain.Cliente) (*domain.Cliente, error) {
 
-	if err := s.repo.Salvar(novoCliente); err != nil {
+	if err := s.repo.Salvar(&input); err != nil {
 		return nil, errors.New("falha ao salvar cliente: " + err.Error())
 	}
 
-	return novoCliente, nil
+	return &input, nil
 }
 
 func (s *ServiceCliente) BuscarPorId(id string) (*domain.Cliente, error) {

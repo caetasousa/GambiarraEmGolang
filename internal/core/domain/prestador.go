@@ -1,10 +1,11 @@
 package domain
 
 type Prestador struct {
-	ID            string
-	Nome          string
-	Email         string
-	Telefone      string
-	Ativo         bool
+	ID       string
+	Nome     string
+	Email    string
+	Telefone string
+	Ativo    bool
 	Catalogo []Catalogo
+	Agenda   []AgendaDiaria
 }
