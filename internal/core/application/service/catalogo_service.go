@@ -15,13 +15,12 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 	return &CatalogoService{repo: r}
 }
 
-func (s *CatalogoService) Cadastra(input domain.Catalogo) (*domain.Catalogo, error) {
-
-	if err := s.repo.Salvar(&input); err != nil {
+func (s *CatalogoService) Cadastra(input *domain.Catalogo) (*domain.Catalogo, error) {
+	if err := s.repo.Salvar(input); err != nil {
 		return nil, err
 	}
 
-	return &input, nil
+	return input, nil
 }
 
 func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {

@@ -15,13 +15,16 @@ func NovoServiceCliente(r port.ClienteRepositorio) *ServiceCliente {
 	return &ServiceCliente{repo: r}
 }
 
-func (s *ServiceCliente) Cadastra(input domain.Cliente) (*domain.Cliente, error) {
+func (s *ServiceCliente) Cadastra(cliente *domain.Cliente) (*domain.Cliente, error) {
+	if cliente == nil {
+		return nil, errors.New("cliente não pode ser nil")
+	}
 
-	if err := s.repo.Salvar(&input); err != nil {
+	if err := s.repo.Salvar(cliente); err != nil {
 		return nil, errors.New("falha ao salvar cliente: " + err.Error())
 	}
 
-	return &input, nil
+	return cliente, nil
 }
 
 func (s *ServiceCliente) BuscarPorId(id string) (*domain.Cliente, error) {

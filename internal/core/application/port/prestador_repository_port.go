@@ -2,6 +2,6 @@ package port
 
 import "meu-servico-agenda/internal/core/domain"
 
-type PrestadorDeServicoRepositorio interface {
+type PrestadorRepositorio interface {
 	Salvar(prestador *domain.Prestador) error
 }

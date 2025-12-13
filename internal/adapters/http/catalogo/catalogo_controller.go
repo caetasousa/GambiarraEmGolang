@@ -36,14 +36,23 @@ func (ctl *CatalogoController) PostPrestador(c *gin.Context) {
 		return
 	}
 
-	catalogo, err := ctl.criarCatalogoService.Cadastra(*input.ToCatalogo())
+	catalogoDomain, err := input.ToCatalogo()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(), // exemplo: preço negativo, duração inválida
+		})
+		return
+	}
+	catalogoSalvo, err := ctl.criarCatalogoService.Cadastra(catalogoDomain)
 
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		c.JSON(http.StatusConflict, gin.H{
+			"error": err.Error(), // exemplo: conflito no banco
+		})
 		return
 	}
 
-	c.JSON(http.StatusCreated, catalogo)
+	c.JSON(http.StatusCreated, catalogoSalvo)
 }
 
 // GetCatalogoPorID é o handler para a rota GET /catalogos/:id

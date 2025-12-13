@@ -2,8 +2,6 @@ package request
 
 import (
 	"meu-servico-agenda/internal/core/domain"
-
-	"github.com/rs/xid"
 )
 
 type CatalogoRequest struct {
@@ -13,12 +11,11 @@ type CatalogoRequest struct {
 	Categoria     string  `json:"categoria" binding:"required,min=3,max=50" swagger:"desc('Categoria do serviço')"`
 }
 
-func (cr *CatalogoRequest) ToCatalogo() *domain.Catalogo {
-	return &domain.Catalogo{
-		ID:            xid.New().String(),
-		Nome:          cr.Nome,
-		DuracaoPadrao: cr.DuracaoPadrao,
-		Preco:         cr.Preco,
-		Categoria:     cr.Categoria,
-	}
+func (cr *CatalogoRequest) ToCatalogo() (*domain.Catalogo, error) {
+	return domain.NovoCatalogo(
+		cr.Nome,
+		cr.DuracaoPadrao,
+		cr.Preco,
+		cr.Categoria,
+	)
 }

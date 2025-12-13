@@ -2,8 +2,6 @@ package request
 
 import (
 	"meu-servico-agenda/internal/core/domain"
-
-	"github.com/rs/xid"
 )
 
 type ClienteRequest struct {
@@ -12,11 +10,6 @@ type ClienteRequest struct {
 	Telefone string `json:"telefone" binding:"required,min=8,max=15" swagger:"desc('Telefone do cliente')"`
 }
 
-func (r *ClienteRequest) ToCliente() *domain.Cliente {
-	return &domain.Cliente{
-		ID:       xid.New().String(),
-		Nome:     r.Nome,
-		Email:    r.Email,
-		Telefone: r.Telefone,
-	}
+func (r *ClienteRequest) ToCliente() (*domain.Cliente, error) {
+	return domain.NovoCliente(r.Nome, r.Email, r.Telefone)
 }

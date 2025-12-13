@@ -30,7 +30,7 @@ func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiar
 	// validar cada intervalo
 	for _, it := range intervalos {
 		if !it.HoraInicio.Before(it.HoraFim) {
-			return nil, fmt.Errorf("intervalo inválido: início %s >= fim %s",
+			return nil, fmt.Errorf("intervalo inválido: hora de início (%s) deve ser anterior à hora de fim (%s)",
 				it.HoraInicio.Format("15:04"), it.HoraFim.Format("15:04"))
 		}
 	}

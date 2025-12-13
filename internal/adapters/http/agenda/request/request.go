@@ -36,9 +36,7 @@ func (r *AgendaDiariaRequest) ToAgendaDiaria() (*domain.AgendaDiaria, error) {
 			return nil, fmt.Errorf("hora_fim inválida: %w", err)
 		}
 
-		if !inicio.Before(fim) {
-			return nil, fmt.Errorf("hora_inicio '%s' deve ser menor que hora_fim '%s'", i.HoraInicio, i.HoraFim)
-		}
+		// Validação movida para o domínio (NovaAgendaDiaria)
 
 		intervalos = append(intervalos, domain.IntervaloDiario{
 			Id:         xid.New().String(),

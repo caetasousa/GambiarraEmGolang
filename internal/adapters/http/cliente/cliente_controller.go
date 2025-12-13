@@ -37,8 +37,15 @@ func (ctrl *ClienteController) PostCliente(c *gin.Context) {
 		return
 	}
 
-	cliente, err := ctrl.novoCliente.Cadastra(*input.ToCliente())
+	// Cria domínio e valida regras de negócio
+	clienteDomain, err := input.ToCliente()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
+	// Persiste usando service
+	cliente, err := ctrl.novoCliente.Cadastra(clienteDomain)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return

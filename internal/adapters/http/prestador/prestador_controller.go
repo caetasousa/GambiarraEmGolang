@@ -33,24 +33,19 @@ func NovoPrestadorController(criarPrestadorService *service.PrestadorService, ca
 func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	var input request.PrestadorRequest
 
+	// 1️⃣ Validação de binding do JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
 
-	prestador, err := input.ToPrestador(prc.catalogoRepo)
-
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	prestador, err = prc.criarPrestadorService.Cadastra(prestador)
-
+	// 2️⃣ Orquestração pelo service
+	prestador, err := prc.criarPrestadorService.Cadastra(&input)
 	if err != nil {
 		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 		return
 	}
 
+	// 3️⃣ Retorno HTTP 201 com o prestador criado
 	c.JSON(http.StatusCreated, prestador)
 }
