@@ -32,7 +32,7 @@ func main() {
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
 	cadastroCliente := service.NovoServiceCliente(clienteRepo)
-	cadastroPrestador := service.NovoPrestadorService(prestadorRepo)
+	cadastroPrestador := service.NovaPrestadorService(prestadorRepo, catalogoRepo)
 	cadastraCatalogo := service.NovoCatalogoService(catalogoRepo)
 	cadastraAgendaDiaria := service.NovaServiceAgendaDiaria(agendaDiariaRepo)
 
