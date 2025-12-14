@@ -30,16 +30,13 @@ func (s *ServiceCliente) Cadastra(cliente *domain.Cliente) (*domain.Cliente, err
 func (s *ServiceCliente) BuscarPorId(id string) (*domain.Cliente, error) {
 	cliente, err := s.repo.BuscarPorId(id)
 
-	// 1. Erro de Infraestrutura (DB offline, etc.)
 	if err != nil {
 		return nil, errors.New("falha na infraestrutura ao buscar cliente")
 	}
 
-	// 2. Cliente Não Encontrado (Nil retornado pelo repositório)
 	if cliente == nil {
-		return nil, errors.New("cliente não encontrado") // Erro de negócio para o Controller/Handler
+		return nil, errors.New("cliente não encontrado") 
 	}
 
-	// 3. Sucesso
 	return cliente, nil
 }

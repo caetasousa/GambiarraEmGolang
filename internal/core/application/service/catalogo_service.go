@@ -29,7 +29,7 @@ func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {
 		return nil, fmt.Errorf("falha na infraestrutura ao buscar catalogo: %w", err)
 	}
 	if catalogo == nil {
-		return nil, errors.New("catalogo nao encontrado") // <- sem wrap
+		return nil, errors.New("catalogo nao encontrado") 
 	}
 	return catalogo, nil
 }

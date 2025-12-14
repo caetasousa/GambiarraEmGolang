@@ -1,33 +1,5 @@
 basePath: /api/v1
 definitions:
-  domain.AgendaDiaria:
-    properties:
-      data:
-        description: 'Ex: "2026-01-15" (A data em que o trabalho ocorre)'
-        type: string
-      id:
-        type: string
-      intervalos:
-        description: Lista de horários disponíveis naquele dia
-        items:
-          $ref: '#/definitions/domain.IntervaloDiario'
-        type: array
-    type: object
-  domain.Catalogo:
-    properties:
-      categoria:
-        type: string
-      duracaoPadrao:
-        description: DuracaoPadrao em minutos
-        type: integer
-      id:
-        type: string
-      nome:
-        type: string
-      preco:
-        format: float64
-        type: number
-    type: object
   domain.Cliente:
     properties:
       email:
@@ -42,36 +14,6 @@ definitions:
   domain.ErrorResponse:
     properties:
       error:
-        type: string
-    type: object
-  domain.IntervaloDiario:
-    properties:
-      horaFim:
-        type: string
-      horaInicio:
-        type: string
-      id:
-        type: string
-    type: object
-  domain.Prestador:
-    properties:
-      agenda:
-        items:
-          $ref: '#/definitions/domain.AgendaDiaria'
-        type: array
-      ativo:
-        type: boolean
-      catalogo:
-        items:
-          $ref: '#/definitions/domain.Catalogo'
-        type: array
-      email:
-        type: string
-      id:
-        type: string
-      nome:
-        type: string
-      telefone:
         type: string
     type: object
   request.AgendaDiariaRequest:
@@ -166,6 +108,79 @@ definitions:
     - nome
     - telefone
     type: object
+  response.AgendaDiariaResponse:
+    properties:
+      data:
+        type: string
+      dia_semana:
+        type: string
+      id:
+        type: string
+      intervalos:
+        items:
+          $ref: '#/definitions/response.IntervaloDiarioResponse'
+        type: array
+    type: object
+  response.CatalogoResponse:
+    properties:
+      categoria:
+        type: string
+      duracao_padrao:
+        type: integer
+      id:
+        type: string
+      nome:
+        type: string
+      preco:
+        type: integer
+    type: object
+  response.IntervaloDiarioResponse:
+    properties:
+      hora_fim:
+        type: string
+      hora_inicio:
+        type: string
+      id:
+        type: string
+    type: object
+  response.PrestadorPostResponse:
+    properties:
+      ativo:
+        type: boolean
+      catalogo:
+        items:
+          $ref: '#/definitions/response.CatalogoResponse'
+        type: array
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
+    type: object
+  response.PrestadorResponse:
+    properties:
+      agenda:
+        items:
+          $ref: '#/definitions/response.AgendaDiariaResponse'
+        type: array
+      ativo:
+        type: boolean
+      catalogo:
+        items:
+          $ref: '#/definitions/response.CatalogoResponse'
+        type: array
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
+    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -191,7 +206,7 @@ paths:
         "201":
           description: Catálogo criado com sucesso
           schema:
-            $ref: '#/definitions/domain.Catalogo'
+            $ref: '#/definitions/response.CatalogoResponse'
         "400":
           description: Dados inválidos (erro de validação do binding)
           schema:
@@ -224,7 +239,7 @@ paths:
         "200":
           description: Catálogo encontrado com sucesso
           schema:
-            $ref: '#/definitions/domain.Catalogo'
+            $ref: '#/definitions/response.CatalogoResponse'
         "400":
           description: ID inválido fornecido
           schema:
@@ -326,7 +341,7 @@ paths:
         "201":
           description: Prestador criado com sucesso
           schema:
-            $ref: '#/definitions/domain.Prestador'
+            $ref: '#/definitions/response.PrestadorPostResponse'
         "400":
           description: Dados inválidos (erro de validação do binding)
           schema:
@@ -340,6 +355,36 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
       summary: Cadastra um novo prestadores
+      tags:
+      - Prestadores
+  /prestadores/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna informações do prestador, incluindo catálogo de serviços
+        e agenda diária.
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prestador encontrado com sucesso
+          schema:
+            $ref: '#/definitions/response.PrestadorResponse'
+        "404":
+          description: Prestador não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Consulta prestador pelo ID
       tags:
       - Prestadores
   /prestadores/{id}/agenda:

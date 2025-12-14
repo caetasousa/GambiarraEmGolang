@@ -43,7 +43,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Catálogo criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/domain.Catalogo"
+                            "$ref": "#/definitions/response.CatalogoResponse"
                         }
                     },
                     "400": {
@@ -93,7 +93,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Catálogo encontrado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/domain.Catalogo"
+                            "$ref": "#/definitions/response.CatalogoResponse"
                         }
                     },
                     "400": {
@@ -247,7 +247,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Prestador criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/domain.Prestador"
+                            "$ref": "#/definitions/response.PrestadorPostResponse"
                         }
                     },
                     "400": {
@@ -264,6 +264,50 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Falha na persistência de dados ou erro interno",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/prestadores/{id}": {
+            "get": {
+                "description": "Retorna informações do prestador, incluindo catálogo de serviços e agenda diária.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Consulta prestador pelo ID",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Prestador encontrado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/response.PrestadorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Prestador não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -335,47 +379,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.AgendaDiaria": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "description": "Ex: \"2026-01-15\" (A data em que o trabalho ocorre)",
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "intervalos": {
-                    "description": "Lista de horários disponíveis naquele dia",
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.IntervaloDiario"
-                    }
-                }
-            }
-        },
-        "domain.Catalogo": {
-            "type": "object",
-            "properties": {
-                "categoria": {
-                    "type": "string"
-                },
-                "duracaoPadrao": {
-                    "description": "DuracaoPadrao em minutos",
-                    "type": "integer"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "nome": {
-                    "type": "string"
-                },
-                "preco": {
-                    "type": "number",
-                    "format": "float64"
-                }
-            }
-        },
         "domain.Cliente": {
             "type": "object",
             "properties": {
@@ -397,52 +400,6 @@ const docTemplate = `{
             "type": "object",
             "properties": {
                 "error": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.IntervaloDiario": {
-            "type": "object",
-            "properties": {
-                "horaFim": {
-                    "type": "string"
-                },
-                "horaInicio": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                }
-            }
-        },
-        "domain.Prestador": {
-            "type": "object",
-            "properties": {
-                "agenda": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.AgendaDiaria"
-                    }
-                },
-                "ativo": {
-                    "type": "boolean"
-                },
-                "catalogo": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/domain.Catalogo"
-                    }
-                },
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "nome": {
-                    "type": "string"
-                },
-                "telefone": {
                     "type": "string"
                 }
             }
@@ -568,6 +525,118 @@ const docTemplate = `{
                     "maxLength": 15,
                     "minLength": 8,
                     "example": "62999677481"
+                }
+            }
+        },
+        "response.AgendaDiariaResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string"
+                },
+                "dia_semana": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.IntervaloDiarioResponse"
+                    }
+                }
+            }
+        },
+        "response.CatalogoResponse": {
+            "type": "object",
+            "properties": {
+                "categoria": {
+                    "type": "string"
+                },
+                "duracao_padrao": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "preco": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response.IntervaloDiarioResponse": {
+            "type": "object",
+            "properties": {
+                "hora_fim": {
+                    "type": "string"
+                },
+                "hora_inicio": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PrestadorPostResponse": {
+            "type": "object",
+            "properties": {
+                "ativo": {
+                    "type": "boolean"
+                },
+                "catalogo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CatalogoResponse"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
+        "response.PrestadorResponse": {
+            "type": "object",
+            "properties": {
+                "agenda": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.AgendaDiariaResponse"
+                    }
+                },
+                "ativo": {
+                    "type": "boolean"
+                },
+                "catalogo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response.CatalogoResponse"
+                    }
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
                 }
             }
         }

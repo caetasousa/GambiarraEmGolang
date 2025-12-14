@@ -51,6 +51,7 @@ func main() {
 		apiV1.GET("/clientes/:id", clienteController.GetCliente)
 
 		apiV1.POST("/prestadores", prestadorController.PostPrestador)
+		apiV1.GET("/prestadores/:id", prestadorController.GetPrestador)
 		apiV1.PUT("/prestadores/:id/agenda", prestadorController.PutAgenda)
 
 		apiV1.POST("/catalogos", catalogoController.PostPrestador)
