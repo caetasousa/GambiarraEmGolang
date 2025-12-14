@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
 
@@ -11,7 +12,7 @@ type FakeClienteRepositorio struct {
 }
 
 // NewFakeClienteRepositorio cria e inicializa o repositório fake.
-func NewFakeClienteRepositorio() *FakeClienteRepositorio {
+func NewFakeClienteRepositorio() port.ClienteRepositorio {
 	return &FakeClienteRepositorio{
 		Clientes: make(map[string]*domain.Cliente),
 	}

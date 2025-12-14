@@ -8,6 +8,7 @@ import (
 	Http "meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/http/cliente/request"
 	"meu-servico-agenda/internal/adapters/repository"
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 
@@ -19,7 +20,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SetupRouterCliente() (*gin.Engine, *repository.FakeClienteRepositorio) {
+func SetupRouterCliente() (*gin.Engine, port.ClienteRepositorio) {
 	gin.SetMode(gin.TestMode)
 
 	clienteRepo := repository.NewFakeClienteRepositorio()

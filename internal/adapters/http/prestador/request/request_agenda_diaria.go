@@ -4,8 +4,6 @@ import (
 	"fmt"
 	"meu-servico-agenda/internal/core/domain"
 	"time"
-
-	"github.com/rs/xid"
 )
 
 type IntervaloDiarioRequest struct {
@@ -26,23 +24,15 @@ func (r *AgendaDiariaRequest) ToAgendaDiaria() (*domain.AgendaDiaria, error) {
 
 	intervalos := make([]domain.IntervaloDiario, 0, len(r.Intervalos))
 	for _, i := range r.Intervalos {
-		inicio, err := time.Parse("15:04", i.HoraInicio)
+		inicio, _ := time.Parse("15:04", i.HoraInicio)
+		fim, _ := time.Parse("15:04", i.HoraFim)
+
+		intervalo, err := domain.NovoIntervaloDiario(inicio, fim)
 		if err != nil {
-			return nil, fmt.Errorf("hora_inicio inválida: %w", err)
+			return nil, err
 		}
 
-		fim, err := time.Parse("15:04", i.HoraFim)
-		if err != nil {
-			return nil, fmt.Errorf("hora_fim inválida: %w", err)
-		}
-
-		// Validação movida para o domínio (NovaAgendaDiaria)
-
-		intervalos = append(intervalos, domain.IntervaloDiario{
-			Id:         xid.New().String(),
-			HoraInicio: inicio,
-			HoraFim:    fim,
-		})
+		intervalos = append(intervalos, *intervalo)
 	}
 
 	return domain.NovaAgendaDiaria(data, intervalos)

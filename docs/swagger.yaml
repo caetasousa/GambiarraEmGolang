@@ -90,16 +90,20 @@ definitions:
   request.CatalogoRequest:
     properties:
       categoria:
+        example: Redes
         maxLength: 50
         minLength: 3
         type: string
       duracao_padrao:
+        example: 20
         type: integer
       nome:
+        example: Tecnico de Redes
         maxLength: 100
         minLength: 3
         type: string
       preco:
+        example: 10000
         type: number
     required:
     - categoria
@@ -110,12 +114,15 @@ definitions:
   request.ClienteRequest:
     properties:
       email:
+        example: joao@email.com
         type: string
       nome:
+        example: João da Silva
         maxLength: 100
         minLength: 3
         type: string
       telefone:
+        example: "62999677481"
         maxLength: 15
         minLength: 8
         type: string
@@ -142,12 +149,15 @@ definitions:
           type: string
         type: array
       email:
+        example: joao@email.com
         type: string
       nome:
+        example: joao
         maxLength: 100
         minLength: 3
         type: string
       telefone:
+        example: "62999677481"
         maxLength: 15
         minLength: 8
         type: string
@@ -156,28 +166,6 @@ definitions:
     - nome
     - telefone
     type: object
-  response.AgendaDiariaResponse:
-    properties:
-      data:
-        type: string
-      dia_semana:
-        type: string
-      id:
-        type: string
-      intervalos:
-        items:
-          $ref: '#/definitions/response.IntervaloDiarioResponse'
-        type: array
-    type: object
-  response.IntervaloDiarioResponse:
-    properties:
-      hora_fim:
-        type: string
-      hora_inicio:
-        type: string
-      id:
-        type: string
-    type: object
 host: localhost:8080
 info:
   contact: {}
@@ -185,41 +173,6 @@ info:
   title: API de Agendamentos
   version: "1.0"
 paths:
-  /agendas:
-    post:
-      consumes:
-      - application/json
-      description: Registra uma agenda diária contendo data e intervalos de horário
-        disponíveis.
-      parameters:
-      - description: Dados da Agenda Diária
-        in: body
-        name: agenda
-        required: true
-        schema:
-          $ref: '#/definitions/request.AgendaDiariaRequest'
-      produces:
-      - application/json
-      responses:
-        "201":
-          description: Agenda criada com sucesso
-          schema:
-            $ref: '#/definitions/response.AgendaDiariaResponse'
-        "400":
-          description: Dados inválidos (erro de validação)
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "409":
-          description: Conflito ao cadastrar agenda
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Erro interno ao criar agenda
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Cadastra uma nova agenda diária
-      tags:
-      - Agendas
   /catalogos:
     post:
       consumes:
@@ -387,6 +340,47 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
       summary: Cadastra um novo prestadores
+      tags:
+      - Prestadores
+  /prestadores/{id}/agenda:
+    put:
+      consumes:
+      - application/json
+      description: Adiciona uma nova agenda diária à disponibilidade do prestador.
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Agenda diária
+        in: body
+        name: agenda
+        required: true
+        schema:
+          $ref: '#/definitions/request.AgendaDiariaRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Agenda adicionada com sucesso
+        "400":
+          description: Dados inválidos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Prestador não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: Conflito de agenda
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Define a agenda diária de um prestador
       tags:
       - Prestadores
 swagger: "2.0"

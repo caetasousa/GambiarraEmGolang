@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
 
@@ -8,7 +9,7 @@ type CatalogoFakeRepo struct {
 	Catalogo map[string]*domain.Catalogo
 }
 
-func NovoCatalogoFakeRepo() *CatalogoFakeRepo {
+func NovoCatalogoFakeRepo() port.CatalogoRepositorio {
 	return &CatalogoFakeRepo{Catalogo: make(map[string]*domain.Catalogo)}
 }
 

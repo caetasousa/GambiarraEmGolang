@@ -2,6 +2,7 @@ package domain
 
 import (
 	"errors"
+	"fmt"
 
 	"github.com/rs/xid"
 )
@@ -30,4 +31,19 @@ func NovoPrestador(nome, email, telefone string, catalogos []Catalogo) (*Prestad
 		Catalogo: catalogos,
 		Agenda:   []AgendaDiaria{},
 	}, nil
+}
+
+func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
+	if !p.Ativo {
+		return errors.New("prestador inativo não pode criar agenda")
+	}
+	
+	for _, a := range p.Agenda {
+		if a.Data == agenda.Data {
+			return fmt.Errorf("já existe agenda cadastrada para o dia %s", agenda.Data)
+		}
+	}
+
+	p.Agenda = append(p.Agenda, *agenda)
+	return nil
 }

@@ -41,3 +41,15 @@ func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiar
 		Intervalos: intervalos,
 	}, nil
 }
+
+func NovoIntervaloDiario(horaInicio, horaFim time.Time) (*IntervaloDiario, error) {
+	if !horaInicio.Before(horaFim) {
+		return nil, fmt.Errorf("hora_inicio %s deve ser menor que hora_fim %s", horaInicio.Format("15:04"), horaFim.Format("15:04"))
+	}
+
+	return &IntervaloDiario{
+		Id:         xid.New().String(),
+		HoraInicio: horaInicio,
+		HoraFim:    horaFim,
+	}, nil
+}

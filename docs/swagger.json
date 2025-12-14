@@ -9,58 +9,6 @@
     "host": "localhost:8080",
     "basePath": "/api/v1",
     "paths": {
-        "/agendas": {
-            "post": {
-                "description": "Registra uma agenda diária contendo data e intervalos de horário disponíveis.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Agendas"
-                ],
-                "summary": "Cadastra uma nova agenda diária",
-                "parameters": [
-                    {
-                        "description": "Dados da Agenda Diária",
-                        "name": "agenda",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.AgendaDiariaRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "201": {
-                        "description": "Agenda criada com sucesso",
-                        "schema": {
-                            "$ref": "#/definitions/response.AgendaDiariaResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inválidos (erro de validação)",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Conflito ao cadastrar agenda",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Erro interno ao criar agenda",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/catalogos": {
             "post": {
                 "description": "Recebe os dados necessários para registrar um novo serviço no catálogo.",
@@ -316,6 +264,68 @@
                     }
                 }
             }
+        },
+        "/prestadores/{id}/agenda": {
+            "put": {
+                "description": "Adiciona uma nova agenda diária à disponibilidade do prestador.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Define a agenda diária de um prestador",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Agenda diária",
+                        "name": "agenda",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.AgendaDiariaRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Agenda adicionada com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Prestador não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito de agenda",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
         }
     },
     "definitions": {
@@ -462,18 +472,22 @@
                 "categoria": {
                     "type": "string",
                     "maxLength": 50,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "Redes"
                 },
                 "duracao_padrao": {
-                    "type": "integer"
+                    "type": "integer",
+                    "example": 20
                 },
                 "nome": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "Tecnico de Redes"
                 },
                 "preco": {
-                    "type": "number"
+                    "type": "number",
+                    "example": 10000
                 }
             }
         },
@@ -485,17 +499,20 @@
             ],
             "properties": {
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joao@email.com"
                 },
                 "nome": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "João da Silva"
                 },
                 "telefone": {
                     "type": "string",
                     "maxLength": 15,
-                    "minLength": 8
+                    "minLength": 8,
+                    "example": "62999677481"
                 }
             }
         },
@@ -531,51 +548,20 @@
                     }
                 },
                 "email": {
-                    "type": "string"
+                    "type": "string",
+                    "example": "joao@email.com"
                 },
                 "nome": {
                     "type": "string",
                     "maxLength": 100,
-                    "minLength": 3
+                    "minLength": 3,
+                    "example": "joao"
                 },
                 "telefone": {
                     "type": "string",
                     "maxLength": 15,
-                    "minLength": 8
-                }
-            }
-        },
-        "response.AgendaDiariaResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "string"
-                },
-                "dia_semana": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "intervalos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/response.IntervaloDiarioResponse"
-                    }
-                }
-            }
-        },
-        "response.IntervaloDiarioResponse": {
-            "type": "object",
-            "properties": {
-                "hora_fim": {
-                    "type": "string"
-                },
-                "hora_inicio": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
+                    "minLength": 8,
+                    "example": "62999677481"
                 }
             }
         }

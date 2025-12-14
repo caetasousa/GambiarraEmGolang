@@ -5,9 +5,9 @@ import (
 )
 
 type PrestadorRequest struct {
-	Nome        string   `json:"nome" binding:"required,min=3,max=100" swagger:"desc('Nome do prestador')"`
-	Email       string   `json:"email" binding:"omitempty,email" swagger:"desc('Email do prestador')"`
-	Telefone    string   `json:"telefone" binding:"required,min=8,max=15" swagger:"desc('Telefone do prestador')"`
+	Nome        string   `json:"nome" binding:"required,min=3,max=100" example:"joao" swagger:"desc('Nome do prestador')"`
+	Email       string   `json:"email" binding:"omitempty,email" example:"joao@email.com" swagger:"desc('Email do prestador')"`
+	Telefone    string   `json:"telefone" binding:"required,min=8,max=15" example:"62999677481" swagger:"desc('Telefone do prestador')"`
 	CatalogoIDs []string `json:"catalogo_ids" binding:"omitempty,dive,required" swagger:"desc('IDs dos serviços no catálogo oferecidos pelo prestador')"`
 }
 

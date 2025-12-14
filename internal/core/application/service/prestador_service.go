@@ -10,12 +10,14 @@ import (
 type PrestadorService struct {
 	prestadorRepo port.PrestadorRepositorio
 	catalogoRepo  port.CatalogoRepositorio
+	agendaDiariaRepo port.AgendaDiariaRepositorio
 }
 
-func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoRepositorio) *PrestadorService {
+func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoRepositorio, ad port.AgendaDiariaRepositorio) *PrestadorService {
 	return &PrestadorService{
 		prestadorRepo: pr,
 		catalogoRepo:  cr,
+		agendaDiariaRepo: ad,
 	}
 }
 
@@ -47,4 +49,35 @@ func (s *PrestadorService) Cadastra(req *request.PrestadorRequest) (*domain.Pres
 	}
 
 	return prestador, nil
+}
+
+func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request.AgendaDiariaRequest) error {
+
+	// 1️⃣ Buscar agregado
+	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
+	if err != nil {
+		return err
+	}
+	if prestador == nil {
+		return fmt.Errorf("prestador não encontrado")
+	}
+
+	// 2️⃣ Criar entidade de domínio
+	agenda, err := req.ToAgendaDiaria()
+	if err != nil {
+		return err
+	}
+
+	// 3️⃣ Delegar decisão ao domínio
+	if err := prestador.AdicionarAgenda(agenda); err != nil {
+		return err
+	}
+
+	// 4️⃣ Persistir agenda (tabela separada)
+	if err := s.agendaDiariaRepo.Salvar(agenda); err != nil {
+		return err
+	}
+
+	// 5️⃣ Persistir agregado inteiro
+	return s.prestadorRepo.Salvar(prestador)
 }

@@ -6,6 +6,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/catalogo"
 	"meu-servico-agenda/internal/adapters/http/catalogo/request"
 	"meu-servico-agenda/internal/adapters/repository"
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 	"net/http"
@@ -16,7 +17,7 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
-func SetupRouterCatalogo() (*gin.Engine, *repository.CatalogoFakeRepo) {
+func SetupRouterCatalogo() (*gin.Engine, port.CatalogoRepositorio) {
 	gin.SetMode(gin.TestMode)
 
 	catalogoRepo := repository.NovoCatalogoFakeRepo()

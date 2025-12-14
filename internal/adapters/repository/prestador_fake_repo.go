@@ -1,12 +1,15 @@
 package repository
 
-import "meu-servico-agenda/internal/core/domain"
+import (
+	"meu-servico-agenda/internal/core/application/port"
+	"meu-servico-agenda/internal/core/domain"
+)
 
 type FakePrestadorRepositorio struct {
 	storage map[string]*domain.Prestador
 }
 
-func NovoFakePrestadorRepositorio() *FakePrestadorRepositorio {
+func NovoFakePrestadorRepositorio() port.PrestadorRepositorio {
 	return &FakePrestadorRepositorio{
 		storage: make(map[string]*domain.Prestador),
 	}

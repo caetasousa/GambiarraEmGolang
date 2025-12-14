@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"errors"
-
 	"github.com/rs/xid"
 )
 
@@ -14,12 +12,8 @@ type Cliente struct {
 }
 
 func NovoCliente(nome, email, telefone string) (*Cliente, error) {
-	if nome == "" {
-		return nil, errors.New("nome do cliente não pode ser vazio")
-	}
-
 	return &Cliente{
-		ID:       xid.New().String(), // ✅ ID gerado no domínio
+		ID:       xid.New().String(),
 		Nome:     nome,
 		Email:    email,
 		Telefone: telefone,
