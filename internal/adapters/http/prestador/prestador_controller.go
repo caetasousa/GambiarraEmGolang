@@ -1,10 +1,12 @@
 package prestador
 
 import (
+	"errors"
 	"log"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/response"
 	"meu-servico-agenda/internal/core/application/service"
+	"meu-servico-agenda/internal/core/domain"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -77,8 +79,23 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 		return
 	}
 
-	if err := prc.prestadorService.AdicionarAgenda(prestadorID, &input); err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+	err := prc.prestadorService.AdicionarAgenda(prestadorID, &input)
+	if err != nil {
+		switch {
+		case errors.Is(err, domain.ErrPrestadorNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		case errors.Is(err, domain.ErrAgendaDuplicada),
+			errors.Is(err, domain.ErrPrestadorInativo):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+
+		case errors.Is(err, domain.ErrAgendaSemIntervalos),
+			errors.Is(err, domain.ErrIntervaloHorarioInvalido):
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "erro interno"})
+		}
 		return
 	}
 

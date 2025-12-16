@@ -2,13 +2,16 @@ package domain
 
 import (
 	"errors"
-	"fmt"
 	"time"
 
 	"github.com/rs/xid"
 )
 
-// AgendaDiaria: A estrutura central que define a agenda para uma data específica.
+var (
+	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
+	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
+)
+
 type AgendaDiaria struct {
 	Id         string
 	Data       string            // Ex: "2026-01-15" (A data em que o trabalho ocorre)
@@ -24,27 +27,25 @@ type IntervaloDiario struct {
 
 func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiaria, error) {
 	if len(intervalos) == 0 {
-		return nil, errors.New("a agenda deve conter ao menos um intervalo")
+		return nil, ErrAgendaSemIntervalos
 	}
 
-	// validar cada intervalo
 	for _, it := range intervalos {
 		if !it.HoraInicio.Before(it.HoraFim) {
-			return nil, fmt.Errorf("intervalo inválido: hora de início (%s) deve ser anterior à hora de fim (%s)",
-				it.HoraInicio.Format("15:04"), it.HoraFim.Format("15:04"))
+			return nil, ErrIntervaloHorarioInvalido
 		}
 	}
 
 	return &AgendaDiaria{
 		Id:         xid.New().String(),
-		Data:       data.Format("2006-01-02"), // porque vc usa string no domínio
+		Data:       data.Format("2006-01-02"),
 		Intervalos: intervalos,
 	}, nil
 }
 
 func NovoIntervaloDiario(horaInicio, horaFim time.Time) (*IntervaloDiario, error) {
 	if !horaInicio.Before(horaFim) {
-		return nil, fmt.Errorf("hora_inicio %s deve ser menor que hora_fim %s", horaInicio.Format("15:04"), horaFim.Format("15:04"))
+		return nil, ErrIntervaloHorarioInvalido
 	}
 
 	return &IntervaloDiario{

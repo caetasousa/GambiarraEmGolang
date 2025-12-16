@@ -2,7 +2,6 @@ package domain
 
 import (
 	"errors"
-	"fmt"
 
 	"github.com/rs/xid"
 )
@@ -33,14 +32,20 @@ func NovoPrestador(nome, email, telefone string, catalogos []Catalogo) (*Prestad
 	}, nil
 }
 
+var (
+	ErrAgendaDuplicada  = errors.New("agenda duplicada")
+	ErrPrestadorInativo = errors.New("prestador inativo")
+	ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
+)
+
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
 	if !p.Ativo {
-		return errors.New("prestador inativo não pode criar agenda")
+		return ErrPrestadorInativo
 	}
 
 	for _, a := range p.Agenda {
 		if a.Data == agenda.Data {
-			return fmt.Errorf("já existe agenda cadastrada para o dia %s", agenda.Data)
+			return ErrAgendaDuplicada
 		}
 	}
 

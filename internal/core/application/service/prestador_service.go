@@ -56,7 +56,7 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request_pres
 	}
 
 	if prestador == nil {
-		return fmt.Errorf("prestador não encontrado")
+		return domain.ErrPrestadorNaoEncontrado
 	}
 
 	agenda, err := req.ToAgendaDiaria()

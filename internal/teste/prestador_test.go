@@ -13,13 +13,15 @@ import (
 	"meu-servico-agenda/internal/adapters/http/prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/repository"
+	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
+	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
 	"github.com/stretchr/testify/require"
 )
 
-func SetupPostPrestador() *gin.Engine {
+func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 	gin.SetMode(gin.TestMode)
 
 	prestadorRepo := repository.NovoFakePrestadorRepositorio()
@@ -46,7 +48,7 @@ func SetupPostPrestador() *gin.Engine {
 		apiV1.POST("/catalogos", catalogoController.PostPrestador)
 	}
 
-	return router
+	return router, prestadorRepo
 }
 
 func SetupPostPrestadorRequest(router *gin.Engine, input request_prestador.PrestadorRequest) *httptest.ResponseRecorder {
@@ -87,7 +89,7 @@ func SetupPutAgendaRequest(router *gin.Engine, prestadorID string, input request
 }
 
 func TestPostPrestador_Sucesso(t *testing.T) {
-	router := SetupPostPrestador()
+	router, _ := SetupPostPrestador()
 
 	catalogoInput := request.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
@@ -115,7 +117,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 }
 
 func TestPostPrestador_FalhaPayloadInvalido(t *testing.T) {
-	router := SetupPostPrestador()
+	router, _ := SetupPostPrestador()
 
 	prestadorInput := request_prestador.PrestadorRequest{
 		// Nome ausente
@@ -129,7 +131,7 @@ func TestPostPrestador_FalhaPayloadInvalido(t *testing.T) {
 }
 
 func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
-	router := SetupPostPrestador()
+	router, _ := SetupPostPrestador()
 
 	prestadorInput := request_prestador.PrestadorRequest{
 		Nome:        "João da Silva",
@@ -148,7 +150,7 @@ func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
 }
 
 func TestGetPrestador_Sucesso(t *testing.T) {
-	router := SetupPostPrestador()
+	router, _ := SetupPostPrestador()
 
 	// 1️⃣ Criar catálogo válido
 	catalogoInput := request.CatalogoRequest{
@@ -184,13 +186,13 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 }
 
 func TestGetPrestador_NaoEncontrado(t *testing.T) {
-	router := SetupPostPrestador()
+	router, _ := SetupPostPrestador()
 	rr := SetupGetPrestadorRequest(router, "id-inexistente")
 	require.Equal(t, http.StatusNotFound, rr.Code)
 }
 
-func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, string) {
-	router := SetupPostPrestador()
+func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador, port.PrestadorRepositorio) {
+	router, repo := SetupPostPrestador()
 
 	// 1️⃣ Criar catálogo
 	catalogoInput := request.CatalogoRequest{
@@ -216,15 +218,14 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, string) {
 	rrPrestador := SetupPostPrestadorRequest(router, prestadorInput)
 	require.Equal(t, http.StatusCreated, rrPrestador.Code)
 
-	var prestadorResp map[string]interface{}
+	var prestadorResp domain.Prestador
 	err = json.Unmarshal(rrPrestador.Body.Bytes(), &prestadorResp)
 	require.NoError(t, err)
-	prestadorID := prestadorResp["id"].(string)
 
-	return router, prestadorID
+	return router, prestadorResp, repo
 }
 func TestPutAgenda_Sucesso(t *testing.T) {
-	router, prestadorID := CriarPrestadorValidoParaTeste(t)
+	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
 		Data: "2025-01-03",
@@ -234,12 +235,12 @@ func TestPutAgenda_Sucesso(t *testing.T) {
 		},
 	}
 
-	rrAgenda := SetupPutAgendaRequest(router, prestadorID, agendaInput)
+	rrAgenda := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
 	require.Equal(t, http.StatusNoContent, rrAgenda.Code)
 }
 
 func TestPutAgenda_PrestadorNaoEncontrado(t *testing.T) {
-	router, _ := CriarPrestadorValidoParaTeste(t)
+	router, _, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
 		Data: "2025-01-03",
@@ -249,12 +250,13 @@ func TestPutAgenda_PrestadorNaoEncontrado(t *testing.T) {
 	}
 
 	rr := SetupPutAgendaRequest(router, "id-inexistente", agendaInput)
-	require.Equal(t, http.StatusConflict, rr.Code)
+
+	require.Equal(t, http.StatusNotFound, rr.Code)
 	require.Contains(t, rr.Body.String(), "prestador não encontrado")
 }
 
 func TestPutAgenda_AgendaDuplicada(t *testing.T) {
-	router, prestadorID := CriarPrestadorValidoParaTeste(t)
+	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
 		Data: "2025-01-03",
@@ -263,33 +265,65 @@ func TestPutAgenda_AgendaDuplicada(t *testing.T) {
 		},
 	}
 
-	// Primeira inserção (válida)
-	rr1 := SetupPutAgendaRequest(router, prestadorID, agendaInput)
+	rr1 := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
 	require.Equal(t, http.StatusNoContent, rr1.Code)
 
-	// Segunda inserção para o mesmo dia (erro)
-	rr2 := SetupPutAgendaRequest(router, prestadorID, agendaInput)
+	rr2 := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
 	require.Equal(t, http.StatusConflict, rr2.Code)
-	require.Contains(t, rr2.Body.String(), "já existe agenda cadastrada")
+	require.Contains(t, rr2.Body.String(), "agenda")
 }
 
-// func TestPutAgenda_PrestadorInativo(t *testing.T) {
-// 	router, prestadorID := CriarPrestadorValidoParaTeste(t)
+func TestPutAgenda_PrestadorInativo(t *testing.T) {
+	router, prestadorResp, repo := CriarPrestadorValidoParaTeste(t)
 
-// 	// Tornar prestador inativo
-// 	prestadorRepo := repository.NovoFakePrestadorRepositorio()
-// 	prestador, _ := prestadorRepo.BuscarPorId(prestadorID)
-// 	prestador.Ativo = false
-// 	prestadorRepo.Salvar(prestador)
+	prestadorResp.Ativo = false
+	err := repo.Salvar(&prestadorResp)
+	require.NoError(t, err)
 
-// 	agendaInput := request_prestador.AgendaDiariaRequest{
-// 		Data: "2025-01-03",
-// 		Intervalos: []request_prestador.IntervaloDiarioRequest{
-// 			{HoraInicio: "08:00", HoraFim: "12:00"},
-// 		},
-// 	}
+	agendaInput := request_prestador.AgendaDiariaRequest{
+		Data: "2025-01-03",
+		Intervalos: []request_prestador.IntervaloDiarioRequest{
+			{HoraInicio: "08:00", HoraFim: "12:00"},
+		},
+	}
 
-// 	rr := SetupPutAgendaRequest(router, prestadorID, agendaInput)
-// 	require.Equal(t, http.StatusConflict, rr.Code)
-// 	require.Contains(t, rr.Body.String(), "prestador inativo não pode criar agenda")
-// }
+	rr := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
+
+	require.Equal(t, http.StatusConflict, rr.Code)
+	require.Contains(t, rr.Body.String(), "inativo")
+}
+
+func TestPutAgenda_HorarioInicioMaiorQueFim(t *testing.T) {
+	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
+
+	agendaInput := request_prestador.AgendaDiariaRequest{
+		Data: "2025-01-03",
+		Intervalos: []request_prestador.IntervaloDiarioRequest{
+			{
+				HoraInicio: "18:00",
+				HoraFim:    "08:00",
+			},
+		},
+	}
+
+	rr := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+
+	// valida exatamente o erro do domínio
+	require.Contains(t, rr.Body.String(), domain.ErrIntervaloHorarioInvalido.Error())
+}
+
+func TestPutAgenda_AgendaSemIntervalos(t *testing.T) {
+	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
+
+	agendaInput := request_prestador.AgendaDiariaRequest{
+		Data:       "2025-01-03",
+		Intervalos: []request_prestador.IntervaloDiarioRequest{}, // vazio
+	}
+
+	rr := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Contains(t, rr.Body.String(), domain.ErrAgendaSemIntervalos.Error())
+}
