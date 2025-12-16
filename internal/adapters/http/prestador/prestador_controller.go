@@ -1,7 +1,8 @@
 package prestador
 
 import (
-	"meu-servico-agenda/internal/adapters/http/prestador/request"
+	"log"
+	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/response"
 	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
@@ -31,10 +32,11 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 // @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
 // @Router /prestadores [post]
 func (prc *PrestadorController) PostPrestador(c *gin.Context) {
-	var input request.PrestadorRequest
+	var input request_prestador.PrestadorRequest
 
 	// 1️⃣ Validação de binding do JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
+		log.Printf("erro ao fazer bind do JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
@@ -42,7 +44,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	// 2️⃣ Orquestração pelo service
 	prestador, err := prc.prestadorService.Cadastra(&input)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -50,6 +52,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 
 	// 3️⃣ Retorno HTTP 201 com o prestador criado
 	c.JSON(http.StatusCreated, resp)
+
 }
 
 // @Summary Define a agenda diária de um prestador
@@ -68,7 +71,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 	prestadorID := c.Param("id")
 
-	var input request.AgendaDiariaRequest
+	var input request_prestador.AgendaDiariaRequest
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return

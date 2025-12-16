@@ -1,8 +1,9 @@
-package request
+package request_prestador
 
 import (
 	"fmt"
 	"meu-servico-agenda/internal/core/domain"
+
 	"time"
 )
 
@@ -23,7 +24,7 @@ func (r *AgendaDiariaRequest) ToAgendaDiaria() (*domain.AgendaDiaria, error) {
 	}
 
 	intervalos := make([]domain.IntervaloDiario, 0, len(r.Intervalos))
-		for _, i := range r.Intervalos {
+	for _, i := range r.Intervalos {
 		inicio, err := time.Parse("15:04", i.HoraInicio)
 		if err != nil {
 			return nil, fmt.Errorf("hora_inicio inválida: %w", err)

@@ -2,26 +2,27 @@ package service
 
 import (
 	"fmt"
-	"meu-servico-agenda/internal/adapters/http/prestador/request"
+
+	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
 
 type PrestadorService struct {
-	prestadorRepo port.PrestadorRepositorio
-	catalogoRepo  port.CatalogoRepositorio
+	prestadorRepo    port.PrestadorRepositorio
+	catalogoRepo     port.CatalogoRepositorio
 	agendaDiariaRepo port.AgendaDiariaRepositorio
 }
 
 func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoRepositorio, ad port.AgendaDiariaRepositorio) *PrestadorService {
 	return &PrestadorService{
-		prestadorRepo: pr,
-		catalogoRepo:  cr,
+		prestadorRepo:    pr,
+		catalogoRepo:     cr,
 		agendaDiariaRepo: ad,
 	}
 }
 
-func (s *PrestadorService) Cadastra(req *request.PrestadorRequest) (*domain.Prestador, error) {
+func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*domain.Prestador, error) {
 
 	catalogos := []domain.Catalogo{}
 	for _, id := range req.CatalogoIDs {
@@ -47,7 +48,7 @@ func (s *PrestadorService) Cadastra(req *request.PrestadorRequest) (*domain.Pres
 	return prestador, nil
 }
 
-func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request.AgendaDiariaRequest) error {
+func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request_prestador.AgendaDiariaRequest) error {
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
 	if err != nil {
