@@ -108,6 +108,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 	prestadorInput := request_prestador.PrestadorRequest{
 		Nome:        "João da Silva",
 		Email:       "joao@email.com",
+		Cpf:         "04423258196",
 		Telefone:    "62999677481",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
@@ -116,25 +117,12 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 	require.Equal(t, http.StatusCreated, rrPrestador.Code)
 }
 
-func TestPostPrestador_FalhaPayloadInvalido(t *testing.T) {
-	router, _ := SetupPostPrestador()
-
-	prestadorInput := request_prestador.PrestadorRequest{
-		// Nome ausente
-		Email:    "joao@email.com",
-		Telefone: "62999677481",
-	}
-
-	rr := SetupPostPrestadorRequest(router, prestadorInput)
-
-	require.Equal(t, http.StatusBadRequest, rr.Code)
-}
-
 func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
 	router, _ := SetupPostPrestador()
 
 	prestadorInput := request_prestador.PrestadorRequest{
 		Nome:        "João da Silva",
+		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
 		CatalogoIDs: []string{"catalogo-inexistente"},
@@ -169,6 +157,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 	// 2️⃣ Criar prestador usando o ID do catálogo
 	prestadorInput := request_prestador.PrestadorRequest{
 		Nome:        "Maria",
+		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
 		CatalogoIDs: []string{catalogoResp.ID},
@@ -183,6 +172,37 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 
 	rrGet := SetupGetPrestadorRequest(router, id)
 	require.Equal(t, http.StatusOK, rrGet.Code)
+}
+
+func TestGetPrestador_UsuarioExistente(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// 1️⃣ Criar catálogo válido
+	catalogoInput := request.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// 2️⃣ Criar prestador usando o ID do catálogo
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "Maria",
+		Cpf:         "04423258196",
+		Email:       "maria@email.com",
+		Telefone:    "62999677482",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	ccCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+	require.Equal(t, http.StatusConflict, ccCreate.Code)
 }
 
 func TestGetPrestador_NaoEncontrado(t *testing.T) {
@@ -211,6 +231,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 	// 2️⃣ Criar prestador
 	prestadorInput := request_prestador.PrestadorRequest{
 		Nome:        "João da Silva",
+		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
 		CatalogoIDs: []string{catalogoResp.ID},

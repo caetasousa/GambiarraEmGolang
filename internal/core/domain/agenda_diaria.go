@@ -7,11 +7,6 @@ import (
 	"github.com/rs/xid"
 )
 
-var (
-	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
-	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
-)
-
 type AgendaDiaria struct {
 	Id         string
 	Data       string            // Ex: "2026-01-15" (A data em que o trabalho ocorre)
@@ -24,6 +19,11 @@ type IntervaloDiario struct {
 	HoraInicio time.Time
 	HoraFim    time.Time
 }
+
+var (
+	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
+	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
+)
 
 func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiaria, error) {
 	if len(intervalos) == 0 {

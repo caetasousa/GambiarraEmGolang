@@ -9,6 +9,7 @@ import (
 type Prestador struct {
 	ID       string
 	Nome     string
+	Cpf      string
 	Email    string
 	Telefone string
 	Ativo    bool
@@ -16,7 +17,7 @@ type Prestador struct {
 	Agenda   []AgendaDiaria
 }
 
-func NovoPrestador(nome, email, telefone string, catalogos []Catalogo) (*Prestador, error) {
+func NovoPrestador(nome, cpf, email, telefone string, catalogos []Catalogo) (*Prestador, error) {
 	if len(catalogos) == 0 {
 		return nil, errors.New("prestador deve ter ao menos um catálogo de serviços")
 	}
@@ -24,6 +25,7 @@ func NovoPrestador(nome, email, telefone string, catalogos []Catalogo) (*Prestad
 	return &Prestador{
 		ID:       xid.New().String(),
 		Nome:     nome,
+		Cpf:      cpf,
 		Email:    email,
 		Telefone: telefone,
 		Ativo:    true,
@@ -35,7 +37,6 @@ func NovoPrestador(nome, email, telefone string, catalogos []Catalogo) (*Prestad
 var (
 	ErrAgendaDuplicada  = errors.New("agenda duplicada")
 	ErrPrestadorInativo = errors.New("prestador inativo")
-	ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
 )
 
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {

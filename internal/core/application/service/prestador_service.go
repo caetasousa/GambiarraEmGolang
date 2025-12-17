@@ -1,11 +1,14 @@
 package service
 
 import (
+	"errors"
 	"fmt"
 
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
+
+	"github.com/klassmann/cpfcnpj"
 )
 
 type PrestadorService struct {
@@ -22,7 +25,20 @@ func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoReposito
 	}
 }
 
+var (
+	ErrCPFJaCadastrado   = errors.New("cpf já possui um cadastro")
+	ErrCatalogoNaoExiste = errors.New("catálogo não existe")
+)
+
 func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*domain.Prestador, error) {
+	cpf := cpfcnpj.Clean(req.Cpf)
+	prestadorExistente, err := s.prestadorRepo.BuscarPorCPF(cpf)
+	if err != nil {
+		return nil, err
+	}
+	if prestadorExistente != nil {
+		return nil, fmt.Errorf("%w: %s", ErrCPFJaCadastrado, cpf)
+	}
 
 	catalogos := []domain.Catalogo{}
 	for _, id := range req.CatalogoIDs {
@@ -31,7 +47,7 @@ func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*d
 			return nil, err
 		}
 		if c == nil {
-			return nil, fmt.Errorf("catálogo '%s' não existe", id)
+			return nil, fmt.Errorf("%w: %s", ErrCatalogoNaoExiste, id)
 		}
 		catalogos = append(catalogos, *c)
 	}
@@ -48,6 +64,8 @@ func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*d
 	return prestador, nil
 }
 
+var ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
+
 func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request_prestador.AgendaDiariaRequest) error {
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
@@ -56,7 +74,7 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request_pres
 	}
 
 	if prestador == nil {
-		return domain.ErrPrestadorNaoEncontrado
+		return ErrPrestadorNaoEncontrado
 	}
 
 	agenda, err := req.ToAgendaDiaria()

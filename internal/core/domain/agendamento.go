@@ -15,7 +15,6 @@ type Agendamento struct {
 	ID             string
 	Cliente        Cliente
 	Prestador      Prestador
-	Catalogo       Catalogo
 	DataHoraInicio time.Time
 	DataHoraFim    time.Time           // Calculado com base na duração do Serviço
 	Status         StatusDoAgendamento // Ex: "Confirmado", "Cancelado", "Pendente"

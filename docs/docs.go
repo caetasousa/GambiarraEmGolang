@@ -239,7 +239,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.PrestadorRequest"
+                            "$ref": "#/definitions/request_prestador.PrestadorRequest"
                         }
                     }
                 ],
@@ -342,7 +342,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.AgendaDiariaRequest"
+                            "$ref": "#/definitions/request_prestador.AgendaDiariaRequest"
                         }
                     }
                 ],
@@ -404,25 +404,6 @@ const docTemplate = `{
                 }
             }
         },
-        "request.AgendaDiariaRequest": {
-            "type": "object",
-            "required": [
-                "data",
-                "intervalos"
-            ],
-            "properties": {
-                "data": {
-                    "type": "string",
-                    "example": "2025-01-03"
-                },
-                "intervalos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/request.IntervaloDiarioRequest"
-                    }
-                }
-            }
-        },
         "request.CatalogoRequest": {
             "type": "object",
             "required": [
@@ -479,7 +460,26 @@ const docTemplate = `{
                 }
             }
         },
-        "request.IntervaloDiarioRequest": {
+        "request_prestador.AgendaDiariaRequest": {
+            "type": "object",
+            "required": [
+                "data",
+                "intervalos"
+            ],
+            "properties": {
+                "data": {
+                    "type": "string",
+                    "example": "2025-01-03"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/request_prestador.IntervaloDiarioRequest"
+                    }
+                }
+            }
+        },
+        "request_prestador.IntervaloDiarioRequest": {
             "type": "object",
             "required": [
                 "hora_fim",
@@ -496,10 +496,11 @@ const docTemplate = `{
                 }
             }
         },
-        "request.PrestadorRequest": {
+        "request_prestador.PrestadorRequest": {
             "type": "object",
             "required": [
                 "catalogo_ids",
+                "cpf",
                 "nome",
                 "telefone"
             ],
@@ -509,6 +510,10 @@ const docTemplate = `{
                     "items": {
                         "type": "string"
                     }
+                },
+                "cpf": {
+                    "type": "string",
+                    "example": "04423258196"
                 },
                 "email": {
                     "type": "string",

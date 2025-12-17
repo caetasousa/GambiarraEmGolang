@@ -4,7 +4,10 @@ go 1.24.0
 
 toolchain go1.24.11
 
-require github.com/stretchr/testify v1.11.1
+require (
+	github.com/klassmann/cpfcnpj v0.0.0-20200907140233-a595c5fd8de1
+	github.com/stretchr/testify v1.11.1
+)
 
 require github.com/kr/text v0.2.0 // indirect
 

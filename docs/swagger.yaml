@@ -16,19 +16,6 @@ definitions:
       error:
         type: string
     type: object
-  request.AgendaDiariaRequest:
-    properties:
-      data:
-        example: "2025-01-03"
-        type: string
-      intervalos:
-        items:
-          $ref: '#/definitions/request.IntervaloDiarioRequest'
-        type: array
-    required:
-    - data
-    - intervalos
-    type: object
   request.CatalogoRequest:
     properties:
       categoria:
@@ -72,7 +59,20 @@ definitions:
     - nome
     - telefone
     type: object
-  request.IntervaloDiarioRequest:
+  request_prestador.AgendaDiariaRequest:
+    properties:
+      data:
+        example: "2025-01-03"
+        type: string
+      intervalos:
+        items:
+          $ref: '#/definitions/request_prestador.IntervaloDiarioRequest'
+        type: array
+    required:
+    - data
+    - intervalos
+    type: object
+  request_prestador.IntervaloDiarioRequest:
     properties:
       hora_fim:
         example: "12:00"
@@ -84,12 +84,15 @@ definitions:
     - hora_fim
     - hora_inicio
     type: object
-  request.PrestadorRequest:
+  request_prestador.PrestadorRequest:
     properties:
       catalogo_ids:
         items:
           type: string
         type: array
+      cpf:
+        example: "04423258196"
+        type: string
       email:
         example: joao@email.com
         type: string
@@ -105,6 +108,7 @@ definitions:
         type: string
     required:
     - catalogo_ids
+    - cpf
     - nome
     - telefone
     type: object
@@ -334,7 +338,7 @@ paths:
         name: prestador
         required: true
         schema:
-          $ref: '#/definitions/request.PrestadorRequest'
+          $ref: '#/definitions/request_prestador.PrestadorRequest'
       produces:
       - application/json
       responses:
@@ -403,7 +407,7 @@ paths:
         name: agenda
         required: true
         schema:
-          $ref: '#/definitions/request.AgendaDiariaRequest'
+          $ref: '#/definitions/request_prestador.AgendaDiariaRequest'
       produces:
       - application/json
       responses:

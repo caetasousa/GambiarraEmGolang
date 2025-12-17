@@ -3,6 +3,8 @@ package repository
 import (
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
+
+	"github.com/klassmann/cpfcnpj"
 )
 
 type FakePrestadorRepositorio struct {
@@ -26,4 +28,14 @@ func (r *FakePrestadorRepositorio) BuscarPorId(id string) (*domain.Prestador, er
 		return nil, nil
 	}
 	return prestador, nil
+}
+
+func (r *FakePrestadorRepositorio) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
+	cpf = cpfcnpj.Clean(cpf)
+	for _, p := range r.storage {
+		if cpfcnpj.Clean(p.Cpf) == cpf {
+			return p, nil
+		}
+	}
+	return nil, nil
 }

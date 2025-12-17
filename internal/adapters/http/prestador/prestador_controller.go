@@ -2,7 +2,6 @@ package prestador
 
 import (
 	"errors"
-	"log"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/response"
 	"meu-servico-agenda/internal/core/application/service"
@@ -27,7 +26,7 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 // @Tags Prestadores
 // @Accept json
 // @Produce json
-// @Param prestador body request.PrestadorRequest true "Dados do Prestador"
+// @Param prestador body request_prestador.PrestadorRequest true "Dados do Prestador"
 // @Success 201 {object} response.PrestadorPostResponse "Prestador criado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos (erro de validação do binding)"
 // @Failure 409 {object} domain.ErrorResponse "Prestador já cadastrado ou conflito de dados"
@@ -36,23 +35,27 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	var input request_prestador.PrestadorRequest
 
-	// 1️⃣ Validação de binding do JSON
 	if err := c.ShouldBindJSON(&input); err != nil {
-		log.Printf("erro ao fazer bind do JSON: %v", err)
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
 
-	// 2️⃣ Orquestração pelo service
 	prestador, err := prc.prestadorService.Cadastra(&input)
 	if err != nil {
-		c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
-		return
+		switch {
+		case errors.Is(err, service.ErrCPFJaCadastrado):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		case errors.Is(err, service.ErrCatalogoNaoExiste):
+			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		}
 	}
 
 	resp := response.FromPostPrestador(prestador)
-
-	// 3️⃣ Retorno HTTP 201 com o prestador criado
 	c.JSON(http.StatusCreated, resp)
 
 }
@@ -63,7 +66,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "ID do prestador"
-// @Param agenda body request.AgendaDiariaRequest true "Agenda diária"
+// @Param agenda body request_prestador.AgendaDiariaRequest true "Agenda diária"
 // @Success 204 "Agenda adicionada com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
@@ -82,7 +85,7 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 	err := prc.prestadorService.AdicionarAgenda(prestadorID, &input)
 	if err != nil {
 		switch {
-		case errors.Is(err, domain.ErrPrestadorNaoEncontrado):
+		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
 		case errors.Is(err, domain.ErrAgendaDuplicada),
