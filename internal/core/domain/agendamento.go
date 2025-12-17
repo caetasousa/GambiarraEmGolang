@@ -1,6 +1,11 @@
 package domain
 
-import "time"
+import (
+	"errors"
+	"time"
+
+	"github.com/rs/xid"
+)
 
 type StatusDoAgendamento int
 
@@ -13,10 +18,36 @@ const (
 
 type Agendamento struct {
 	ID             string
-	Cliente        Cliente
-	Prestador      Prestador
+	ClienteID      string
+	PrestadorID    string
+	CatalogoID     string
 	DataHoraInicio time.Time
-	DataHoraFim    time.Time           // Calculado com base na duração do Serviço
-	Status         StatusDoAgendamento // Ex: "Confirmado", "Cancelado", "Pendente"
+	DataHoraFim    time.Time
+	Status         StatusDoAgendamento
 	Notas          string
+}
+
+func NovoAgendamento(
+	clienteID string,
+	prestadorID string,
+	catalogoID string,
+	dataHoraInicio time.Time,
+	dataHoraFim time.Time,
+	nota string,
+) (*Agendamento, error) {
+
+	if !dataHoraInicio.Before(dataHoraFim) {
+		return nil, errors.New("horário início deve ser antes do fim")
+	}
+
+	return &Agendamento{
+		ID:             xid.New().String(),
+		ClienteID:      clienteID,
+		PrestadorID:    prestadorID,
+		CatalogoID:     catalogoID,
+		DataHoraInicio: dataHoraInicio,
+		DataHoraFim:    dataHoraFim,
+		Status:         Pendente,
+		Notas:          nota,
+	}, nil
 }
