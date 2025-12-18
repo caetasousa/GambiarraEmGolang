@@ -3,7 +3,7 @@ package prestador
 import (
 	"errors"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
-	"meu-servico-agenda/internal/adapters/http/prestador/response"
+	"meu-servico-agenda/internal/adapters/http/prestador/response_prestador"
 	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 	"net/http"
@@ -21,7 +21,7 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 	}
 }
 
-// @Summary Cadastra um novo prestadores
+// @Summary Cadastra um novo prestador
 // @Description Recebe os dados necessários para registrar um novo prestador.
 // @Tags Prestadores
 // @Accept json
@@ -35,29 +35,42 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	var input request_prestador.PrestadorRequest
 
+	// 1️⃣ Validação de binding / formato (continua igual)
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Dados inválidos: " + err.Error(),
+		})
 		return
 	}
 
-	prestador, err := prc.prestadorService.Cadastra(&input)
+	// 2️⃣ Adapter → Command (mantém validações existentes)
+	cmd, err := input.ToCommand()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": err.Error(),
+		})
+		return
+	}
+
+	// 3️⃣ Chamada do caso de uso
+	prestador, err := prc.prestadorService.Cadastra(cmd)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrCPFJaCadastrado):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-			return
+
 		case errors.Is(err, service.ErrCatalogoNaoExiste):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
-			return
+
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-			return
 		}
+		return
 	}
 
-	resp := response.FromPostPrestador(prestador)
+	// 4️⃣ Response
+	resp := response_prestador.FromPostPrestador(prestador)
 	c.JSON(http.StatusCreated, resp)
-
 }
 
 // @Summary Define a agenda diária de um prestador
@@ -77,12 +90,22 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 	prestadorID := c.Param("id")
 
 	var input request_prestador.AgendaDiariaRequest
+
+	// 1️⃣ Binding / validação de formato
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	err := prc.prestadorService.AdicionarAgenda(prestadorID, &input)
+	// 2️⃣ Adapter → Command (mantém time.Parse e validações)
+	cmd, err := input.ToCommand()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	// 3️⃣ Caso de uso
+	err = prc.prestadorService.AdicionarAgenda(prestadorID, cmd)
 	if err != nil {
 		switch {
 		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
@@ -123,7 +146,7 @@ func (prc *PrestadorController) GetPrestador(c *gin.Context) {
 		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 		return
 	}
-	resp := response.FromPrestador(prestador)
+	resp := response_prestador.FromPrestador(prestador)
 
 	c.JSON(http.StatusOK, resp)
 }

@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"fmt"
+	"meu-servico-agenda/internal/core/application/command"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -15,12 +16,23 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 	return &CatalogoService{repo: r}
 }
 
-func (s *CatalogoService) Cadastra(input *domain.Catalogo) (*domain.Catalogo, error) {
-	if err := s.repo.Salvar(input); err != nil {
+func (s *CatalogoService) Cadastra(cmd *command.CatalogoCommand) (*domain.Catalogo, error) {
+
+	catalogo, err := domain.NovoCatalogo(
+		cmd.Nome,
+		cmd.DuracaoPadrao,
+		cmd.Preco,
+		cmd.Categoria,
+	)
+	if err != nil {
 		return nil, err
 	}
 
-	return input, nil
+	if err := s.repo.Salvar(catalogo); err != nil {
+		return nil, err
+	}
+
+	return catalogo, nil
 }
 
 func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {
@@ -29,7 +41,7 @@ func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {
 		return nil, fmt.Errorf("falha na infraestrutura ao buscar catalogo: %w", err)
 	}
 	if catalogo == nil {
-		return nil, errors.New("catalogo nao encontrado") 
+		return nil, errors.New("catalogo nao encontrado")
 	}
 	return catalogo, nil
 }

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
+	"meu-servico-agenda/internal/core/application/command"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 
@@ -30,8 +30,12 @@ var (
 	ErrCatalogoNaoExiste = errors.New("catálogo não existe")
 )
 
-func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*domain.Prestador, error) {
-	cpf := cpfcnpj.Clean(req.Cpf)
+func (s *PrestadorService) Cadastra(
+	cmd *command.CadastrarPrestadorCommand,
+) (*domain.Prestador, error) {
+
+	cpf := cpfcnpj.Clean(cmd.CPF)
+
 	prestadorExistente, err := s.prestadorRepo.BuscarPorCPF(cpf)
 	if err != nil {
 		return nil, err
@@ -41,7 +45,7 @@ func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*d
 	}
 
 	catalogos := []domain.Catalogo{}
-	for _, id := range req.CatalogoIDs {
+	for _, id := range cmd.CatalogoIDs {
 		c, err := s.catalogoRepo.BuscarPorId(id)
 		if err != nil {
 			return nil, err
@@ -52,7 +56,13 @@ func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*d
 		catalogos = append(catalogos, *c)
 	}
 
-	prestador, err := req.ToPrestador(catalogos)
+	prestador, err := domain.NovoPrestador(
+		cmd.Nome,
+		cpf,
+		cmd.Email,
+		cmd.Telefone,
+		catalogos,
+	)
 	if err != nil {
 		return nil, err
 	}
@@ -66,18 +76,29 @@ func (s *PrestadorService) Cadastra(req *request_prestador.PrestadorRequest) (*d
 
 var ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
 
-func (s *PrestadorService) AdicionarAgenda(prestadorID string, req *request_prestador.AgendaDiariaRequest) error {
+func (s *PrestadorService) AdicionarAgenda(
+	prestadorID string,
+	cmd *command.AdicionarAgendaCommand,
+) error {
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
 	if err != nil {
 		return err
 	}
-
 	if prestador == nil {
 		return ErrPrestadorNaoEncontrado
 	}
 
-	agenda, err := req.ToAgendaDiaria()
+	intervalos := make([]domain.IntervaloDiario, 0, len(cmd.Intervalos))
+	for _, i := range cmd.Intervalos {
+		intervalo, err := domain.NovoIntervaloDiario(i.Inicio, i.Fim)
+		if err != nil {
+			return err
+		}
+		intervalos = append(intervalos, *intervalo)
+	}
+
+	agenda, err := domain.NovaAgendaDiaria(cmd.Data, intervalos)
 	if err != nil {
 		return err
 	}

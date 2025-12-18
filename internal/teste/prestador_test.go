@@ -8,7 +8,7 @@ import (
 	"testing"
 
 	"meu-servico-agenda/internal/adapters/http/catalogo"
-	"meu-servico-agenda/internal/adapters/http/catalogo/request"
+	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
 	"meu-servico-agenda/internal/adapters/http/catalogo/response"
 	"meu-servico-agenda/internal/adapters/http/prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
@@ -45,7 +45,7 @@ func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 		apiV1.GET("/prestadores/:id", prestadorController.GetPrestador)
 		apiV1.PUT("/prestadores/:id/agenda", prestadorController.PutAgenda)
 
-		apiV1.POST("/catalogos", catalogoController.PostPrestador)
+		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 	}
 
 	return router, prestadorRepo
@@ -91,7 +91,7 @@ func SetupPutAgendaRequest(router *gin.Engine, prestadorID string, input request
 func TestPostPrestador_Sucesso(t *testing.T) {
 	router, _ := SetupPostPrestador()
 
-	catalogoInput := request.CatalogoRequest{
+	catalogoInput := request_catalogo.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
@@ -141,7 +141,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 	router, _ := SetupPostPrestador()
 
 	// 1️⃣ Criar catálogo válido
-	catalogoInput := request.CatalogoRequest{
+	catalogoInput := request_catalogo.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
@@ -178,7 +178,7 @@ func TestGetPrestador_UsuarioExistente(t *testing.T) {
 	router, _ := SetupPostPrestador()
 
 	// 1️⃣ Criar catálogo válido
-	catalogoInput := request.CatalogoRequest{
+	catalogoInput := request_catalogo.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
@@ -215,7 +215,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 	router, repo := SetupPostPrestador()
 
 	// 1️⃣ Criar catálogo
-	catalogoInput := request.CatalogoRequest{
+	catalogoInput := request_catalogo.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
 		DuracaoPadrao: 30,
 		Preco:         3500.0,

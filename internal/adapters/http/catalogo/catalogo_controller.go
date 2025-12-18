@@ -1,8 +1,9 @@
 package catalogo
 
 import (
-	"meu-servico-agenda/internal/adapters/http/catalogo/request"
-	"meu-servico-agenda/internal/adapters/http/catalogo/response"
+	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
+	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
+
 	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
 
@@ -29,33 +30,24 @@ func NovoCatalogoController(criarCatalogoService *service.CatalogoService) *Cata
 // @Failure 409 {object} domain.ErrorResponse "Catálogo já cadastrado ou conflito de dados"
 // @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
 // @Router /catalogos [post]
-func (ctl *CatalogoController) PostPrestador(c *gin.Context) {
-	var input request.CatalogoRequest
+func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
+	var input request_catalogo.CatalogoRequest
 
 	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	catalogoDomain, err := input.ToCatalogo()
+	cmd := input.ToCommand()
+
+	catalogoSalvo, err := ctl.criarCatalogoService.Cadastra(cmd)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{
-			"error": err.Error(), // exemplo: preço negativo, duração inválida
-		})
-		return
-	}
-	catalogoSalvo, err := ctl.criarCatalogoService.Cadastra(catalogoDomain)
-
-	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{
-			"error": err.Error(), // exemplo: conflito no banco
-		})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	response := response.FromCatalogo(catalogoSalvo)
-
-	c.JSON(http.StatusCreated, response)
+	resp := response_catalogo.FromCatalogo(catalogoSalvo)
+	c.JSON(http.StatusCreated, resp)
 }
 
 // GetCatalogoPorID é o handler para a rota GET /catalogos/:id
@@ -84,7 +76,7 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 		return
 	}
 
-	resp := response.FromCatalogo(catalogo)
+	resp := response_catalogo.FromCatalogo(catalogo)
 
 	c.JSON(http.StatusOK, resp)
 }

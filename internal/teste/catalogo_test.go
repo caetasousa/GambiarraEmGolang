@@ -4,7 +4,8 @@ import (
 	"bytes"
 	"encoding/json"
 	"meu-servico-agenda/internal/adapters/http/catalogo"
-	"meu-servico-agenda/internal/adapters/http/catalogo/request"
+	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
+
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
@@ -27,14 +28,14 @@ func SetupRouterCatalogo() (*gin.Engine, port.CatalogoRepositorio) {
 	router := gin.Default()
 	apiV1 := router.Group("/api/v1")
 	{
-		apiV1.POST("/catalogos", catalogoController.PostPrestador)
+		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 		apiV1.GET("/catalogos/:id", catalogoController.GetCatalogoPorID)
 	}
 
 	return router, catalogoRepo
 }
 
-func SetupPostCatalogoRequest(router *gin.Engine, input request.CatalogoRequest) *httptest.ResponseRecorder {
+func SetupPostCatalogoRequest(router *gin.Engine, input request_catalogo.CatalogoRequest) *httptest.ResponseRecorder {
 	body, _ := json.Marshal(input)
 	req, _ := http.NewRequest(http.MethodPost, "/api/v1/catalogos", bytes.NewBuffer(body))
 	req.Header.Set("Content-Type", "application/json")
@@ -69,7 +70,7 @@ func PostJSONFromMap(router *gin.Engine, input map[string]interface{}) *httptest
 func TestPostCatalogo_Sucesso(t *testing.T) {
 	router, _ := SetupRouterCatalogo()
 
-	input := request.CatalogoRequest{
+	input := request_catalogo.CatalogoRequest{
 		Nome:          "Corte de Cabelo",
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
@@ -96,7 +97,7 @@ func TestPostCatalogo_NomeVazio_DeveRetornar400(t *testing.T) {
 	router, _ := SetupRouterCatalogo()
 
 	// Nome vazio — validação de entrada deveria falhar
-	input := request.CatalogoRequest{
+	input := request_catalogo.CatalogoRequest{
 		Nome:          "",
 		DuracaoPadrao: 30,
 		Preco:         2500.0,
@@ -155,7 +156,7 @@ func TestPostCatalogo_NomeMuitoCurto_DeveRetornar400(t *testing.T) {
 	router, _ := SetupRouterCatalogo()
 
 	// Nome com menos de 3 caracteres
-	input := request.CatalogoRequest{
+	input := request_catalogo.CatalogoRequest{
 		Nome:          "AB",
 		DuracaoPadrao: 30,
 		Preco:         2500.0,
@@ -174,7 +175,7 @@ func TestPostCatalogo_CategoriaMuitoCurta_DeveRetornar400(t *testing.T) {
 	router, _ := SetupRouterCatalogo()
 
 	// Categoria com menos de 3 caracteres
-	input := request.CatalogoRequest{
+	input := request_catalogo.CatalogoRequest{
 		Nome:          "Corte Premium",
 		DuracaoPadrao: 45,
 		Preco:         5000.0,
@@ -192,7 +193,7 @@ func TestPostCatalogo_CategoriaMuitoCurta_DeveRetornar400(t *testing.T) {
 func TestGetCatalogo_Sucesso(t *testing.T) {
 	router, _ := SetupRouterCatalogo()
 
-	input := request.CatalogoRequest{
+	input := request_catalogo.CatalogoRequest{
 		Nome:          "Massagem",
 		DuracaoPadrao: 60,
 		Preco:         5000.0,

@@ -1,4 +1,4 @@
-package response
+package response_prestador
 
 import (
 	"meu-servico-agenda/internal/core/domain"

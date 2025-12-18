@@ -2,7 +2,7 @@ package request_prestador
 
 import (
 	"fmt"
-	"meu-servico-agenda/internal/core/domain"
+	"meu-servico-agenda/internal/core/application/command"
 
 	"time"
 )
@@ -17,13 +17,13 @@ type AgendaDiariaRequest struct {
 	Intervalos []IntervaloDiarioRequest `json:"intervalos" binding:"required,dive"`
 }
 
-func (r *AgendaDiariaRequest) ToAgendaDiaria() (*domain.AgendaDiaria, error) {
+func (r *AgendaDiariaRequest) ToCommand() (*command.AdicionarAgendaCommand, error) {
 	data, err := time.Parse("2006-01-02", r.Data)
 	if err != nil {
 		return nil, fmt.Errorf("data inválida: %w", err)
 	}
 
-	intervalos := make([]domain.IntervaloDiario, 0, len(r.Intervalos))
+	intervalos := make([]command.IntervaloCommand, 0, len(r.Intervalos))
 	for _, i := range r.Intervalos {
 		inicio, err := time.Parse("15:04", i.HoraInicio)
 		if err != nil {
@@ -35,13 +35,14 @@ func (r *AgendaDiariaRequest) ToAgendaDiaria() (*domain.AgendaDiaria, error) {
 			return nil, fmt.Errorf("hora_fim inválida: %w", err)
 		}
 
-		intervalo, err := domain.NovoIntervaloDiario(inicio, fim)
-		if err != nil {
-			return nil, err
-		}
-
-		intervalos = append(intervalos, *intervalo)
+		intervalos = append(intervalos, command.IntervaloCommand{
+			Inicio: inicio,
+			Fim:    fim,
+		})
 	}
 
-	return domain.NovaAgendaDiaria(data, intervalos)
+	return &command.AdicionarAgendaCommand{
+		Data:       data,
+		Intervalos: intervalos,
+	}, nil
 }
