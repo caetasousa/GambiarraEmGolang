@@ -3,7 +3,10 @@ package service
 import (
 	"errors"
 	"fmt"
-	"meu-servico-agenda/internal/core/application/command"
+
+	"meu-servico-agenda/internal/core/application/input"
+	"meu-servico-agenda/internal/core/application/mapper"
+	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -16,7 +19,7 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 	return &CatalogoService{repo: r}
 }
 
-func (s *CatalogoService) Cadastra(cmd *command.CatalogoCommand) (*domain.Catalogo, error) {
+func (s *CatalogoService) Cadastra(cmd *input.CatalogoInput) (*output.CatalogoOutput, error) {
 
 	catalogo, err := domain.NovoCatalogo(
 		cmd.Nome,
@@ -32,16 +35,19 @@ func (s *CatalogoService) Cadastra(cmd *command.CatalogoCommand) (*domain.Catalo
 		return nil, err
 	}
 
-	return catalogo, nil
+	return mapper.FromCatalogo(catalogo), nil
 }
 
-func (s *CatalogoService) BuscarPorId(id string) (*domain.Catalogo, error) {
+var ErrCatalogoNaoEncontrado = errors.New("catálogo não encontrado")
+var ErrFalhaInfraestrutura = errors.New("falha na infraestrutura ao buscar catálogo")
+
+func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error) {
 	catalogo, err := s.repo.BuscarPorId(id)
 	if err != nil {
-		return nil, fmt.Errorf("falha na infraestrutura ao buscar catalogo: %w", err)
+		return nil, fmt.Errorf("%w: %w", ErrFalhaInfraestrutura, err)
 	}
 	if catalogo == nil {
-		return nil, errors.New("catalogo nao encontrado")
+		return nil, ErrCatalogoNaoEncontrado
 	}
-	return catalogo, nil
+	return mapper.FromCatalogo(catalogo), nil
 }

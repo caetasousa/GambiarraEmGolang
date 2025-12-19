@@ -1,6 +1,6 @@
-package command
+package input
 
-type CatalogoCommand struct {
+type CatalogoInput struct {
 	Nome          string
 	DuracaoPadrao int
 	Preco         float64

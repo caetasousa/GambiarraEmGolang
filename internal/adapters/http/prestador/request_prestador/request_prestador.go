@@ -2,7 +2,7 @@ package request_prestador
 
 import (
 	"errors"
-	"meu-servico-agenda/internal/core/application/command"
+	"meu-servico-agenda/internal/core/application/input"
 
 	"github.com/klassmann/cpfcnpj"
 )
@@ -15,13 +15,13 @@ type PrestadorRequest struct {
 	CatalogoIDs []string `json:"catalogo_ids" binding:"omitempty,dive,required" swagger:"desc('IDs dos serviços no catálogo oferecidos pelo prestador')"`
 }
 
-func (r *PrestadorRequest) ToCommand() (*command.CadastrarPrestadorCommand, error) {
+func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestadorInput, error) {
 	cpf, err := ValidaCPF(r.Cpf)
 	if err != nil {
 		return nil, err
 	}
 
-	return &command.CadastrarPrestadorCommand{
+	return &input.CadastrarPrestadorInput{
 		Nome:        r.Nome,
 		CPF:         cpf,
 		Email:       r.Email,

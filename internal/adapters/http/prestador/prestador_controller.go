@@ -44,7 +44,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	}
 
 	// 2️⃣ Adapter → Command (mantém validações existentes)
-	cmd, err := input.ToCommand()
+	cmd, err := input.ToCadastrarPrestadorInput()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error": err.Error(),
@@ -69,7 +69,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	}
 
 	// 4️⃣ Response
-	resp := response_prestador.FromPostPrestador(prestador)
+	resp := response_prestador.FromCriarPrestadorOutput(*prestador)
 	c.JSON(http.StatusCreated, resp)
 }
 
@@ -98,7 +98,7 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 	}
 
 	// 2️⃣ Adapter → Command (mantém time.Parse e validações)
-	cmd, err := input.ToCommand()
+	cmd, err := input.ToAdicionarAgendaInput()
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
@@ -141,12 +141,23 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 func (prc *PrestadorController) GetPrestador(c *gin.Context) {
 	id := c.Param("id")
 
-	prestador, err := prc.prestadorService.BuscarPorId(id)
+	out, err := prc.prestadorService.BuscarPorId(id)
 	if err != nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-		return
-	}
-	resp := response_prestador.FromPrestador(prestador)
+		switch {
+		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": err.Error(),
+			})
+			return
 
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "erro interno",
+			})
+			return
+		}
+	}
+
+	resp := response_prestador.FromPrestadorOutput(*out)
 	c.JSON(http.StatusOK, resp)
 }

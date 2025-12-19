@@ -1,6 +1,6 @@
 package request_catalogo
 
-import "meu-servico-agenda/internal/core/application/command"
+import "meu-servico-agenda/internal/core/application/input"
 
 type CatalogoRequest struct {
 	Nome          string  `json:"nome" binding:"required,min=3,max=100" example:"Tecnico de Redes" swagger:"desc('Nome do serviço')"`
@@ -9,8 +9,8 @@ type CatalogoRequest struct {
 	Categoria     string  `json:"categoria" binding:"required,min=3,max=50" example:"Redes" swagger:"desc('Categoria do serviço')"`
 }
 
-func (cr *CatalogoRequest) ToCommand() *command.CatalogoCommand {
-	return &command.CatalogoCommand{
+func (cr *CatalogoRequest) ToCatalogoInput() *input.CatalogoInput {
+	return &input.CatalogoInput{
 		Nome:          cr.Nome,
 		DuracaoPadrao: cr.DuracaoPadrao,
 		Preco:         cr.Preco,

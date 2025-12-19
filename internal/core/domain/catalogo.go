@@ -15,14 +15,19 @@ type Catalogo struct {
 	Categoria     string
 }
 
+var (
+	ErrDuracaoInvalida = errors.New("duração padrão inválida")
+	ErrPrecoInvalido   = errors.New("preço inválido")
+)
+
 func NovoCatalogo(nome string, duracao int, preco float64, categoria string) (*Catalogo, error) {
 
 	if duracao <= 1 {
-		return nil, errors.New("duração padrão deve ser maior que 1 minuto")
+		return nil, ErrDuracaoInvalida
 	}
 
 	if preco < 0 {
-		return nil, errors.New("preço não pode ser negativo")
+		return nil, ErrPrecoInvalido
 	}
 
 	return &Catalogo{

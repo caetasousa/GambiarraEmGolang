@@ -9,7 +9,7 @@ import (
 
 	"meu-servico-agenda/internal/adapters/http/catalogo"
 	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
-	"meu-servico-agenda/internal/adapters/http/catalogo/response"
+	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
 	"meu-servico-agenda/internal/adapters/http/prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/repository"
@@ -101,7 +101,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
 
-	var catalogoResp response.CatalogoResponse
+	var catalogoResp response_catalogo.CatalogoResponse
 	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
 	require.NoError(t, err)
 
@@ -150,7 +150,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
 
-	var catalogoResp response.CatalogoResponse
+	var catalogoResp response_catalogo.CatalogoResponse
 	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
 	require.NoError(t, err)
 
@@ -187,7 +187,7 @@ func TestGetPrestador_UsuarioExistente(t *testing.T) {
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
 
-	var catalogoResp response.CatalogoResponse
+	var catalogoResp response_catalogo.CatalogoResponse
 	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
 	require.NoError(t, err)
 
@@ -224,7 +224,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
 
-	var catalogoResp response.CatalogoResponse
+	var catalogoResp response_catalogo.CatalogoResponse
 	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
 	require.NoError(t, err)
 

@@ -1,6 +1,7 @@
 package catalogo
 
 import (
+	"errors"
 	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
 	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
 
@@ -31,22 +32,26 @@ func NovoCatalogoController(criarCatalogoService *service.CatalogoService) *Cata
 // @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
 // @Router /catalogos [post]
 func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
-	var input request_catalogo.CatalogoRequest
+	var req request_catalogo.CatalogoRequest
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	cmd := input.ToCommand()
+	// request → input (core)
+	cmd := req.ToCatalogoInput()
 
-	catalogoSalvo, err := ctl.criarCatalogoService.Cadastra(cmd)
+	// service → output (core)
+	out, err := ctl.criarCatalogoService.Cadastra(cmd)
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
-	resp := response_catalogo.FromCatalogo(catalogoSalvo)
+	// output → response (HTTP)
+	resp := response_catalogo.FromCatalogoOutput(*out)
+
 	c.JSON(http.StatusCreated, resp)
 }
 
@@ -66,17 +71,29 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 	id := c.Param("id")
 
 	catalogo, err := ctl.criarCatalogoService.BuscarPorId(id)
-
 	if err != nil {
-		if err.Error() == "catalogo nao encontrado" { // compara string exata
-			c.JSON(http.StatusNotFound, gin.H{"error": "Catalogo não encontrado"})
+
+		switch {
+		case errors.Is(err, service.ErrCatalogoNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{
+				"error": "Catálogo não encontrado",
+			})
+			return
+
+		case errors.Is(err, service.ErrFalhaInfraestrutura):
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro interno ao buscar catálogo",
+			})
+			return
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro inesperado",
+			})
 			return
 		}
-		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
-		return
 	}
 
-	resp := response_catalogo.FromCatalogo(catalogo)
-
+	resp := response_catalogo.FromCatalogoOutput(*catalogo)
 	c.JSON(http.StatusOK, resp)
 }

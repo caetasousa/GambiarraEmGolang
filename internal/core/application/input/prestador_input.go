@@ -1,6 +1,6 @@
-package command
+package input
 
-type CadastrarPrestadorCommand struct {
+type CadastrarPrestadorInput struct {
 	Nome        string
 	CPF         string
 	Email       string

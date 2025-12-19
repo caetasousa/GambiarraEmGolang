@@ -2,7 +2,7 @@ package response_prestador
 
 import (
 	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
-	"meu-servico-agenda/internal/core/domain"
+	"meu-servico-agenda/internal/core/application/output"
 )
 
 type PrestadorResponse struct {
@@ -15,24 +15,24 @@ type PrestadorResponse struct {
 	Agenda   []AgendaDiariaResponse               `json:"agenda"`
 }
 
-func FromPrestador(p *domain.Prestador) PrestadorResponse {
+func FromPrestadorOutput(o output.BuscarPrestadorOutput) PrestadorResponse {
 
-	agenda := make([]AgendaDiariaResponse, len(p.Agenda))
-	for i, ag := range p.Agenda {
-		agenda[i] = FromAgendaDiaria(&ag)
+	agenda := make([]AgendaDiariaResponse, len(o.Agenda))
+	for i, ag := range o.Agenda {
+		agenda[i] = FromAgendaDiariaOutput(ag)
 	}
 
-	catalogo := make([]response_catalogo.CatalogoResponse, len(p.Catalogo))
-	for i, c := range p.Catalogo {
-		catalogo[i] = response_catalogo.FromCatalogo(&c)
+	catalogo := make([]response_catalogo.CatalogoResponse, len(o.Catalogo))
+	for i, c := range o.Catalogo {
+		catalogo[i] = response_catalogo.FromCatalogoOutput(c)
 	}
 
 	return PrestadorResponse{
-		ID:       p.ID,
-		Nome:     p.Nome,
-		Email:    p.Email,
-		Telefone: p.Telefone,
-		Ativo:    p.Ativo,
+		ID:       o.ID,
+		Nome:     o.Nome,
+		Email:    o.Email,
+		Telefone: o.Telefone,
+		Ativo:    o.Ativo,
 		Catalogo: catalogo,
 		Agenda:   agenda,
 	}

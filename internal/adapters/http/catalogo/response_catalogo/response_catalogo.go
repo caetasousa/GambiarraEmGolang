@@ -1,6 +1,6 @@
 package response_catalogo
 
-import "meu-servico-agenda/internal/core/domain"
+import "meu-servico-agenda/internal/core/application/output"
 
 type CatalogoResponse struct {
 	ID            string `json:"id"`
@@ -10,12 +10,12 @@ type CatalogoResponse struct {
 	Categoria     string `json:"categoria"`
 }
 
-func FromCatalogo(c *domain.Catalogo) CatalogoResponse {
+func FromCatalogoOutput(o output.CatalogoOutput) CatalogoResponse {
 	return CatalogoResponse{
-		ID:            c.ID,
-		Nome:          c.Nome,
-		DuracaoPadrao: c.DuracaoPadrao,
-		Preco:         int64(c.Preco),
-		Categoria:     c.Categoria,
+		ID:            o.ID,
+		Nome:          o.Nome,
+		DuracaoPadrao: o.DuracaoPadrao,
+		Preco:         int64(o.Preco),
+		Categoria:     o.Categoria,
 	}
 }

@@ -4,7 +4,9 @@ import (
 	"errors"
 	"fmt"
 
-	"meu-servico-agenda/internal/core/application/command"
+	"meu-servico-agenda/internal/core/application/input"
+	"meu-servico-agenda/internal/core/application/mapper"
+	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 
@@ -30,9 +32,7 @@ var (
 	ErrCatalogoNaoExiste = errors.New("catálogo não existe")
 )
 
-func (s *PrestadorService) Cadastra(
-	cmd *command.CadastrarPrestadorCommand,
-) (*domain.Prestador, error) {
+func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output.CriarPrestadorOutput, error) {
 
 	cpf := cpfcnpj.Clean(cmd.CPF)
 
@@ -71,15 +71,14 @@ func (s *PrestadorService) Cadastra(
 		return nil, err
 	}
 
-	return prestador, nil
+	out := mapper.FromDomainToCriarOutput(prestador)
+
+	return out, nil
 }
 
 var ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
 
-func (s *PrestadorService) AdicionarAgenda(
-	prestadorID string,
-	cmd *command.AdicionarAgendaCommand,
-) error {
+func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.AdicionarAgendaInput) error {
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
 	if err != nil {
@@ -114,13 +113,16 @@ func (s *PrestadorService) AdicionarAgenda(
 	return s.prestadorRepo.Salvar(prestador)
 }
 
-func (s *PrestadorService) BuscarPorId(id string) (*domain.Prestador, error) {
+func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput, error) {
 	prestador, err := s.prestadorRepo.BuscarPorId(id)
 	if err != nil {
-		return nil, fmt.Errorf("falha na infraestrutura ao buscar prestador: %w", err)
+		return nil, err
 	}
 	if prestador == nil {
-		return nil, fmt.Errorf("prestador não encontrado")
+		return nil, ErrPrestadorNaoEncontrado
 	}
-	return prestador, nil
+
+	out := mapper.FromPrestador(prestador)
+
+	return out, nil
 }

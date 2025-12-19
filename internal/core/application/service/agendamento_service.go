@@ -11,10 +11,7 @@ type AgendamentoService struct {
 	agendamentoRepo port.AgendamentoRepositorio
 }
 
-func NovaAgendamentoService(
-	pr port.PrestadorRepositorio,
-	ar port.AgendamentoRepositorio,
-) *AgendamentoService {
+func NovaAgendamentoService(pr port.PrestadorRepositorio, ar port.AgendamentoRepositorio) *AgendamentoService {
 	return &AgendamentoService{
 		prestadorRepo:   pr,
 		agendamentoRepo: ar,
