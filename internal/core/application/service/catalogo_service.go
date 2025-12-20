@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 
 	"meu-servico-agenda/internal/core/application/input"
@@ -35,11 +34,8 @@ func (s *CatalogoService) Cadastra(cmd *input.CatalogoInput) (*output.CatalogoOu
 		return nil, err
 	}
 
-	return mapper.FromCatalogo(catalogo), nil
+	return mapper.FromCatalogoOutput(catalogo), nil
 }
-
-var ErrCatalogoNaoEncontrado = errors.New("catálogo não encontrado")
-var ErrFalhaInfraestrutura = errors.New("falha na infraestrutura ao buscar catálogo")
 
 func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error) {
 	catalogo, err := s.repo.BuscarPorId(id)
@@ -49,5 +45,5 @@ func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error)
 	if catalogo == nil {
 		return nil, ErrCatalogoNaoEncontrado
 	}
-	return mapper.FromCatalogo(catalogo), nil
+	return mapper.FromCatalogoOutput(catalogo), nil
 }

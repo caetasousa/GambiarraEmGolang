@@ -19,17 +19,17 @@ func NovoCatalogoController(criarCatalogoService *service.CatalogoService) *Cata
 	return &CatalogoController{criarCatalogoService: criarCatalogoService}
 }
 
-// PostPrestador é o handler para a rota POST /catalogos
-// @Summary Cadastra um novo catálogo
-// @Description Recebe os dados necessários para registrar um novo serviço no catálogo.
+// @Summary Cria um novo catálogo de serviços
+// @Description Cadastra um serviço que pode ser oferecido por um prestador
 // @Tags Catálogos
 // @Accept json
 // @Produce json
-// @Param catalogo body request.CatalogoRequest true "Dados do Catálogo"
-// @Success 201 {object} response.CatalogoResponse "Catálogo criado com sucesso"
-// @Failure 400 {object} domain.ErrorResponse "Dados inválidos (erro de validação do binding)"
-// @Failure 409 {object} domain.ErrorResponse "Catálogo já cadastrado ou conflito de dados"
-// @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
+// @Param catalogo body request_catalogo.CatalogoRequest true "Dados do Catálogo"
+// @Success 201 {object} response_catalogo.CatalogoResponse "Catálogo criado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 409 {object} domain.ErrorResponse "Catálogo já existente"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno"
 // @Router /catalogos [post]
 func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
 	var req request_catalogo.CatalogoRequest
@@ -50,7 +50,7 @@ func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
 	}
 
 	// output → response (HTTP)
-	resp := response_catalogo.FromCatalogoOutput(*out)
+	resp := response_catalogo.FromCatalogoResponse(*out)
 
 	c.JSON(http.StatusCreated, resp)
 }
@@ -62,7 +62,7 @@ func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "ID do Catálogo"
-// @Success 200 {object} response.CatalogoResponse "Catálogo encontrado com sucesso"
+// @Success 200 {object} response_catalogo.CatalogoResponse "Catálogo encontrado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "ID inválido fornecido"
 // @Failure 404 {object} domain.ErrorResponse "Catálogo não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor ou falha de infraestrutura"
@@ -94,6 +94,6 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 		}
 	}
 
-	resp := response_catalogo.FromCatalogoOutput(*catalogo)
+	resp := response_catalogo.FromCatalogoResponse(*catalogo)
 	c.JSON(http.StatusOK, resp)
 }

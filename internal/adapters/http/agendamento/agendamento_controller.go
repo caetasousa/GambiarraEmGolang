@@ -2,7 +2,8 @@ package agendamento
 
 import (
 	"errors"
-	requesta_gendamento "meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
+	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
+	"meu-servico-agenda/internal/adapters/http/agendamento/response_agendamento"
 	"meu-servico-agenda/internal/core/application/service"
 	"net/http"
 
@@ -19,8 +20,20 @@ func NovoAgendamentoController(ag *service.AgendamentoService) *AgendamentoContr
 	}
 }
 
+// @Summary Cria um novo agendamento
+// @Description Realiza o agendamento de um serviço para um prestador em uma data e horário específicos.
+// @Tags Agendamentos
+// @Accept json
+// @Produce json
+// @Param agendamento body request_agendamento.AgendamentoRequest true "Dados do agendamento"
+// @Success 201 {object} response_agendamento.AgendamentoResponse "Agendamento criado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos ou formato de data incorreto"
+// @Failure 404 {object} domain.ErrorResponse "Cliente, prestador ou serviço não encontrado"
+// @Failure 409 {object} domain.ErrorResponse "Conflito de agenda (dia ou horário indisponível)"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /agendamentos [post]
 func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
-	var input requesta_gendamento.AgendamentoRequest
+	var input request_agendamento.AgendamentoRequest
 	// 1️⃣ Validação estrutural (JSON)
 	if err := c.ShouldBindJSON(&input); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
@@ -62,7 +75,7 @@ func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
 		// 500 — erro inesperado
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "erro interno do servidor",
+				"error": service.ErrFalhaInfraestrutura.Error(),
 			})
 		}
 
@@ -70,5 +83,7 @@ func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
 	}
 
 	// 3️⃣ Sucesso
-	c.JSON(http.StatusCreated, agendamento)
+
+	resp := response_agendamento.NovoAgendamentoResponse(agendamento)
+	c.JSON(http.StatusCreated, resp)
 }

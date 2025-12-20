@@ -4,6 +4,6 @@ type CatalogoOutput struct {
 	ID            string
 	Nome          string
 	DuracaoPadrao int
-	Preco         float64
+	Preco         int
 	Categoria     string
 }

@@ -27,7 +27,7 @@ func NovoPrestadorController(ps *service.PrestadorService) *PrestadorController 
 // @Accept json
 // @Produce json
 // @Param prestador body request_prestador.PrestadorRequest true "Dados do Prestador"
-// @Success 201 {object} response.PrestadorPostResponse "Prestador criado com sucesso"
+// @Success 201 {object} response_prestador.PrestadorPostResponse "Prestador criado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos (erro de validação do binding)"
 // @Failure 409 {object} domain.ErrorResponse "Prestador já cadastrado ou conflito de dados"
 // @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
@@ -134,7 +134,7 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 // @Accept json
 // @Produce json
 // @Param id path string true "ID do prestador"
-// @Success 200 {object} response.PrestadorResponse "Prestador encontrado com sucesso"
+// @Success 200 {object} response_prestador.PrestadorResponse "Prestador encontrado com sucesso"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno"
 // @Router /prestadores/{id} [get]

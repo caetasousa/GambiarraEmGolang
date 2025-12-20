@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"time"
 
 	"github.com/rs/xid"
@@ -20,7 +19,7 @@ type Prestador struct {
 
 func NovoPrestador(nome, cpf, email, telefone string, catalogos []Catalogo) (*Prestador, error) {
 	if len(catalogos) == 0 {
-		return nil, errors.New("prestador deve ter ao menos um catálogo de serviços")
+		return nil, ErrPrestadorDeveTerCatalogo
 	}
 
 	return &Prestador{
@@ -35,10 +34,7 @@ func NovoPrestador(nome, cpf, email, telefone string, catalogos []Catalogo) (*Pr
 	}, nil
 }
 
-var (
-	ErrAgendaDuplicada  = errors.New("agenda duplicada")
-	ErrPrestadorInativo = errors.New("prestador inativo")
-)
+
 
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
 	if !p.Ativo {

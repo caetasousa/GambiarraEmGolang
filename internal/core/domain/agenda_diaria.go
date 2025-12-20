@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"time"
 
 	"github.com/rs/xid"
@@ -19,11 +18,6 @@ type IntervaloDiario struct {
 	HoraInicio time.Time
 	HoraFim    time.Time
 }
-
-var (
-	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
-	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
-)
 
 func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiaria, error) {
 	if len(intervalos) == 0 {

@@ -1,5 +1,11 @@
 package request_agendamento
 
+import (
+	"errors"
+	"meu-servico-agenda/internal/core/application/input"
+	"time"
+)
+
 type AgendamentoRequest struct {
 	ClienteID      string `json:"cliente_id" binding:"required" swagger:"desc('ID do cliente que está solicitando o agendamento')"`
 	PrestadorID    string `json:"prestador_id" binding:"required" swagger:"desc('ID do prestador que irá atender')"`
@@ -8,25 +14,20 @@ type AgendamentoRequest struct {
 	Notas          string `json:"notas,omitempty" binding:"omitempty,max=500" swagger:"desc('Notas ou observações do cliente sobre o agendamento')"`
 }
 
-// func (ag *AgendamentoRequest) ToAgendamento() (*domain.Agendamento, error) {
-// 	// Convertendo DataHoraInicio de string para time.Time
-// 	dataHoraInicio, err := time.Parse(time.RFC3339, ag.DataHoraInicio)
-// 	if err != nil {
-// 		return nil, errors.New("formato de data/hora inválido")
-// 	}
+func (ag *AgendamentoRequest) ToAgendamento() (*input.CadastrarAgendamentoInput, error) {
+	// Convertendo DataHoraInicio de string para time.Time
+	dataHoraInicio, err := time.Parse(time.RFC3339, ag.DataHoraInicio)
+	if err != nil {
+		return nil, errors.New("formato de data/hora inválido")
+	}
 
-// 	// Usando o método NovoAgendamento da camada de domínio para criar o agendamento
-// 	agendamento, err := domain.NovoAgendamento(
-// 		ag.ClienteID,
-// 		ag.PrestadorID,
-// 		ag.CatalogoID,
-// 		dataHoraInicio,
-// 		dataHoraInicio.Add(time.Duration(30)*time.Minute),
-// 		ag.Notas,
-// 	)
-// 	if err != nil {
-// 		return nil, err
-// 	}
+	agendamento := input.CadastrarAgendamentoInput{
+		ClienteID:      ag.ClienteID,
+		PrestadorID:    ag.PrestadorID,
+		CatalogoID:     ag.CatalogoID,
+		DataHoraInicio: dataHoraInicio,
+		Notas:          ag.Notas,
+	}
 
-// 	return agendamento, nil
-// }
+	return &agendamento, nil
+}

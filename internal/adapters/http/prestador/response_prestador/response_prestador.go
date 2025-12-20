@@ -18,7 +18,7 @@ func FromCriarPrestadorOutput(o output.CriarPrestadorOutput) PrestadorPostRespon
 
 	catalogo := make([]response_catalogo.CatalogoResponse, len(o.Catalogo))
 	for i, c := range o.Catalogo {
-		catalogo[i] = response_catalogo.FromCatalogoOutput(c)
+		catalogo[i] = response_catalogo.FromCatalogoResponse(c)
 	}
 
 	return PrestadorPostResponse{

@@ -1,7 +1,6 @@
 package domain
 
 import (
-	"errors"
 	"time"
 
 	"github.com/rs/xid"
@@ -37,7 +36,7 @@ func NovoAgendamento(
 ) (*Agendamento, error) {
 
 	if !dataHoraInicio.Before(dataHoraFim) {
-		return nil, errors.New("horário início deve ser antes do fim")
+		return nil, ErrHoraInicialMenorQueFinal
 	}
 
 	return &Agendamento{

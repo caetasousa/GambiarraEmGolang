@@ -26,24 +26,13 @@ func FromPrestador(p *domain.Prestador) *output.BuscarPrestadorOutput {
 		}
 	}
 
-	catalogo := make([]output.CatalogoOutput, len(p.Catalogo))
-	for i, c := range p.Catalogo {
-		catalogo[i] = output.CatalogoOutput{
-			ID:            c.ID,
-			Nome:          c.Nome,
-			DuracaoPadrao: c.DuracaoPadrao,
-			Preco:         c.Preco,
-			Categoria:     c.Categoria,
-		}
-	}
-
 	return &output.BuscarPrestadorOutput{
 		ID:       p.ID,
 		Nome:     p.Nome,
 		Email:    p.Email,
 		Telefone: p.Telefone,
 		Ativo:    p.Ativo,
-		Catalogo: catalogo,
+		Catalogo: CatalogosFromDomain(p.Catalogo),
 		Agenda:   agenda,
 	}
 }

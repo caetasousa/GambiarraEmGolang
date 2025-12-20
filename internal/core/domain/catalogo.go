@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"errors"
-
 	"github.com/rs/xid"
 )
 
@@ -11,16 +9,11 @@ type Catalogo struct {
 	Nome string
 	// DuracaoPadrao em minutos
 	DuracaoPadrao int
-	Preco         float64
+	Preco         int
 	Categoria     string
 }
 
-var (
-	ErrDuracaoInvalida = errors.New("duração padrão inválida")
-	ErrPrecoInvalido   = errors.New("preço inválido")
-)
-
-func NovoCatalogo(nome string, duracao int, preco float64, categoria string) (*Catalogo, error) {
+func NovoCatalogo(nome string, duracao int, preco int, categoria string) (*Catalogo, error) {
 
 	if duracao <= 1 {
 		return nil, ErrDuracaoInvalida

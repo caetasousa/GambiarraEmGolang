@@ -1,7 +1,6 @@
 package service
 
 import (
-	"errors"
 	"fmt"
 
 	"meu-servico-agenda/internal/core/application/input"
@@ -27,10 +26,6 @@ func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoReposito
 	}
 }
 
-var (
-	ErrCPFJaCadastrado   = errors.New("cpf já possui um cadastro")
-	ErrCatalogoNaoExiste = errors.New("catálogo não existe")
-)
 
 func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output.CriarPrestadorOutput, error) {
 
@@ -76,7 +71,6 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	return out, nil
 }
 
-var ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
 
 func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.AdicionarAgendaInput) error {
 

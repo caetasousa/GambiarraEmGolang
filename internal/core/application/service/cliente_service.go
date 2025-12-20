@@ -17,11 +17,11 @@ func NovoServiceCliente(r port.ClienteRepositorio) *ServiceCliente {
 
 func (s *ServiceCliente) Cadastra(cliente *domain.Cliente) (*domain.Cliente, error) {
 	if cliente == nil {
-		return nil, errors.New("cliente não pode ser nil")
+		return nil, ErrClienteNaoEncontrado
 	}
 
 	if err := s.repo.Salvar(cliente); err != nil {
-		return nil, errors.New("falha ao salvar cliente: " + err.Error())
+		return nil, errors.New(ErrAoSalvarCliente.Error() + err.Error())
 	}
 
 	return cliente, nil
@@ -31,11 +31,11 @@ func (s *ServiceCliente) BuscarPorId(id string) (*domain.Cliente, error) {
 	cliente, err := s.repo.BuscarPorId(id)
 
 	if err != nil {
-		return nil, errors.New("falha na infraestrutura ao buscar cliente")
+		return nil, ErrFalhaInfraestrutura
 	}
 
 	if cliente == nil {
-		return nil, errors.New("cliente não encontrado") 
+		return nil, ErrClienteNaoEncontrado
 	}
 
 	return cliente, nil

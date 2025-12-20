@@ -15,9 +15,67 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/agendamentos": {
+            "post": {
+                "description": "Realiza o agendamento de um serviço para um prestador em uma data e horário específicos.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendamentos"
+                ],
+                "summary": "Cria um novo agendamento",
+                "parameters": [
+                    {
+                        "description": "Dados do agendamento",
+                        "name": "agendamento",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_agendamento.AgendamentoRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Agendamento criado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/response_agendamento.AgendamentoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou formato de data incorreto",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Cliente, prestador ou serviço não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Conflito de agenda (dia ou horário indisponível)",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/catalogos": {
             "post": {
-                "description": "Recebe os dados necessários para registrar um novo serviço no catálogo.",
+                "description": "Cadastra um serviço que pode ser oferecido por um prestador",
                 "consumes": [
                     "application/json"
                 ],
@@ -27,7 +85,7 @@ const docTemplate = `{
                 "tags": [
                     "Catálogos"
                 ],
-                "summary": "Cadastra um novo catálogo",
+                "summary": "Cria um novo catálogo de serviços",
                 "parameters": [
                     {
                         "description": "Dados do Catálogo",
@@ -35,7 +93,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/request.CatalogoRequest"
+                            "$ref": "#/definitions/request_catalogo.CatalogoRequest"
                         }
                     }
                 ],
@@ -43,23 +101,29 @@ const docTemplate = `{
                     "201": {
                         "description": "Catálogo criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/response.CatalogoResponse"
+                            "$ref": "#/definitions/response_catalogo.CatalogoResponse"
                         }
                     },
                     "400": {
-                        "description": "Dados inválidos (erro de validação do binding)",
+                        "description": "Dados inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Prestador não encontrado",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
                     "409": {
-                        "description": "Catálogo já cadastrado ou conflito de dados",
+                        "description": "Catálogo já existente",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
                     "500": {
-                        "description": "Falha na persistência de dados ou erro interno",
+                        "description": "Erro interno",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -93,7 +157,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Catálogo encontrado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/response.CatalogoResponse"
+                            "$ref": "#/definitions/response_catalogo.CatalogoResponse"
                         }
                     },
                     "400": {
@@ -231,7 +295,7 @@ const docTemplate = `{
                 "tags": [
                     "Prestadores"
                 ],
-                "summary": "Cadastra um novo prestadores",
+                "summary": "Cadastra um novo prestador",
                 "parameters": [
                     {
                         "description": "Dados do Prestador",
@@ -247,7 +311,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Prestador criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/response.PrestadorPostResponse"
+                            "$ref": "#/definitions/response_prestador.PrestadorPostResponse"
                         }
                     },
                     "400": {
@@ -297,7 +361,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Prestador encontrado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/response.PrestadorResponse"
+                            "$ref": "#/definitions/response_prestador.PrestadorResponse"
                         }
                     },
                     "404": {
@@ -404,7 +468,75 @@ const docTemplate = `{
                 }
             }
         },
-        "request.CatalogoRequest": {
+        "domain.StatusDoAgendamento": {
+            "type": "integer",
+            "enum": [
+                1,
+                2,
+                3,
+                4
+            ],
+            "x-enum-varnames": [
+                "Pendente",
+                "Confirmado",
+                "Cancelado",
+                "Concluido"
+            ]
+        },
+        "request.ClienteRequest": {
+            "type": "object",
+            "required": [
+                "nome",
+                "telefone"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "joao@email.com"
+                },
+                "nome": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "João da Silva"
+                },
+                "telefone": {
+                    "type": "string",
+                    "maxLength": 15,
+                    "minLength": 8,
+                    "example": "62999677481"
+                }
+            }
+        },
+        "request_agendamento.AgendamentoRequest": {
+            "type": "object",
+            "required": [
+                "catalogo_id",
+                "cliente_id",
+                "data_hora_inicio",
+                "prestador_id"
+            ],
+            "properties": {
+                "catalogo_id": {
+                    "type": "string"
+                },
+                "cliente_id": {
+                    "type": "string"
+                },
+                "data_hora_inicio": {
+                    "type": "string",
+                    "example": "2025-01-03T08:00:00Z"
+                },
+                "notas": {
+                    "type": "string",
+                    "maxLength": 500
+                },
+                "prestador_id": {
+                    "type": "string"
+                }
+            }
+        },
+        "request_catalogo.CatalogoRequest": {
             "type": "object",
             "required": [
                 "categoria",
@@ -432,31 +564,6 @@ const docTemplate = `{
                 "preco": {
                     "type": "number",
                     "example": 10000
-                }
-            }
-        },
-        "request.ClienteRequest": {
-            "type": "object",
-            "required": [
-                "nome",
-                "telefone"
-            ],
-            "properties": {
-                "email": {
-                    "type": "string",
-                    "example": "joao@email.com"
-                },
-                "nome": {
-                    "type": "string",
-                    "maxLength": 100,
-                    "minLength": 3,
-                    "example": "João da Silva"
-                },
-                "telefone": {
-                    "type": "string",
-                    "maxLength": 15,
-                    "minLength": 8,
-                    "example": "62999677481"
                 }
             }
         },
@@ -533,27 +640,42 @@ const docTemplate = `{
                 }
             }
         },
-        "response.AgendaDiariaResponse": {
+        "response_agendamento.AgendamentoResponse": {
             "type": "object",
             "properties": {
-                "data": {
+                "data_hora_fim": {
                     "type": "string"
                 },
-                "dia_semana": {
+                "data_hora_inicio": {
                     "type": "string"
                 },
                 "id": {
                     "type": "string"
                 },
-                "intervalos": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/response.IntervaloDiarioResponse"
-                    }
+                "notas": {
+                    "type": "string"
+                },
+                "prestador_nome": {
+                    "type": "string"
+                },
+                "prestador_telefone": {
+                    "type": "string"
+                },
+                "servico_duracao": {
+                    "type": "integer"
+                },
+                "servico_nome": {
+                    "type": "string"
+                },
+                "servico_preco": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.StatusDoAgendamento"
                 }
             }
         },
-        "response.CatalogoResponse": {
+        "response_catalogo.CatalogoResponse": {
             "type": "object",
             "properties": {
                 "categoria": {
@@ -573,7 +695,24 @@ const docTemplate = `{
                 }
             }
         },
-        "response.IntervaloDiarioResponse": {
+        "response_prestador.AgendaDiariaResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response_prestador.IntervaloDiarioResponse"
+                    }
+                }
+            }
+        },
+        "response_prestador.IntervaloDiarioResponse": {
             "type": "object",
             "properties": {
                 "hora_fim": {
@@ -587,7 +726,7 @@ const docTemplate = `{
                 }
             }
         },
-        "response.PrestadorPostResponse": {
+        "response_prestador.PrestadorPostResponse": {
             "type": "object",
             "properties": {
                 "ativo": {
@@ -596,7 +735,7 @@ const docTemplate = `{
                 "catalogo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.CatalogoResponse"
+                        "$ref": "#/definitions/response_catalogo.CatalogoResponse"
                     }
                 },
                 "email": {
@@ -613,13 +752,13 @@ const docTemplate = `{
                 }
             }
         },
-        "response.PrestadorResponse": {
+        "response_prestador.PrestadorResponse": {
             "type": "object",
             "properties": {
                 "agenda": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.AgendaDiariaResponse"
+                        "$ref": "#/definitions/response_prestador.AgendaDiariaResponse"
                     }
                 },
                 "ativo": {
@@ -628,7 +767,7 @@ const docTemplate = `{
                 "catalogo": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/response.CatalogoResponse"
+                        "$ref": "#/definitions/response_catalogo.CatalogoResponse"
                     }
                 },
                 "email": {
