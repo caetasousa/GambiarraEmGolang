@@ -4,6 +4,7 @@ import (
 	"log"
 	_ "meu-servico-agenda/docs"
 
+	"meu-servico-agenda/internal/adapters/http/agendamento"
 	"meu-servico-agenda/internal/adapters/http/catalogo"
 	"meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/http/prestador"
@@ -28,16 +29,19 @@ func main() {
 	prestadorRepo := repository.NovoFakePrestadorRepositorio()
 	catalogoRepo := repository.NovoCatalogoFakeRepo()
 	agendaDiariaRepo := repository.NovoFakeAgendaDiariaRepositorio()
+	agendamentoRepo := repository.NovoFakeAgendamentoRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
 	cadastroCliente := service.NovoServiceCliente(clienteRepo)
 	cadastroPrestador := service.NovaPrestadorService(prestadorRepo, catalogoRepo, agendaDiariaRepo)
 	cadastraCatalogo := service.NovoCatalogoService(catalogoRepo)
+	cadastraAgendamento := service.NovaAgendamentoService(prestadorRepo, agendamentoRepo, catalogoRepo, clienteRepo)
 
 	// 3. Camada de Adaptador HTTP (Controller)
 	clienteController := cliente.NovoClienteController(cadastroCliente)
 	prestadorController := prestador.NovoPrestadorController(cadastroPrestador)
 	catalogoController := catalogo.NovoCatalogoController(cadastraCatalogo)
+	agendamentoController := agendamento.NovoAgendamentoController(cadastraAgendamento)
 
 	// --- 4. Inicialização do Servidor Gin ---
 	router := gin.Default()
@@ -56,6 +60,8 @@ func main() {
 
 		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 		apiV1.GET("/catalogos/:id", catalogoController.GetCatalogoPorID)
+
+		apiV1.POST("/agendamentos", agendamentoController.PostAgendamento)
 	}
 
 	router.GET("/ping", func(c *gin.Context) {

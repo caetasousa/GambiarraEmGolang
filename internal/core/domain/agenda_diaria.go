@@ -54,3 +54,38 @@ func NovoIntervaloDiario(horaInicio, horaFim time.Time) (*IntervaloDiario, error
 		HoraFim:    horaFim,
 	}, nil
 }
+
+func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {
+	for _, it := range a.Intervalos {
+
+		// Combina a DATA da agenda com a HORA do intervalo
+		dataAgenda, _ := time.Parse("2006-01-02", a.Data)
+
+		inicioIntervalo := time.Date(
+			dataAgenda.Year(),
+			dataAgenda.Month(),
+			dataAgenda.Day(),
+			it.HoraInicio.Hour(),
+			it.HoraInicio.Minute(),
+			0,
+			0,
+			inicio.Location(),
+		)
+
+		fimIntervalo := time.Date(
+			dataAgenda.Year(),
+			dataAgenda.Month(),
+			dataAgenda.Day(),
+			it.HoraFim.Hour(),
+			it.HoraFim.Minute(),
+			0,
+			0,
+			inicio.Location(),
+		)
+
+		if !inicio.Before(inicioIntervalo) && !fim.After(fimIntervalo) {
+			return true
+		}
+	}
+	return false
+}

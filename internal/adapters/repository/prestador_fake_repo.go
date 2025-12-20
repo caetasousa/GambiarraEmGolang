@@ -39,3 +39,18 @@ func (r *FakePrestadorRepositorio) BuscarPorCPF(cpf string) (*domain.Prestador, 
 	}
 	return nil, nil
 }
+
+func (r *FakePrestadorRepositorio) BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error) {
+	prestador, ok := r.storage[prestadorID]
+	if !ok {
+		return nil, nil
+	}
+
+	for _, agenda := range prestador.Agenda {
+		if agenda.Data == data {
+			return &agenda, nil
+		}
+	}
+
+	return nil, nil
+}

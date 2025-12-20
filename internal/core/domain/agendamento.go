@@ -18,9 +18,9 @@ const (
 
 type Agendamento struct {
 	ID             string
-	ClienteID      string
-	PrestadorID    string
-	CatalogoID     string
+	Cliente        *Cliente
+	Prestador      *Prestador
+	Catalogo       *Catalogo
 	DataHoraInicio time.Time
 	DataHoraFim    time.Time
 	Status         StatusDoAgendamento
@@ -28,9 +28,9 @@ type Agendamento struct {
 }
 
 func NovoAgendamento(
-	clienteID string,
-	prestadorID string,
-	catalogoID string,
+	cliente *Cliente,
+	prestador *Prestador,
+	catalogo *Catalogo,
 	dataHoraInicio time.Time,
 	dataHoraFim time.Time,
 	nota string,
@@ -42,9 +42,9 @@ func NovoAgendamento(
 
 	return &Agendamento{
 		ID:             xid.New().String(),
-		ClienteID:      clienteID,
-		PrestadorID:    prestadorID,
-		CatalogoID:     catalogoID,
+		Cliente:        cliente,
+		Prestador:      prestador,
+		Catalogo:       catalogo,
 		DataHoraInicio: dataHoraInicio,
 		DataHoraFim:    dataHoraFim,
 		Status:         Pendente,

@@ -1,6 +1,8 @@
 package port
 
-import "meu-servico-agenda/internal/core/domain"
+import (
+	"meu-servico-agenda/internal/core/domain"
+)
 
 type AgendaDiariaRepositorio interface {
 	Salvar(agenda *domain.AgendaDiaria) error

@@ -19,3 +19,4 @@ func (r *FakeAgendaDiariaRepositorio) Salvar(agenda *domain.AgendaDiaria) error 
 	r.storage[agenda.Id] = agenda
 	return nil
 }
+
