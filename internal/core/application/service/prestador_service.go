@@ -108,12 +108,8 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.Adicio
 func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput, error) {
 	prestador, err := s.prestadorRepo.BuscarPorId(id)
 	if err != nil {
-		return nil, err
-	}
-	if prestador == nil {
 		return nil, ErrPrestadorNaoEncontrado
 	}
-
 	out := mapper.FromPrestador(prestador)
 
 	return out, nil
