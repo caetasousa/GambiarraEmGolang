@@ -49,14 +49,6 @@ func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
 
 		switch {
 
-		// 400 — erro de input
-		case errors.Is(err, service.ErrDataHoraInvalida),
-			errors.Is(err, service.ErrClienteInvalido),
-			errors.Is(err, service.ErrPrestadorInvalido),
-			errors.Is(err, service.ErrCatalogoInvalido):
-
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
 		// 404 — recurso inexistente
 		case errors.Is(err, service.ErrClienteNaoExiste),
 			errors.Is(err, service.ErrPrestadorNaoExiste),

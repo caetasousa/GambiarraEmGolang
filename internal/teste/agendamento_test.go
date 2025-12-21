@@ -75,7 +75,7 @@ func SetupNovoCliente(p port.ClienteRepositorio) *domain.Cliente {
 	return cliente
 }
 
-func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.Catalogo){
+func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.Catalogo) {
 	cat, _ := domain.NovoCatalogo("Manutenção", 60, 20000, "Beleza")
 	p.Salvar(cat)
 	catalogos := []domain.Catalogo{*cat}
@@ -115,7 +115,7 @@ func TestPostAgendamento_Sucesso(t *testing.T) {
 
 	//cria agenda diaria
 	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
-	
+
 	//adiciona agenda diaria a prestador
 	prestador.AdicionarAgenda(agendaDiaria)
 
@@ -162,7 +162,7 @@ func TestPostAgendamento_ErroClienteInexistente(t *testing.T) {
 
 	//cria agenda diaria
 	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
-	
+
 	//adiciona agenda diaria a prestador
 	prestador.AdicionarAgenda(agendaDiaria)
 
@@ -192,7 +192,7 @@ func TestPostAgendamento_ErroCatalogoInexistente(t *testing.T) {
 
 	//cria agenda diaria
 	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
-	
+
 	//adiciona agenda diaria a prestador
 	prestador.AdicionarAgenda(agendaDiaria)
 
@@ -206,4 +206,164 @@ func TestPostAgendamento_ErroCatalogoInexistente(t *testing.T) {
 
 	rr := SetupPostAgendamentoRequest(router, input)
 	require.Equal(t, http.StatusNotFound, rr.Code)
+}
+
+func TestPostAgendamento_PrestadorNãoTrabalhaNesseDia(t *testing.T) {
+	router, prestadorRepo, clienteRepo, catalogoRepo, agendaDiariaRepo := SetupRouterAgendamento()
+
+	// cadastro do cliente
+	cliente := SetupNovoCliente(clienteRepo)
+
+	//cadastro do catalogo
+	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
+
+	//cria prestador
+	prestador := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos)
+
+	//cria agenda diaria
+	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
+
+	//adiciona agenda diaria a prestador
+	prestador.AdicionarAgenda(agendaDiaria)
+
+	input := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente.ID,
+		PrestadorID:    prestador.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-02T08:00:00Z",
+		Notas:          "Estou com preça",
+	}
+
+	rr := SetupPostAgendamentoRequest(router, input)
+	require.Equal(t, http.StatusConflict, rr.Code)
+}
+
+func TestPostAgendamento_PeriodoDeTrabalhoDoPrestadorIndisponivel(t *testing.T) {
+	router, prestadorRepo, clienteRepo, catalogoRepo, agendaDiariaRepo := SetupRouterAgendamento()
+
+	// cadastro do cliente
+	cliente := SetupNovoCliente(clienteRepo)
+
+	//cadastro do catalogo
+	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
+
+	//cria prestador
+	prestador := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos)
+
+	//cria agenda diaria
+	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
+
+	//adiciona agenda diaria a prestador
+	prestador.AdicionarAgenda(agendaDiaria)
+
+	input1 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente.ID,
+		PrestadorID:    prestador.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T07:59:00Z",
+		Notas:          "Estou com preça",
+	}
+
+	rr1 := SetupPostAgendamentoRequest(router, input1)
+	require.Equal(t, http.StatusConflict, rr1.Code)
+
+	// Pelo tempo medio de serviço ser de 60 minutos um agendamento as 11:01 ja não e mais permitido
+	input2 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente.ID,
+		PrestadorID:    prestador.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T11:01:00Z",
+		Notas:          "Estou com preça",
+	}
+
+	rr2 := SetupPostAgendamentoRequest(router, input2)
+	require.Equal(t, http.StatusConflict, rr2.Code)
+}
+
+func TestPostAgendamento_PrestadorOcupado(t *testing.T) {
+	router, prestadorRepo, clienteRepo, catalogoRepo, agendaDiariaRepo := SetupRouterAgendamento()
+
+	// cliente 1
+	cliente1 := SetupNovoCliente(clienteRepo)
+
+	// cliente 2
+	cliente2, _ := domain.NovoCliente("Maria", "maria@email.com", "62999999999")
+	clienteRepo.Salvar(cliente2)
+
+	// catálogo
+	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
+
+	// prestador
+	prestador := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos)
+
+	// agenda
+	agendaDiaria := SetupCriaAgendaDiaria(agendaDiariaRepo)
+	prestador.AdicionarAgenda(agendaDiaria)
+
+	// primeiro agendamento (válido)
+	input1 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente1.ID,
+		PrestadorID:    prestador.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T08:00:00Z",
+	}
+	rr1 := SetupPostAgendamentoRequest(router, input1)
+	require.Equal(t, http.StatusCreated, rr1.Code)
+
+	// segundo agendamento (mesmo horário, mesmo prestador)
+	input2 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente2.ID,
+		PrestadorID:    prestador.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T08:00:00Z",
+	}
+	rr2 := SetupPostAgendamentoRequest(router, input2)
+	require.Equal(t, http.StatusConflict, rr2.Code)
+}
+
+func TestPostAgendamento_ClienteOcupado(t *testing.T) {
+	router, prestadorRepo, clienteRepo, catalogoRepo, agendaDiariaRepo := SetupRouterAgendamento()
+
+	// cliente único
+	cliente := SetupNovoCliente(clienteRepo)
+
+	// catálogo
+	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
+
+	// prestador 1
+	prestador1 := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos)
+	agenda1 := SetupCriaAgendaDiaria(agendaDiariaRepo)
+	prestador1.AdicionarAgenda(agenda1)
+
+	// prestador 2
+	prestador2, _ := domain.NovoPrestador(
+		"Outro Prestador",
+		"12345678900",
+		"outro@email.com",
+		"62988888888",
+		*listaDeCatalogos,
+	)
+	prestadorRepo.Salvar(prestador2)
+	agenda2 := SetupCriaAgendaDiaria(agendaDiariaRepo)
+	prestador2.AdicionarAgenda(agenda2)
+
+	// primeiro agendamento
+	input1 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente.ID,
+		PrestadorID:    prestador1.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T08:00:00Z",
+	}
+	rr1 := SetupPostAgendamentoRequest(router, input1)
+	require.Equal(t, http.StatusCreated, rr1.Code)
+
+	// segundo agendamento (mesmo cliente, mesmo horário)
+	input2 := request_agendamento.AgendamentoRequest{
+		ClienteID:      cliente.ID,
+		PrestadorID:    prestador2.ID,
+		CatalogoID:     catalogo.ID,
+		DataHoraInicio: "2025-01-03T08:00:00Z",
+	}
+	rr2 := SetupPostAgendamentoRequest(router, input2)
+	require.Equal(t, http.StatusConflict, rr2.Code)
 }
