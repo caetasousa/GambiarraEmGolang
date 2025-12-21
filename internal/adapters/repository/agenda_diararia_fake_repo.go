@@ -15,7 +15,7 @@ func NovoFakeAgendaDiariaRepositorio() port.AgendaDiariaRepositorio {
 	}
 }
 
-func (r *FakeAgendaDiariaRepositorio) Salvar(agenda *domain.AgendaDiaria) error {
+func (r *FakeAgendaDiariaRepositorio) Salvar(agenda *domain.AgendaDiaria, prestadorId string) error {
 	r.storage[agenda.Id] = agenda
 	return nil
 }

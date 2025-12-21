@@ -1,0 +1,46 @@
+services:
+  annygo-postgres:
+    image: postgres:16-alpine
+    container_name: annygo-postgres
+    restart: always
+    environment:
+      POSTGRES_PASSWORD: postgres
+      POSTGRES_USER: postgres
+    ports:
+      - 5432:5432
+    volumes:
+      - ./data/postgres:/var/lib/postgresql/data
+  annygo-pgadmin:
+    image: dpage/pgadmin4:latest
+    restart: always
+    depends_on:
+      - annygo-postgres
+    environment:
+      PGADMIN_DEFAULT_EMAIL: admin@localhost.com
+      PGADMIN_DEFAULT_PASSWORD: admin
+    ports:
+      - 8081:80
+    volumes:
+      - ./data/pgadmin:/var/lib/pgadmin
+  flyway:
+    image: flyway/flyway:latest
+    container_name: annygo-flyway
+    depends_on:
+      - annygo-postgres
+    command: migrate
+    volumes:
+      - ./flyway/sql:/flyway/sql
+      - ./flyway/conf:/flyway/conf
+    networks:
+      - default
+
+networks:
+  default:
+    name: local-network
+    external: true
+
+# foi preciso criar a rede local-network com o comando:
+# docker network create local-network
+
+# tambem foi preciso dar permissao de escrita na pasta data com o comando:
+# sudo chmod -R 777 ./data/pgadmin

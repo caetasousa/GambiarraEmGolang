@@ -96,7 +96,7 @@ func SetupCriaAgendaDiaria(p port.AgendaDiariaRepositorio) *domain.AgendaDiaria 
 	intervalo, _ := domain.NovoIntervaloDiario(horaInicio, horaFim)
 	intervalos := []domain.IntervaloDiario{*intervalo}
 	agendaDiaria, _ := domain.NovaAgendaDiaria(data, intervalos)
-	p.Salvar(agendaDiaria)
+	p.Salvar(agendaDiaria, "dasdf")
 
 	return agendaDiaria
 }

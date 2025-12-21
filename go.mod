@@ -6,6 +6,7 @@ toolchain go1.24.11
 
 require (
 	github.com/klassmann/cpfcnpj v0.0.0-20200907140233-a595c5fd8de1
+	github.com/lib/pq v1.10.9
 	github.com/stretchr/testify v1.11.1
 )
 

@@ -5,5 +5,5 @@ import (
 )
 
 type AgendaDiariaRepositorio interface {
-	Salvar(agenda *domain.AgendaDiaria) error
+	Salvar(agenda *domain.AgendaDiaria, prestadorId string) error
 }

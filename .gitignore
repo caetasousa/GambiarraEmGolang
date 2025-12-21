@@ -1,0 +1,40 @@
+# Binaries
+/bin/
+/build/
+/dist/
+/data
+
+# Go build cache
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Vendor
+/vendor/
+
+# Editor
+*.swp
+*.swo
+*.idea/
+*.vscode/
+
+# Logs
+*.log
+
+# Docker Compose
+docker-compose.override.yml
+docker-compose.override.*.yml
+.env
+.env.local
+.env.*.local
+
+# Docker images and volumes (opcional)
+*.docker
+*.tar
+
+# MacOS
+.DS_Store

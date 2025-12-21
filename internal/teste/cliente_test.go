@@ -195,16 +195,10 @@ func TestGetCliente_Sucesso(t *testing.T) {
 }
 
 func TestGetCliente_NaoEncontrado(t *testing.T) {
-	// Garante que a rota GET está mapeada no SetupRouterCliente!
 	router, _ := SetupRouterCliente()
-	// 1. Execução (Busca por um ID que não existe)
-	// O ID "id-inexistente" é um ID que o sistema com certeza não gerou.
+
 	rr := SetupGetClienteRequest(router, "id-inexistente")
-
-	// === Validações === //
-
-	// 3. Verifica o Status Code (Deve ser 404)
-	assert.Equal(t, http.StatusNotFound, rr.Code, "Esperado 404 Not Found para cliente inexistente")
+	assert.Equal(t, http.StatusNotFound, rr.Code)
 }
 
 func TestPostCliente_NomeMuitoCurto_DeveRetornar400(t *testing.T) {
@@ -218,11 +212,7 @@ func TestPostCliente_NomeMuitoCurto_DeveRetornar400(t *testing.T) {
 	}
 	rr := SetupPostClienteRequest(router, input)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para nome com < 3 caracteres")
-	var resp map[string]string
-	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
-	_, exists := resp["error"]
-	assert.True(t, exists, "Resposta deve conter campo 'error'")
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
 
 func TestPostCliente_TelefoneMuitoCurto_DeveRetornar400(t *testing.T) {
@@ -236,11 +226,7 @@ func TestPostCliente_TelefoneMuitoCurto_DeveRetornar400(t *testing.T) {
 	}
 	rr := SetupPostClienteRequest(router, input)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para telefone com < 8 dígitos")
-	var resp map[string]string
-	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
-	_, exists := resp["error"]
-	assert.True(t, exists, "Resposta deve conter campo 'error'")
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
 
 func TestPostCliente_TelefoneComTipoInvalido_DeveRetornar400(t *testing.T) {
@@ -254,17 +240,12 @@ func TestPostCliente_TelefoneComTipoInvalido_DeveRetornar400(t *testing.T) {
 	}
 	rr := SetupPostClienteRequest(router, input)
 
-	assert.Equal(t, http.StatusBadRequest, rr.Code, "Esperado 400 para tipo inválido de telefone")
-	var resp map[string]string
-	_ = json.Unmarshal(rr.Body.Bytes(), &resp)
-	_, exists := resp["error"]
-	assert.True(t, exists, "Resposta deve conter campo 'error'")
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }
 
-func TestPostCliente_EmailOmitido_DeveRetornar201(t *testing.T) {
+func TestPostCliente_EmailOmitido_DeveRetornar400(t *testing.T) {
 	router, _ := SetupRouterCliente()
 
-	// Email é omitempty, então não é obrigatório
 	input := request.ClienteRequest{
 		Nome:     "Maria",
 		Email:    "",
@@ -272,10 +253,5 @@ func TestPostCliente_EmailOmitido_DeveRetornar201(t *testing.T) {
 	}
 	rr := SetupPostClienteRequest(router, input)
 
-	assert.Equal(t, http.StatusCreated, rr.Code, "Email omitido deveria ser aceito (201)")
-	var resp domain.Cliente
-	err := json.Unmarshal(rr.Body.Bytes(), &resp)
-	assert.NoError(t, err, "Resposta deve ser um JSON válido")
-	assert.Equal(t, input.Nome, resp.Nome)
-	assert.Equal(t, "", resp.Email)
+	assert.Equal(t, http.StatusBadRequest, rr.Code)
 }

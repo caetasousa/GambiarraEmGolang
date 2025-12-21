@@ -26,7 +26,6 @@ func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoReposito
 	}
 }
 
-
 func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output.CriarPrestadorOutput, error) {
 
 	cpf := cpfcnpj.Clean(cmd.CPF)
@@ -35,6 +34,7 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	if err != nil {
 		return nil, err
 	}
+	// log.Printf("✅ prestador de cpf %s", cmd.CPF)
 	if prestadorExistente != nil {
 		return nil, fmt.Errorf("%w: %s", ErrCPFJaCadastrado, cpf)
 	}
@@ -71,7 +71,6 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	return out, nil
 }
 
-
 func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.AdicionarAgendaInput) error {
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
@@ -100,11 +99,10 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.Adicio
 		return err
 	}
 
-	if err := s.agendaDiariaRepo.Salvar(agenda); err != nil {
+	if err := s.agendaDiariaRepo.Salvar(agenda, prestadorID); err != nil {
 		return err
 	}
-
-	return s.prestadorRepo.Salvar(prestador)
+	return nil
 }
 
 func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput, error) {

@@ -8,6 +8,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/catalogo"
 	"meu-servico-agenda/internal/adapters/http/cliente"
 	"meu-servico-agenda/internal/adapters/http/prestador"
+	"meu-servico-agenda/internal/infra/database"
 
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/service"
@@ -24,11 +25,19 @@ import (
 // @host localhost:8080
 // @BasePath /api/v1
 func main() {
+
+	// 0. Conexão com o banco de dadoss (Infraestrutura)
+	db, err := database.Connect()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
 	// 1. Camada de Repositório (Infraestrutura)
-	clienteRepo := repository.NewFakeClienteRepositorio()
-	prestadorRepo := repository.NovoFakePrestadorRepositorio()
-	catalogoRepo := repository.NovoCatalogoFakeRepo()
-	agendaDiariaRepo := repository.NovoFakeAgendaDiariaRepositorio()
+	clienteRepo := repository.NovoClientePostgresRepositorio(db)
+	prestadorRepo := repository.NewPrestadorPostgresRepository(db)
+	catalogoRepo := repository.NovoCatalogoPostgresRepositorio(db)
+	agendaDiariaRepo := repository.NovoAgendaDiariaPostgresRepository(db)
 	agendamentoRepo := repository.NovoFakeAgendamentoRepositorio()
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
