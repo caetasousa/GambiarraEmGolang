@@ -1,7 +1,7 @@
 package response_agendamento
 
 import (
-	"meu-servico-agenda/internal/core/application/mapper"
+	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/domain"
 	"time"
 )
@@ -12,23 +12,22 @@ type PrestadorInfo struct {
 }
 
 type ServicoInfo struct {
-	Nome     string  `json:"nome"`
-	Duracao  int     `json:"duracao"`
-	Preco    int `json:"preco"`
+	Nome    string `json:"nome"`
+	Duracao int    `json:"duracao"`
+	Preco   int    `json:"preco"`
 }
 
 type AgendamentoResponse struct {
-	ID        string                     `json:"id"`
-	Prestador PrestadorInfo              `json:"prestador"`
-	Servico   ServicoInfo                `json:"servico"`
-	DataInicio time.Time                 `json:"data_inicio"`
-	DataFim    time.Time                 `json:"data_fim"`
+	ID         string                     `json:"id"`
+	Prestador  PrestadorInfo              `json:"prestador"`
+	Servico    ServicoInfo                `json:"servico"`
+	DataInicio time.Time                  `json:"data_inicio"`
+	DataFim    time.Time                  `json:"data_fim"`
 	Status     domain.StatusDoAgendamento `json:"status"`
 	Notas      string                     `json:"notas,omitempty"`
 }
 
-
-func NovoAgendamentoResponse(a *mapper.AgendamentoOutput) *AgendamentoResponse {
+func NovoAgendamentoResponse(a *output.AgendamentoOutput) *AgendamentoResponse {
 	return &AgendamentoResponse{
 		ID: a.ID,
 		Prestador: PrestadorInfo{

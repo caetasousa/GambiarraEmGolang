@@ -3,6 +3,7 @@ package service
 import (
 	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
 	"meu-servico-agenda/internal/core/application/mapper"
+	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 	"time"
@@ -24,7 +25,7 @@ func NovaAgendamentoService(pr port.PrestadorRepositorio, ar port.AgendamentoRep
 	}
 }
 
-func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.AgendamentoRequest) (*mapper.AgendamentoOutput, error) {
+func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.AgendamentoRequest) (*output.AgendamentoOutput, error) {
 	input, err := request.ToAgendamento()
 
 	cliente, err := s.clienteRepo.BuscarPorId(input.ClienteID)
