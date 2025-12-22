@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 )
@@ -19,9 +20,9 @@ func (r *CatalogoFakeRepo) Salvar(catalogo *domain.Catalogo) error {
 }
 
 func (r *CatalogoFakeRepo) BuscarPorId(id string) (*domain.Catalogo, error) {
-	catalogo, ok := r.Catalogo[id]
-	if !ok {
-		return nil, nil
+	catalogo := r.Catalogo[id]
+	if catalogo == nil {
+		return nil, errors.New("não encontrado")
 	}
 	return catalogo, nil
 }

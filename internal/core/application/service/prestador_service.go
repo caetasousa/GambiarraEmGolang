@@ -43,9 +43,6 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	for _, id := range cmd.CatalogoIDs {
 		c, err := s.catalogoRepo.BuscarPorId(id)
 		if err != nil {
-			return nil, err
-		}
-		if c == nil {
 			return nil, fmt.Errorf("%w: %s", ErrCatalogoNaoExiste, id)
 		}
 		catalogos = append(catalogos, *c)
@@ -75,9 +72,6 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.Adicio
 
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
 	if err != nil {
-		return err
-	}
-	if prestador == nil {
 		return ErrPrestadorNaoEncontrado
 	}
 

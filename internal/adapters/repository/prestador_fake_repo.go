@@ -1,6 +1,7 @@
 package repository
 
 import (
+	"errors"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 
@@ -23,9 +24,9 @@ func (r *FakePrestadorRepositorio) Salvar(prestador *domain.Prestador) error {
 }
 
 func (r *FakePrestadorRepositorio) BuscarPorId(id string) (*domain.Prestador, error) {
-	prestador, ok := r.storage[id]
-	if !ok {
-		return nil, nil
+	prestador := r.storage[id]
+	if prestador == nil {
+		return nil, errors.New("não encontrado")
 	}
 	return prestador, nil
 }

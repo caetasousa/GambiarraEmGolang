@@ -59,7 +59,7 @@ func (r *CatalogoPostgresRepositorio) BuscarPorId(id string) (*domain.Catalogo, 
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, err
 		}
 		return nil, err
 	}
