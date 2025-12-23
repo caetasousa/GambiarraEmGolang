@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
 	"meu-servico-agenda/internal/core/application/mapper"
 	"meu-servico-agenda/internal/core/application/output"
@@ -28,23 +29,30 @@ func NovaAgendamentoService(pr port.PrestadorRepositorio, ar port.AgendamentoRep
 func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.AgendamentoRequest) (*output.AgendamentoOutput, error) {
 	input, err := request.ToAgendamento()
 
+	validaDataErr := domain.ValidarDataNoPassado(input.DataHoraInicio)
+	log.Print(validaDataErr)
+	if validaDataErr != nil {
+		return nil, domain.ErrDataEstaNoPassado
+	}
+
+	//log.Printf("✅ prestador de cpf %s", input.ClienteID)
 	cliente, err := s.clienteRepo.BuscarPorId(input.ClienteID)
 	if err != nil || cliente == nil {
 		return nil, ErrClienteNaoExiste
 	}
-
+	//log.Printf("✅ prestador de cpf %s", input.ClienteID)
 	prestador, err := s.prestadorRepo.BuscarPorId(input.PrestadorID)
 	if err != nil || prestador == nil {
 		return nil, ErrPrestadorNaoExiste
 	}
-
+	//log.Printf("✅ prestador de cpf %s", prestador.Cpf)
 	catalogo, err := s.catalogoRepo.BuscarPorId(input.CatalogoID)
 	if err != nil || catalogo == nil {
 		return nil, ErrCatalogoNaoExiste
 	}
 
 	dataHorarioFim := input.DataHoraInicio.Add(time.Duration(catalogo.DuracaoPadrao) * time.Minute)
-
+	//log.Printf("✅ prestador de cpf %s", dataHorarioFim)
 	// Busca a agenda do prestador para o dia solicitado
 	// Aqui validamos se o prestador trabalha nesse dia específico
 	agendaDoDia, err := s.prestadorRepo.BuscarAgendaDoDia(prestador.ID, input.DataHoraInicio.Format("2006-01-02"))
@@ -57,17 +65,12 @@ func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.Age
 	if agendaDoDia == nil {
 		return nil, ErrDiaIndisponivel
 	}
+
 	// Valida se o horário solicitado está dentro dos horários disponíveis do dia
 	if !agendaDoDia.PermiteAgendamento(input.DataHoraInicio, dataHorarioFim) {
 		return nil, ErrHorarioIndisponivel
 	}
 
-	// Valida conflitos com outros agendamentos
-	// Garante que o prestador não tenha dois atendimentos no mesmo horário
-	// Essa regra fica no Aggregate Root (Prestador)
-	if !prestador.PodeAgendar(input.DataHoraInicio, dataHorarioFim) {
-		return nil, ErrHorarioIndisponivel
-	}
 	// Um prestador não pode ter dois atendimentos no mesmo período
 	conflitosPrestador, err := s.agendamentoRepo.BuscarPorPrestadorEPeriodo(prestador.ID, input.DataHoraInicio, dataHorarioFim)
 	if err != nil {

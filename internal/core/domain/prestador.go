@@ -1,8 +1,6 @@
 package domain
 
 import (
-	"time"
-
 	"github.com/rs/xid"
 )
 
@@ -34,8 +32,6 @@ func NovoPrestador(nome, cpf, email, telefone string, catalogos []Catalogo) (*Pr
 	}, nil
 }
 
-
-
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
 	if !p.Ativo {
 		return ErrPrestadorInativo
@@ -49,16 +45,4 @@ func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
 
 	p.Agenda = append(p.Agenda, *agenda)
 	return nil
-}
-
-func (p *Prestador) PodeAgendar(inicio, fim time.Time) bool {
-	data := inicio.Format("2006-01-02")
-
-	for _, agenda := range p.Agenda {
-		if agenda.Data == data {
-			return agenda.PermiteAgendamento(inicio, fim)
-		}
-	}
-
-	return false
 }

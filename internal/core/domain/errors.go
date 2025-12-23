@@ -22,4 +22,5 @@ var (
 	//Valida Agenda Diaria
 	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
 	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
+	ErrDataEstaNoPassado        = errors.New("Esta data está passado")
 )

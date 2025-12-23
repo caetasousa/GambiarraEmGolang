@@ -249,7 +249,7 @@ func TestPutAgenda_Sucesso(t *testing.T) {
 	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
-		Data: "2025-01-03",
+		Data: "2030-01-03",
 		Intervalos: []request_prestador.IntervaloDiarioRequest{
 			{HoraInicio: "08:00", HoraFim: "12:00"},
 			{HoraInicio: "14:00", HoraFim: "18:00"},
@@ -264,7 +264,7 @@ func TestPutAgenda_PrestadorNaoEncontrado(t *testing.T) {
 	router, _, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
-		Data: "2025-01-03",
+		Data: "2030-01-03",
 		Intervalos: []request_prestador.IntervaloDiarioRequest{
 			{HoraInicio: "08:00", HoraFim: "12:00"},
 		},
@@ -280,7 +280,7 @@ func TestPutAgenda_AgendaDuplicada(t *testing.T) {
 	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
-		Data: "2025-01-03",
+		Data: "2030-01-03",
 		Intervalos: []request_prestador.IntervaloDiarioRequest{
 			{HoraInicio: "08:00", HoraFim: "12:00"},
 		},
@@ -318,7 +318,7 @@ func TestPutAgenda_HorarioInicioMaiorQueFim(t *testing.T) {
 	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
-		Data: "2025-01-03",
+		Data: "2030-01-03",
 		Intervalos: []request_prestador.IntervaloDiarioRequest{
 			{
 				HoraInicio: "18:00",
@@ -339,7 +339,7 @@ func TestPutAgenda_AgendaSemIntervalos(t *testing.T) {
 	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
-		Data:       "2025-01-03",
+		Data:       "2030-01-03",
 		Intervalos: []request_prestador.IntervaloDiarioRequest{}, // vazio
 	}
 

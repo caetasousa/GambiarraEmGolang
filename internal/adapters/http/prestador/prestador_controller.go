@@ -112,11 +112,14 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
 		case errors.Is(err, domain.ErrAgendaDuplicada),
+			errors.Is(err, service.ErrPrestadorInativo),
 			errors.Is(err, domain.ErrPrestadorInativo):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 
 		case errors.Is(err, domain.ErrAgendaSemIntervalos),
-			errors.Is(err, domain.ErrIntervaloHorarioInvalido):
+			errors.Is(err, domain.ErrIntervaloHorarioInvalido),
+			errors.Is(err, domain.ErrDataEstaNoPassado):
+
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 
 		default:

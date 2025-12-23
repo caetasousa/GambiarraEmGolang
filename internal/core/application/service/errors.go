@@ -18,6 +18,7 @@ var (
 	ErrPrestadorInvalido      = errors.New("prestador inválido")
 	ErrPrestadorNaoExiste     = errors.New("prestador não encontrado")
 	ErrPrestadorOcupado       = errors.New("prestador já possui agendamento neste horário")
+	ErrPrestadorInativo       = errors.New("prestador está inativo")
 
 	//validação de cliente
 	ErrClienteNaoEncontrado = errors.New("cliente não encontrado")

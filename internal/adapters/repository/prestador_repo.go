@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"log"
+	"time"
 
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
@@ -79,45 +80,68 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 	var prestador domain.Prestador
 	var catalogosJSON, agendasJSON []byte
 
-	query := `SELECT 
-        p.id,
-        p.nome,
-        p.cpf,
-        p.email,
-        p.telefone,
-        p.ativo,
-        COALESCE(
-            json_agg(DISTINCT jsonb_build_object(
-                'id', c.id,
-                'nome', c.nome,
-                'duracao_padrao', c.duracao_padrao,
-                'preco', c.preco,
-                'categoria', c.categoria
-            )) FILTER (WHERE c.id IS NOT NULL),
-            '[]'
-        ) AS catalogos,
-        COALESCE(
-            json_agg(DISTINCT jsonb_build_object(
-                'id', a.id,
-                'data', a.data,
-                'intervalos', (
-                    SELECT json_agg(jsonb_build_object(
-                        'id', i.id,
-                        'hora_inicio', i.hora_inicio,
-                        'hora_fim', i.hora_fim
-                    )) 
-                    FROM intervalos_diarios i
-                    WHERE i.agenda_id = a.id
-                )
-            )) FILTER (WHERE a.id IS NOT NULL),
-            '[]'
-        ) AS agendas
-    FROM prestadores p
-    LEFT JOIN prestador_catalogos pc ON pc.prestador_id = p.id
-    LEFT JOIN catalogos c ON c.id = pc.catalogo_id
-    LEFT JOIN agendas_diarias a ON a.prestador_id = p.id
-    WHERE p.id = $1
-    GROUP BY p.id;`
+	query := `
+	SELECT
+		p.id,
+		p.nome,
+		p.cpf,
+		p.email,
+		p.telefone,
+		p.ativo,
+		COALESCE(catalogos.catalogos, '[]') AS catalogos,
+		COALESCE(agendas.agendas, '[]') AS agendas
+	FROM prestadores p
+
+	-- Catálogos
+	LEFT JOIN (
+		SELECT
+			pc.prestador_id,
+			json_agg(
+				jsonb_build_object(
+					'id', c.id,
+					'nome', c.nome,
+					'duracao_padrao', c.duracao_padrao,
+					'preco', c.preco,
+					'categoria', c.categoria
+				)
+			) AS catalogos
+		FROM prestador_catalogos pc
+		JOIN catalogos c ON c.id = pc.catalogo_id
+		GROUP BY pc.prestador_id
+	) catalogos ON catalogos.prestador_id = p.id
+
+	-- Agendas com intervalos
+	LEFT JOIN (
+		SELECT
+			a.prestador_id,
+			json_agg(
+				jsonb_build_object(
+					'id', a.id,
+					'data', a.data,
+					'intervalos', COALESCE(i.intervalos, '[]')
+				)
+				ORDER BY a.data
+			) AS agendas
+		FROM agendas_diarias a
+		LEFT JOIN (
+			SELECT
+				agenda_id,
+				json_agg(
+					jsonb_build_object(
+						'id', id,
+						'hora_inicio', hora_inicio,
+						'hora_fim', hora_fim
+					)
+					ORDER BY hora_inicio
+				) AS intervalos
+			FROM intervalos_diarios
+			GROUP BY agenda_id
+		) i ON i.agenda_id = a.id
+		GROUP BY a.prestador_id
+	) agendas ON agendas.prestador_id = p.id
+
+	WHERE p.id = $1;
+	`
 
 	row := r.db.QueryRow(query, id)
 	err := row.Scan(
@@ -131,29 +155,21 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 		&agendasJSON,
 	)
 	if err != nil {
+		if err == sql.ErrNoRows {
+			return nil, err
+		}
 		return nil, err
 	}
 
 	if err := json.Unmarshal(catalogosJSON, &prestador.Catalogo); err != nil {
 		return nil, fmt.Errorf("erro ao deserializar catalogos: %w", err)
 	}
+
 	if err := json.Unmarshal(agendasJSON, &prestador.Agenda); err != nil {
 		return nil, fmt.Errorf("erro ao deserializar agendas: %w", err)
 	}
 
-	// Retorna convertendo para seu domain.Prestador
-	result := &domain.Prestador{
-		ID:       prestador.ID,
-		Nome:     prestador.Nome,
-		Cpf:      prestador.Cpf,
-		Email:    prestador.Email,
-		Telefone: prestador.Telefone,
-		Ativo:    prestador.Ativo,
-		Catalogo: prestador.Catalogo,
-		Agenda:   prestador.Agenda,
-	}
-
-	return result, nil
+	return &prestador, nil
 }
 
 func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
@@ -181,22 +197,67 @@ func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestado
 
 	return &p, nil
 }
-func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error) {
-	// row := r.db.QueryRow(`
-	// 	SELECT id, prestador_id, data
-	// 	FROM agenda_diaria
-	// 	WHERE prestador_id = $1 AND data = $2
-	// `, prestadorID, data)
 
-	// var agenda domain.AgendaDiaria
-	// if err := row.Scan(
-	// 	&agenda.ID,
-	// 	&agenda.PrestadorID,
-	// 	&agenda.Data,
-	// ); err != nil {
-	// 	return nil, err
-	// }
+func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string,data string) (*domain.AgendaDiaria, error) {
 
-	//return &agenda, nil
-	return nil, nil
+	rows, err := r.db.Query(`
+		SELECT
+			a.id,
+			a.data,
+			i.id,
+			(a.data + i.hora_inicio) AT TIME ZONE 'UTC',
+			(a.data + i.hora_fim)    AT TIME ZONE 'UTC'
+		FROM agendas_diarias a
+		LEFT JOIN intervalos_diarios i ON i.agenda_id = a.id
+		WHERE a.prestador_id = $1
+		  AND a.data = $2
+		ORDER BY i.hora_inicio
+	`, prestadorID, data)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var agenda *domain.AgendaDiaria
+
+	for rows.Next() {
+		var (
+			agendaID   string
+			dataAgenda time.Time
+			intervaloID sql.NullString
+			horaInicio sql.NullTime
+			horaFim    sql.NullTime
+		)
+
+		if err := rows.Scan(
+			&agendaID,
+			&dataAgenda,
+			&intervaloID,
+			&horaInicio,
+			&horaFim,
+		); err != nil {
+			return nil, err
+		}
+
+		if agenda == nil {
+			agenda = &domain.AgendaDiaria{
+				Id:   agendaID,
+				Data: dataAgenda.Format("2006-01-02"),
+			}
+		}
+
+		if intervaloID.Valid {
+			agenda.Intervalos = append(agenda.Intervalos, domain.IntervaloDiario{
+				Id:         intervaloID.String,
+				HoraInicio: horaInicio.Time,
+				HoraFim:    horaFim.Time,
+			})
+		}
+	}
+
+	if agenda == nil {
+		return nil, nil
+	}
+
+	return agenda, nil
 }

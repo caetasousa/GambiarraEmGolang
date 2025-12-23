@@ -29,6 +29,10 @@ func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiar
 			return nil, ErrIntervaloHorarioInvalido
 		}
 	}
+	err := ValidarDataNoPassado(data)
+	if err != nil {
+		return nil, err
+	}
 
 	return &AgendaDiaria{
 		Id:         xid.New().String(),
@@ -50,10 +54,18 @@ func NovoIntervaloDiario(horaInicio, horaFim time.Time) (*IntervaloDiario, error
 }
 
 func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {
-	for _, it := range a.Intervalos {
 
-		// Combina a DATA da agenda com a HORA do intervalo
-		dataAgenda, _ := time.Parse("2006-01-02", a.Data)
+	// Converte entrada para UTC
+	inicioUTC := inicio.UTC()
+	fimUTC := fim.UTC()
+
+	// Parse da data da agenda EM UTC
+	dataAgenda, err := time.ParseInLocation("2006-01-02", a.Data, time.UTC)
+	if err != nil {
+		return false
+	}
+
+	for _, it := range a.Intervalos {
 
 		inicioIntervalo := time.Date(
 			dataAgenda.Year(),
@@ -63,7 +75,7 @@ func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {
 			it.HoraInicio.Minute(),
 			0,
 			0,
-			inicio.Location(),
+			time.UTC,
 		)
 
 		fimIntervalo := time.Date(
@@ -74,12 +86,14 @@ func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {
 			it.HoraFim.Minute(),
 			0,
 			0,
-			inicio.Location(),
+			time.UTC,
 		)
 
-		if !inicio.Before(inicioIntervalo) && !fim.After(fimIntervalo) {
+		if !inicioUTC.Before(inicioIntervalo) && !fimUTC.After(fimIntervalo) {
+			//log.Printf("✅ retornei true, %s data inicio e %s data final", inicioIntervalo, fimIntervalo)
 			return true
 		}
 	}
+	//log.Printf("✅ retornei false")
 	return false
 }

@@ -38,7 +38,7 @@ func main() {
 	prestadorRepo := repository.NewPrestadorPostgresRepository(db)
 	catalogoRepo := repository.NovoCatalogoPostgresRepositorio(db)
 	agendaDiariaRepo := repository.NovoAgendaDiariaPostgresRepository(db)
-	agendamentoRepo := repository.NovoFakeAgendamentoRepositorio()
+	agendamentoRepo := repository.NovoAgendamentoPostgresRepository(db)
 
 	// 2. Camada de Aplicação (Serviços/Casos de Uso)
 	cadastroCliente := service.NovoServiceCliente(clienteRepo)

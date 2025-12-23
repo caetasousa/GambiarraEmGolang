@@ -5,6 +5,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
 	"meu-servico-agenda/internal/adapters/http/agendamento/response_agendamento"
 	"meu-servico-agenda/internal/core/application/service"
+	"meu-servico-agenda/internal/core/domain"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -60,6 +61,7 @@ func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
 		case errors.Is(err, service.ErrDiaIndisponivel),
 			errors.Is(err, service.ErrHorarioIndisponivel),
 			errors.Is(err, service.ErrPrestadorOcupado),
+			errors.Is(err, domain.ErrDataEstaNoPassado),
 			errors.Is(err, service.ErrClienteOcupado):
 
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})

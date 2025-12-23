@@ -75,6 +75,10 @@ func (s *PrestadorService) AdicionarAgenda(prestadorID string, cmd *input.Adicio
 		return ErrPrestadorNaoEncontrado
 	}
 
+	if prestador.Ativo == false {
+		return ErrPrestadorInativo
+	}
+
 	intervalos := make([]domain.IntervaloDiario, 0, len(cmd.Intervalos))
 	for _, i := range cmd.Intervalos {
 		intervalo, err := domain.NovoIntervaloDiario(i.Inicio, i.Fim)

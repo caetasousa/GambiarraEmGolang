@@ -3,6 +3,7 @@ package teste
 import (
 	"bytes"
 	"encoding/json"
+
 	"net/http"
 	"net/http/httptest"
 	"testing"
@@ -91,7 +92,7 @@ func SetupCriaPrestador(p port.PrestadorRepositorio, catalogo []domain.Catalogo)
 func SetupCriaAgendaDiaria(p port.AgendaDiariaRepositorio) *domain.AgendaDiaria {
 	horaInicio, _ := time.Parse("15:04", "08:00")
 	horaFim, _ := time.Parse("15:04", "12:00")
-	data, _ := time.Parse("2006-01-02", "2025-01-03")
+	data, _ := time.Parse("2006-01-02", "2030-01-03")
 
 	intervalo, _ := domain.NovoIntervaloDiario(horaInicio, horaFim)
 	intervalos := []domain.IntervaloDiario{*intervalo}
@@ -106,7 +107,7 @@ func TestPostAgendamento_Sucesso(t *testing.T) {
 
 	// cadastro do cliente
 	cliente := SetupNovoCliente(clienteRepo)
-
+	
 	//cadastro do catalogo
 	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
 
@@ -123,7 +124,7 @@ func TestPostAgendamento_Sucesso(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T10:01:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -144,7 +145,7 @@ func TestPostAgendamento_ErroPrestadorInexistente(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    "prestador-inexistente",
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -170,7 +171,7 @@ func TestPostAgendamento_ErroClienteInexistente(t *testing.T) {
 		ClienteID:      "cliente-inesistente",
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -200,7 +201,7 @@ func TestPostAgendamento_ErroCatalogoInexistente(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     "catalogo-inexistente",
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -230,7 +231,7 @@ func TestPostAgendamento_PrestadorNãoTrabalhaNesseDia(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-02T08:00:00Z",
+		DataHoraInicio: "2030-01-02T08:00:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -260,7 +261,7 @@ func TestPostAgendamento_PeriodoDeTrabalhoDoPrestadorIndisponivel(t *testing.T) 
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T07:59:00Z",
+		DataHoraInicio: "2030-01-03T07:59:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -272,7 +273,7 @@ func TestPostAgendamento_PeriodoDeTrabalhoDoPrestadorIndisponivel(t *testing.T) 
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T11:01:00Z",
+		DataHoraInicio: "2030-01-03T11:01:00Z",
 		Notas:          "Estou com preça",
 	}
 
@@ -305,7 +306,7 @@ func TestPostAgendamento_PrestadorOcupado(t *testing.T) {
 		ClienteID:      cliente1.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 	}
 	rr1 := SetupPostAgendamentoRequest(router, input1)
 	require.Equal(t, http.StatusCreated, rr1.Code)
@@ -315,7 +316,7 @@ func TestPostAgendamento_PrestadorOcupado(t *testing.T) {
 		ClienteID:      cliente2.ID,
 		PrestadorID:    prestador.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 	}
 	rr2 := SetupPostAgendamentoRequest(router, input2)
 	require.Equal(t, http.StatusConflict, rr2.Code)
@@ -352,7 +353,7 @@ func TestPostAgendamento_ClienteOcupado(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador1.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 	}
 	rr1 := SetupPostAgendamentoRequest(router, input1)
 	require.Equal(t, http.StatusCreated, rr1.Code)
@@ -362,7 +363,7 @@ func TestPostAgendamento_ClienteOcupado(t *testing.T) {
 		ClienteID:      cliente.ID,
 		PrestadorID:    prestador2.ID,
 		CatalogoID:     catalogo.ID,
-		DataHoraInicio: "2025-01-03T08:00:00Z",
+		DataHoraInicio: "2030-01-03T08:00:00Z",
 	}
 	rr2 := SetupPostAgendamentoRequest(router, input2)
 	require.Equal(t, http.StatusConflict, rr2.Code)
