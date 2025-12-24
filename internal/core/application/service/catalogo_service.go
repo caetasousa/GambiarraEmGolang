@@ -16,14 +16,16 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 	return &CatalogoService{repo: r}
 }
 
-func (s *CatalogoService) Cadastra(cmd *input.CatalogoInput) (*output.CatalogoOutput, error) {
+func (s *CatalogoService) Cadastra(input *input.CatalogoInput) (*output.CatalogoOutput, error) {
 
 	catalogo, err := domain.NovoCatalogo(
-		cmd.Nome,
-		cmd.DuracaoPadrao,
-		cmd.Preco,
-		cmd.Categoria,
+		input.Nome,
+		input.DuracaoPadrao,
+		input.Preco,
+		input.Categoria,
+		input.ImagemUrl,
 	)
+
 	if err != nil {
 		return nil, err
 	}

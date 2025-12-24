@@ -20,8 +20,15 @@ func NovoCatalogoPostgresRepositorio(db *sql.DB) port.CatalogoRepositorio {
 
 func (r *CatalogoPostgresRepositorio) Salvar(c *domain.Catalogo) error {
 	query := `
-		INSERT INTO catalogos (id, nome, duracao_padrao, preco, categoria)
-		VALUES ($1, $2, $3, $4, $5)
+		INSERT INTO catalogos (
+			id,
+			nome,
+			duracao_padrao,
+			preco,
+			categoria,
+			imagem_url
+		)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := r.db.Exec(
@@ -31,6 +38,7 @@ func (r *CatalogoPostgresRepositorio) Salvar(c *domain.Catalogo) error {
 		c.DuracaoPadrao,
 		c.Preco,
 		c.Categoria,
+		c.ImagemUrl,
 	)
 
 	if err != nil {
@@ -41,7 +49,7 @@ func (r *CatalogoPostgresRepositorio) Salvar(c *domain.Catalogo) error {
 }
 func (r *CatalogoPostgresRepositorio) BuscarPorId(id string) (*domain.Catalogo, error) {
 	query := `
-		SELECT id, nome, duracao_padrao, preco, categoria
+		SELECT id, nome, duracao_padrao, preco, categoria, imagem_url
 		FROM catalogos
 		WHERE id = $1
 	`
@@ -55,6 +63,7 @@ func (r *CatalogoPostgresRepositorio) BuscarPorId(id string) (*domain.Catalogo, 
 		&c.DuracaoPadrao,
 		&c.Preco,
 		&c.Categoria,
+		&c.ImagemUrl,
 	)
 
 	if err != nil {

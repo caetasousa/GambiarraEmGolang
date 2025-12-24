@@ -6,4 +6,5 @@ type CatalogoOutput struct {
 	DuracaoPadrao int
 	Preco         int
 	Categoria     string
+	ImagemUrl     string
 }
