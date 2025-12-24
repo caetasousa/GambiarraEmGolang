@@ -75,3 +75,51 @@ func (r *CatalogoPostgresRepositorio) BuscarPorId(id string) (*domain.Catalogo, 
 
 	return &c, nil
 }
+
+func (r *CatalogoPostgresRepositorio) Listar(limit, offset int) ([]*domain.Catalogo, error) {
+	query := `
+		SELECT
+			id,
+			nome,
+			duracao_padrao,
+			preco,
+			categoria,
+			imagem_url
+		FROM catalogos
+		ORDER BY created_at DESC
+		LIMIT $1 OFFSET $2
+	`
+
+	rows, err := r.db.Query(query, limit, offset)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var catalogos []*domain.Catalogo
+
+	for rows.Next() {
+		var c domain.Catalogo
+		if err := rows.Scan(
+			&c.ID,
+			&c.Nome,
+			&c.DuracaoPadrao,
+			&c.Preco,
+			&c.Categoria,
+			&c.ImagemUrl,
+		); err != nil {
+			return nil, err
+		}
+		catalogos = append(catalogos, &c)
+	}
+
+	return catalogos, nil
+}
+
+func (r *CatalogoPostgresRepositorio) Contar() (int, error) {
+	query := `SELECT COUNT(*) FROM catalogos`
+
+	var total int
+	err := r.db.QueryRow(query).Scan(&total)
+	return total, err
+}

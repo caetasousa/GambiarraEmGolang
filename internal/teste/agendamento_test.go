@@ -77,7 +77,7 @@ func SetupNovoCliente(p port.ClienteRepositorio) *domain.Cliente {
 }
 
 func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.Catalogo) {
-	cat, _ := domain.NovoCatalogo("Manutenção", 60, 20000, "Beleza")
+	cat, _ := domain.NovoCatalogo("Manutenção", 60, 20000, "Beleza", "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif")
 	p.Salvar(cat)
 	catalogos := []domain.Catalogo{*cat}
 	return cat, &catalogos

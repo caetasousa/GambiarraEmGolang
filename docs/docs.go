@@ -74,6 +74,55 @@ const docTemplate = `{
             }
         },
         "/catalogos": {
+            "get": {
+                "description": "Retorna uma lista de catálogos, com page e limit para paginação",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Catalogo"
+                ],
+                "summary": "Lista todos os catálogos com paginação",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Número da página",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Quantidade de itens por página",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "OK",
+                        "schema": {
+                            "$ref": "#/definitions/response_catalogo.CatalogoListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Bad Request",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal Server Error",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Cadastra um serviço que pode ser oferecido por um prestador",
                 "consumes": [
@@ -483,9 +532,33 @@ const docTemplate = `{
                 "Concluido"
             ]
         },
+        "output.CatalogoOutput": {
+            "type": "object",
+            "properties": {
+                "categoria": {
+                    "type": "string"
+                },
+                "duracaoPadrao": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imagemUrl": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "preco": {
+                    "type": "integer"
+                }
+            }
+        },
         "request.ClienteRequest": {
             "type": "object",
             "required": [
+                "email",
                 "nome",
                 "telefone"
             ],
@@ -541,6 +614,7 @@ const docTemplate = `{
             "required": [
                 "categoria",
                 "duracao_padrao",
+                "image_url",
                 "nome",
                 "preco"
             ],
@@ -555,6 +629,10 @@ const docTemplate = `{
                     "type": "integer",
                     "example": 20
                 },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/bb515383d2f6ef76.jpg"
+                },
                 "nome": {
                     "type": "string",
                     "maxLength": 100,
@@ -562,7 +640,7 @@ const docTemplate = `{
                     "example": "Tecnico de Redes"
                 },
                 "preco": {
-                    "type": "number",
+                    "type": "integer",
                     "example": 10000
                 }
             }
@@ -643,10 +721,10 @@ const docTemplate = `{
         "response_agendamento.AgendamentoResponse": {
             "type": "object",
             "properties": {
-                "data_hora_fim": {
+                "data_fim": {
                     "type": "string"
                 },
-                "data_hora_inicio": {
+                "data_inicio": {
                     "type": "string"
                 },
                 "id": {
@@ -655,23 +733,59 @@ const docTemplate = `{
                 "notas": {
                     "type": "string"
                 },
-                "prestador_nome": {
-                    "type": "string"
+                "prestador": {
+                    "$ref": "#/definitions/response_agendamento.PrestadorInfo"
                 },
-                "prestador_telefone": {
-                    "type": "string"
-                },
-                "servico_duracao": {
-                    "type": "integer"
-                },
-                "servico_nome": {
-                    "type": "string"
-                },
-                "servico_preco": {
-                    "type": "integer"
+                "servico": {
+                    "$ref": "#/definitions/response_agendamento.ServicoInfo"
                 },
                 "status": {
                     "$ref": "#/definitions/domain.StatusDoAgendamento"
+                }
+            }
+        },
+        "response_agendamento.PrestadorInfo": {
+            "type": "object",
+            "properties": {
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
+        "response_agendamento.ServicoInfo": {
+            "type": "object",
+            "properties": {
+                "duracao": {
+                    "type": "integer"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "preco": {
+                    "type": "integer"
+                }
+            }
+        },
+        "response_catalogo.CatalogoListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.CatalogoOutput"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },
@@ -685,6 +799,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "image_url": {
                     "type": "string"
                 },
                 "nome": {

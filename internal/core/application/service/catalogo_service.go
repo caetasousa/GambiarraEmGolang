@@ -44,3 +44,31 @@ func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error)
 	}
 	return mapper.FromCatalogoOutput(catalogo), nil
 }
+
+func (s *CatalogoService) Listar(in *input.ListCatalogoInput) ([]*output.CatalogoOutput, int, error) {
+
+	page := in.Page
+	limit := in.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	catalogos, err := s.repo.Listar(limit, offset)
+	if err != nil {
+		return nil, 0, err
+	}
+
+	total, err := s.repo.Contar()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	return mapper.CatalogosFromDomainOutput(catalogos), total, nil
+}

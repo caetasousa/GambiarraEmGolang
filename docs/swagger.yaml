@@ -28,6 +28,21 @@ definitions:
     - Confirmado
     - Cancelado
     - Concluido
+  output.CatalogoOutput:
+    properties:
+      categoria:
+        type: string
+      duracaoPadrao:
+        type: integer
+      id:
+        type: string
+      imagemUrl:
+        type: string
+      nome:
+        type: string
+      preco:
+        type: integer
+    type: object
   request.ClienteRequest:
     properties:
       email:
@@ -44,6 +59,7 @@ definitions:
         minLength: 8
         type: string
     required:
+    - email
     - nome
     - telefone
     type: object
@@ -77,6 +93,9 @@ definitions:
       duracao_padrao:
         example: 20
         type: integer
+      image_url:
+        example: https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/bb515383d2f6ef76.jpg
+        type: string
       nome:
         example: Tecnico de Redes
         maxLength: 100
@@ -84,10 +103,11 @@ definitions:
         type: string
       preco:
         example: 10000
-        type: number
+        type: integer
     required:
     - categoria
     - duracao_padrao
+    - image_url
     - nome
     - preco
     type: object
@@ -146,26 +166,49 @@ definitions:
     type: object
   response_agendamento.AgendamentoResponse:
     properties:
-      data_hora_fim:
+      data_fim:
         type: string
-      data_hora_inicio:
+      data_inicio:
         type: string
       id:
         type: string
       notas:
         type: string
-      prestador_nome:
-        type: string
-      prestador_telefone:
-        type: string
-      servico_duracao:
-        type: integer
-      servico_nome:
-        type: string
-      servico_preco:
-        type: integer
+      prestador:
+        $ref: '#/definitions/response_agendamento.PrestadorInfo'
+      servico:
+        $ref: '#/definitions/response_agendamento.ServicoInfo'
       status:
         $ref: '#/definitions/domain.StatusDoAgendamento'
+    type: object
+  response_agendamento.PrestadorInfo:
+    properties:
+      nome:
+        type: string
+      telefone:
+        type: string
+    type: object
+  response_agendamento.ServicoInfo:
+    properties:
+      duracao:
+        type: integer
+      nome:
+        type: string
+      preco:
+        type: integer
+    type: object
+  response_catalogo.CatalogoListResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/output.CatalogoOutput'
+        type: array
+      limit:
+        type: integer
+      page:
+        type: integer
+      total:
+        type: integer
     type: object
   response_catalogo.CatalogoResponse:
     properties:
@@ -174,6 +217,8 @@ definitions:
       duracao_padrao:
         type: integer
       id:
+        type: string
+      image_url:
         type: string
       nome:
         type: string
@@ -285,6 +330,39 @@ paths:
       tags:
       - Agendamentos
   /catalogos:
+    get:
+      consumes:
+      - application/json
+      description: Retorna uma lista de catálogos, com page e limit para paginação
+      parameters:
+      - default: 1
+        description: Número da página
+        in: query
+        name: page
+        type: integer
+      - default: 10
+        description: Quantidade de itens por página
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/response_catalogo.CatalogoListResponse'
+        "400":
+          description: Bad Request
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Internal Server Error
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Lista todos os catálogos com paginação
+      tags:
+      - Catalogo
     post:
       consumes:
       - application/json

@@ -75,6 +75,7 @@ func TestPostCatalogo_Sucesso(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
+		ImagemUrl: "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 
 	rr := SetupPostCatalogoRequest(router, input)
@@ -102,6 +103,7 @@ func TestPostCatalogo_NomeVazio_DeveRetornar400(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         2500.0,
 		Categoria:     "Beleza",
+		ImagemUrl: "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 
 	rr := SetupPostCatalogoRequest(router, input)
@@ -123,6 +125,7 @@ func TestPostCatalogo_DuracaoInvalida_DeveRetornar400(t *testing.T) {
 		"duracao_padrao": "abc",
 		"preco":          1200.0,
 		"categoria":      "Serviço",
+		"ImagemUrl": "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 	rr := PostJSONFromMap(router, input)
 
@@ -142,6 +145,7 @@ func TestPostCatalogo_PrecoInvalido_DeveRetornar400(t *testing.T) {
 		"duracao_padrao": 45,
 		"preco":          "sem-numero",
 		"categoria":      "Serviço",
+		"ImagemUrl": "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 	rr := PostJSONFromMap(router, input)
 
@@ -161,6 +165,7 @@ func TestPostCatalogo_NomeMuitoCurto_DeveRetornar400(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         2500.0,
 		Categoria:     "Beleza",
+		ImagemUrl: "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 	rr := SetupPostCatalogoRequest(router, input)
 
@@ -180,6 +185,7 @@ func TestPostCatalogo_CategoriaMuitoCurta_DeveRetornar400(t *testing.T) {
 		DuracaoPadrao: 45,
 		Preco:         5000.0,
 		Categoria:     "AB",
+		ImagemUrl: "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 	rr := SetupPostCatalogoRequest(router, input)
 
@@ -198,6 +204,7 @@ func TestGetCatalogo_Sucesso(t *testing.T) {
 		DuracaoPadrao: 60,
 		Preco:         5000.0,
 		Categoria:     "Saúde",
+		ImagemUrl: "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif",
 	}
 
 	rrPost := SetupPostCatalogoRequest(router, input)

@@ -97,3 +97,41 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 	resp := response_catalogo.FromCatalogoResponse(*catalogo)
 	c.JSON(http.StatusOK, resp)
 }
+
+// GetCatalogos godoc
+// @Summary Lista todos os catálogos com paginação
+// @Description Retorna uma lista de catálogos, com page e limit para paginação
+// @Tags Catalogo
+// @Accept json
+// @Produce json
+// @Param page query int false "Número da página" default(1)
+// @Param limit query int false "Quantidade de itens por página" default(10)
+// @Success 200 {object} response_catalogo.CatalogoListResponse
+// @Failure 400 {object} domain.ErrorResponse
+// @Failure 500 {object} domain.ErrorResponse
+// @Router /catalogos [get]
+func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
+	var req request_catalogo.CatalogoListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(400, gin.H{"erro": err.Error()})
+		return
+	}
+
+	in := req.ToInputCatalogo()
+
+	out, total, err := ctl.criarCatalogoService.Listar(in)
+	if err != nil {
+		c.JSON(500, gin.H{"erro": err.Error()})
+		return
+	}
+
+	// monta a response
+	resp := response_catalogo.CatalogoListResponse{
+		Data:  out,
+		Page:  in.Page,
+		Limit: in.Limit,
+		Total: total,
+	}
+
+	c.JSON(200, resp)
+}
