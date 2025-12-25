@@ -75,6 +75,15 @@ func SetupGetPrestadorRequest(router *gin.Engine, id string) *httptest.ResponseR
 	return rr
 }
 
+func SetupPostCatalogoRequest(router *gin.Engine, input request_catalogo.CatalogoRequest) *httptest.ResponseRecorder {
+	body, _ := json.Marshal(input)
+	req, _ := http.NewRequest(http.MethodPost, "/api/v1/catalogos", bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	return rr
+}
+
 func SetupPutAgendaRequest(router *gin.Engine, prestadorID string, input request_prestador.AgendaDiariaRequest) *httptest.ResponseRecorder {
 	body, _ := json.Marshal(input)
 
@@ -96,6 +105,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 	}
 
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
@@ -146,6 +156,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 	}
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
@@ -183,6 +194,7 @@ func TestGetPrestador_UsuarioExistente(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 	}
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
@@ -220,6 +232,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 	}
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)

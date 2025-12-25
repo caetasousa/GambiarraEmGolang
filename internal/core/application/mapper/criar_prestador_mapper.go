@@ -25,6 +25,7 @@ func CatalogosFromDomain(catalogos []domain.Catalogo) []output.CatalogoOutput {
 			DuracaoPadrao: c.DuracaoPadrao,
 			Preco:         c.Preco,
 			Categoria:     c.Categoria,
+			ImagemUrl:     c.ImagemUrl,
 		}
 	}
 	return result

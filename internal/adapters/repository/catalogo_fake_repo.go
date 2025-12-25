@@ -58,12 +58,12 @@ func (r *CatalogoFakeRepo) Contar() (int, error) {
 }
 
 func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error {
-	// Verifica se o catálogo existe
+	// Verifica se o catálogo existe antes de atualizar
 	if _, exists := r.Catalogo[catalogo.ID]; !exists {
 		return errors.New("catálogo não encontrado")
 	}
 	
-	// Atualiza o catálogo no map
+	// Atualiza o catálogo no map (simula UPDATE no banco)
 	r.Catalogo[catalogo.ID] = catalogo
 	return nil
 }
