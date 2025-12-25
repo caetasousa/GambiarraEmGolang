@@ -57,3 +57,7 @@ func (r *CatalogoFakeRepo) Listar(limit, offset int) ([]*domain.Catalogo, error)
 func (r *CatalogoFakeRepo) Contar() (int, error) {
 	return len(r.Catalogo), nil
 }
+
+func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error{
+	return  nil
+}

@@ -123,3 +123,40 @@ func (r *CatalogoPostgresRepositorio) Contar() (int, error) {
 	err := r.db.QueryRow(query).Scan(&total)
 	return total, err
 }
+
+func (r *CatalogoPostgresRepositorio) Atualizar(c *domain.Catalogo) error {
+	query := `
+		UPDATE catalogos
+		SET nome = $1,
+		    duracao_padrao = $2,
+		    preco = $3,
+		    categoria = $4,
+		    imagem_url = $5
+		WHERE id = $6
+	`
+
+	result, err := r.db.Exec(
+		query,
+		c.Nome,
+		c.DuracaoPadrao,
+		c.Preco,
+		c.Categoria,
+		c.ImagemUrl,
+		c.ID,
+	)
+
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("catálogo não encontrado")
+	}
+
+	return nil
+}

@@ -6,6 +6,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
 
 	"meu-servico-agenda/internal/core/application/service"
+	"meu-servico-agenda/internal/core/domain"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -21,7 +22,7 @@ func NovoCatalogoController(criarCatalogoService *service.CatalogoService) *Cata
 
 // @Summary Cria um novo catálogo de serviços
 // @Description Cadastra um serviço que pode ser oferecido por um prestador
-// @Tags Catálogos
+// @Tags Catalogos
 // @Accept json
 // @Produce json
 // @Param catalogo body request_catalogo.CatalogoRequest true "Dados do Catálogo"
@@ -58,7 +59,7 @@ func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
 // GetCatalogoPorID é o handler para a rota GET /catalogos/:id
 // @Summary Busca um catálogo pelo ID
 // @Description Retorna os dados de um catálogo específico usando seu ID.
-// @Tags Catálogos
+// @Tags Catalogos
 // @Accept json
 // @Produce json
 // @Param id path string true "ID do Catálogo"
@@ -101,7 +102,7 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 // GetCatalogos godoc
 // @Summary Lista todos os catálogos com paginação
 // @Description Retorna uma lista de catálogos, com page e limit para paginação
-// @Tags Catalogo
+// @Tags Catalogos
 // @Accept json
 // @Produce json
 // @Param page query int false "Número da página" default(1)
@@ -125,7 +126,6 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 		return
 	}
 
-	// monta a response
 	resp := response_catalogo.CatalogoListResponse{
 		Data:  out,
 		Page:  in.Page,
@@ -135,3 +135,51 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 
 	c.JSON(200, resp)
 }
+
+// AtualizarCatalogo godoc
+// @Summary Atualiza um catálogo existente
+// @Description Atualiza os dados de um catálogo pelo ID
+// @Tags Catalogos
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do Catálogo"
+// @Param catalogo body request_catalogo.CatalogoUpdateRequest true "Dados atualizados do Catálogo"
+// @Success 204 "Catálogo atualizado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 404 {object} domain.ErrorResponse "Catálogo não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /catalogos/{id} [put]
+func (ctl *CatalogoController) Atualizar(c *gin.Context) {
+    id := c.Param("id")
+
+    var req request_catalogo.CatalogoUpdateRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+        return
+    }
+
+    input := req.ToCatalogoUpdateInput()
+    input.ID = id
+
+    err := ctl.criarCatalogoService.Atualizar(input)
+    if err != nil {
+        switch err {
+        case service.ErrCatalogoNaoEncontrado:
+            c.JSON(http.StatusNotFound, gin.H{"error": service.ErrCatalogoNaoEncontrado})
+        case domain.ErrDuracaoInvalida:
+            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrDuracaoInvalida})
+        case domain.ErrPrecoInvalido:
+            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrPrecoInvalido})
+        case domain.ErrNomeInvalido:
+            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrNomeInvalido})
+        case domain.ErrCategoriaInvalida:
+            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrCategoriaInvalida})
+        default:
+            c.JSON(http.StatusInternalServerError, gin.H{"error": "erro interno"})
+        }
+        return
+    }
+
+    c.Status(http.StatusNoContent)
+}
+

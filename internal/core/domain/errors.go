@@ -13,8 +13,10 @@ var (
 	ErrPrestadorDeveTerCatalogo = errors.New("prestador deve ter ao menos um catálogo de serviços")
 
 	//Valida Catalogo
-	ErrDuracaoInvalida = errors.New("duração padrão inválida")
-	ErrPrecoInvalido   = errors.New("preço inválido")
+	ErrDuracaoInvalida   = errors.New("duração padrão inválida")
+	ErrPrecoInvalido     = errors.New("preço inválido")
+	ErrNomeInvalido      = errors.New("Nome invalido")
+	ErrCategoriaInvalida = errors.New("Categoria invalida")
 
 	//Validaa Agendamento
 	ErrHoraInicialMenorQueFinal = errors.New("horário início deve ser antes do fim")

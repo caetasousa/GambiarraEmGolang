@@ -72,3 +72,37 @@ func (s *CatalogoService) Listar(in *input.ListCatalogoInput) ([]*output.Catalog
 
 	return mapper.CatalogosFromDomainOutput(catalogos), total, nil
 }
+
+func (s *CatalogoService) Atualizar(input *input.CatalogoUpdateInput) error {
+	// Verifica se existe
+	catalogo, err := s.repo.BuscarPorId(input.ID)
+	if err != nil {
+		return ErrCatalogoNaoEncontrado
+	}
+
+	// objeto para update
+	catalogo.Nome = input.Nome
+	catalogo.Categoria = input.Categoria
+
+	if input.DuracaoPadrao != 0 && input.DuracaoPadrao <= 1 {
+		return domain.ErrDuracaoInvalida
+	}
+	if input.DuracaoPadrao > 1 {
+		catalogo.DuracaoPadrao = input.DuracaoPadrao
+	}
+
+	if input.Preco < 0 {
+		return domain.ErrPrecoInvalido
+	}
+	if input.Preco > 0 {
+		catalogo.Preco = input.Preco
+	}
+
+	catalogo.ImagemUrl = input.ImagemUrl
+
+	if err := s.repo.Atualizar(catalogo); err != nil {
+		return err
+	}
+
+	return nil
+}

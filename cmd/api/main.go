@@ -70,6 +70,7 @@ func main() {
 		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 		apiV1.GET("/catalogos/:id", catalogoController.GetCatalogoPorID)
 		apiV1.GET("/catalogos", catalogoController.GetCatalogos)
+		apiV1.PUT("/catalogos/:id", catalogoController.Atualizar)
 
 		apiV1.POST("/agendamentos", agendamentoController.PostAgendamento)
 	}
