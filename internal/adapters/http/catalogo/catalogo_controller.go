@@ -1,7 +1,6 @@
 package catalogo
 
 import (
-	"errors"
 	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
 	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
 
@@ -40,19 +39,26 @@ func (ctl *CatalogoController) PostCatalogo(c *gin.Context) {
 		return
 	}
 
-	// request → input (core)
 	cmd := req.ToCatalogoInput()
 
-	// service → output (core)
 	out, err := ctl.criarCatalogoService.Cadastra(cmd)
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+		// Erros de validação do domínio retornam 400
+		switch err {
+		case domain.ErrNomeInvalido,
+			domain.ErrDuracaoInvalida,
+			domain.ErrPrecoInvalido,
+			domain.ErrCategoriaInvalida:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			// Erros de infraestrutura ou inesperados retornam 500
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao criar catálogo"})
+			return
+		}
 	}
 
-	// output → response (HTTP)
 	resp := response_catalogo.FromCatalogoResponse(*out)
-
 	c.JSON(http.StatusCreated, resp)
 }
 
@@ -73,24 +79,12 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 
 	catalogo, err := ctl.criarCatalogoService.BuscarPorId(id)
 	if err != nil {
-
-		switch {
-		case errors.Is(err, service.ErrCatalogoNaoEncontrado):
-			c.JSON(http.StatusNotFound, gin.H{
-				"error": "Catálogo não encontrado",
-			})
+		switch err {
+		case service.ErrCatalogoNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
-
-		case errors.Is(err, service.ErrFalhaInfraestrutura):
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Erro interno ao buscar catálogo",
-			})
-			return
-
 		default:
-			c.JSON(http.StatusInternalServerError, gin.H{
-				"error": "Erro inesperado",
-			})
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao buscar catálogo"})
 			return
 		}
 	}
@@ -114,7 +108,7 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 	var req request_catalogo.CatalogoListRequest
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(400, gin.H{"erro": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -122,7 +116,7 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 
 	out, total, err := ctl.criarCatalogoService.Listar(in)
 	if err != nil {
-		c.JSON(500, gin.H{"erro": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao listar catálogos"})
 		return
 	}
 
@@ -133,7 +127,7 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 		Total: total,
 	}
 
-	c.JSON(200, resp)
+	c.JSON(http.StatusOK, resp)
 }
 
 // AtualizarCatalogo godoc
@@ -150,36 +144,67 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
 // @Router /catalogos/{id} [put]
 func (ctl *CatalogoController) Atualizar(c *gin.Context) {
-    id := c.Param("id")
+	id := c.Param("id")
 
-    var req request_catalogo.CatalogoUpdateRequest
-    if err := c.ShouldBindJSON(&req); err != nil {
-        c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-        return
-    }
+	var req request_catalogo.CatalogoUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
 
-    input := req.ToCatalogoUpdateInput()
-    input.ID = id
+	input := req.ToCatalogoUpdateInput()
+	input.ID = id
 
-    err := ctl.criarCatalogoService.Atualizar(input)
-    if err != nil {
-        switch err {
-        case service.ErrCatalogoNaoEncontrado:
-            c.JSON(http.StatusNotFound, gin.H{"error": service.ErrCatalogoNaoEncontrado})
-        case domain.ErrDuracaoInvalida:
-            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrDuracaoInvalida})
-        case domain.ErrPrecoInvalido:
-            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrPrecoInvalido})
-        case domain.ErrNomeInvalido:
-            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrNomeInvalido})
-        case domain.ErrCategoriaInvalida:
-            c.JSON(http.StatusBadRequest, gin.H{"error": domain.ErrCategoriaInvalida})
-        default:
-            c.JSON(http.StatusInternalServerError, gin.H{"error": "erro interno"})
-        }
-        return
-    }
+	err := ctl.criarCatalogoService.Atualizar(input)
+	if err != nil {
+		switch err {
+		case service.ErrCatalogoNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case domain.ErrDuracaoInvalida,
+			domain.ErrPrecoInvalido,
+			domain.ErrNomeInvalido,
+			domain.ErrCategoriaInvalida:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao atualizar catálogo"})
+			return
+		}
+	}
 
-    c.Status(http.StatusNoContent)
+	c.Status(http.StatusNoContent)
 }
 
+// DeletarCatalogo godoc
+// @Summary Deleta um catálogo existente
+// @Description Remove um catálogo pelo ID
+// @Tags Catalogos
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do Catálogo"
+// @Success 204 "Catálogo deletado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "ID inválido"
+// @Failure 404 {object} domain.ErrorResponse "Catálogo não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /catalogos/{id} [delete]
+func (ctl *CatalogoController) Deletar(c *gin.Context) {
+	id := c.Param("id")
+
+	err := ctl.criarCatalogoService.Deletar(id)
+	if err != nil {
+		switch err {
+		case service.ErrCatalogoNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case service.ErrFalhaInfraestrutura:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao deletar catálogo"})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
+}

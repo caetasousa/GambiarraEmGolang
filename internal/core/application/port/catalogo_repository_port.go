@@ -12,4 +12,6 @@ type CatalogoRepositorio interface {
 	Contar() (int, error)
 	//Update
 	Atualizar(catalogo *domain.Catalogo) error
+	//Delete
+	Deletar(id string) error
 }

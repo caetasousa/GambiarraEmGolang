@@ -160,3 +160,23 @@ func (r *CatalogoPostgresRepositorio) Atualizar(c *domain.Catalogo) error {
 
 	return nil
 }
+
+func (r *CatalogoPostgresRepositorio) Deletar(id string) error {
+	query := `DELETE FROM catalogos WHERE id = $1`
+
+	result, err := r.db.Exec(query, id)
+	if err != nil {
+		return err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return err
+	}
+
+	if rowsAffected == 0 {
+		return errors.New("catálogo não encontrado")
+	}
+
+	return nil
+}

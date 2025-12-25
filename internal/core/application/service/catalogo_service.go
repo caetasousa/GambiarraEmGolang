@@ -106,3 +106,18 @@ func (s *CatalogoService) Atualizar(input *input.CatalogoUpdateInput) error {
 
 	return nil
 }
+
+func (s *CatalogoService) Deletar(id string) error {
+	// Verifica se o catálogo existe
+	_, err := s.repo.BuscarPorId(id)
+	if err != nil {
+		return ErrCatalogoNaoEncontrado
+	}
+
+	// Deleta o catálogo
+	if err := s.repo.Deletar(id); err != nil {
+		return ErrFalhaInfraestrutura
+	}
+
+	return nil
+}

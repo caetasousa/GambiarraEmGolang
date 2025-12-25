@@ -71,6 +71,7 @@ func main() {
 		apiV1.GET("/catalogos/:id", catalogoController.GetCatalogoPorID)
 		apiV1.GET("/catalogos", catalogoController.GetCatalogos)
 		apiV1.PUT("/catalogos/:id", catalogoController.Atualizar)
+		apiV1.DELETE(("/catalogos/:id"), catalogoController.Deletar)
 
 		apiV1.POST("/agendamentos", agendamentoController.PostAgendamento)
 	}

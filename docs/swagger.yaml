@@ -429,6 +429,36 @@ paths:
       tags:
       - Catalogos
   /catalogos/{id}:
+    delete:
+      consumes:
+      - application/json
+      description: Remove um catálogo pelo ID
+      parameters:
+      - description: ID do Catálogo
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Catálogo deletado com sucesso
+        "400":
+          description: ID inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Catálogo não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Deleta um catálogo existente
+      tags:
+      - Catalogos
     get:
       consumes:
       - application/json

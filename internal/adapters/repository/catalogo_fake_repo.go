@@ -53,11 +53,28 @@ func (r *CatalogoFakeRepo) Listar(limit, offset int) ([]*domain.Catalogo, error)
 	return catalogos[offset:end], nil
 }
 
-
 func (r *CatalogoFakeRepo) Contar() (int, error) {
 	return len(r.Catalogo), nil
 }
 
-func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error{
-	return  nil
+func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error {
+	// Verifica se o catálogo existe
+	if _, exists := r.Catalogo[catalogo.ID]; !exists {
+		return errors.New("catálogo não encontrado")
+	}
+	
+	// Atualiza o catálogo no map
+	r.Catalogo[catalogo.ID] = catalogo
+	return nil
+}
+
+func (r *CatalogoFakeRepo) Deletar(id string) error {
+	// Verifica se o catálogo existe
+	if _, exists := r.Catalogo[id]; !exists {
+		return errors.New("catálogo não encontrado")
+	}
+	
+	// Remove o catálogo do map
+	delete(r.Catalogo, id)
+	return nil
 }
