@@ -12,6 +12,7 @@ func FromDomainToCriarOutput(p *domain.Prestador) *output.CriarPrestadorOutput {
 		Email:    p.Email,
 		Telefone: p.Telefone,
 		Ativo:    p.Ativo,
+		ImagemUrl: p.ImagemUrl,
 		Catalogo: CatalogosFromDomain(p.Catalogo),
 	}
 }

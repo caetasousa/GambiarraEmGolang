@@ -30,8 +30,8 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 	log.Printf("✅ prestador de cpf %s", prestador.Cpf)
 	// 1️⃣ Insere prestador
 	_, err = tx.Exec(`
-		INSERT INTO prestadores (id, nome, cpf, email, telefone, ativo, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, NOW())
+		INSERT INTO prestadores (id, nome, cpf, email, telefone, ativo, imagem_url, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
 	`,
 		prestador.ID,
 		prestador.Nome,
@@ -39,6 +39,7 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 		prestador.Email,
 		prestador.Telefone,
 		prestador.Ativo,
+		prestador.ImagemUrl,
 	)
 	if err != nil {
 		log.Printf("erro ao inserir prestador: %+v", err)
@@ -69,10 +70,11 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 
 	// 3️⃣ Commit da transação
 	if err := tx.Commit(); err != nil {
-		log.Printf("Prestador %s inserido com sucesso", prestador.ID)
+		log.Printf("erro ao fazer commit: %v", err)
 		return err
 	}
 
+	log.Printf("Prestador %s inserido com sucesso", prestador.ID)
 	return nil
 }
 
@@ -88,6 +90,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 		p.email,
 		p.telefone,
 		p.ativo,
+		p.imagem_url,
 		COALESCE(catalogos.catalogos, '[]') AS catalogos,
 		COALESCE(agendas.agendas, '[]') AS agendas
 	FROM prestadores p
@@ -151,6 +154,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 		&prestador.Email,
 		&prestador.Telefone,
 		&prestador.Ativo,
+		&prestador.ImagemUrl,
 		&catalogosJSON,
 		&agendasJSON,
 	)
@@ -175,7 +179,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
 	var p domain.Prestador
 	err := r.db.QueryRow(`
-        SELECT id, nome, cpf, email, telefone, ativo
+        SELECT id, nome, cpf, email, telefone, ativo, imagem_url
         FROM prestadores
         WHERE cpf = $1
     `, cpf).Scan(
@@ -185,6 +189,7 @@ func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestado
 		&p.Email,
 		&p.Telefone,
 		&p.Ativo,
+		&p.ImagemUrl,
 	)
 
 	if err == sql.ErrNoRows {
@@ -198,7 +203,7 @@ func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestado
 	return &p, nil
 }
 
-func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string,data string) (*domain.AgendaDiaria, error) {
+func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error) {
 
 	rows, err := r.db.Query(`
 		SELECT
@@ -222,11 +227,11 @@ func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string,data 
 
 	for rows.Next() {
 		var (
-			agendaID   string
-			dataAgenda time.Time
+			agendaID    string
+			dataAgenda  time.Time
 			intervaloID sql.NullString
-			horaInicio sql.NullTime
-			horaFim    sql.NullTime
+			horaInicio  sql.NullTime
+			horaFim     sql.NullTime
 		)
 
 		if err := rows.Scan(

@@ -120,6 +120,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 		Email:       "joao@email.com",
 		Cpf:         "04423258196",
 		Telefone:    "62999677481",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 
@@ -135,6 +136,7 @@ func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{"catalogo-inexistente"},
 	}
 
@@ -171,6 +173,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
@@ -209,6 +212,7 @@ func TestGetPrestador_UsuarioExistente(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
@@ -247,6 +251,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrPrestador := SetupPostPrestadorRequest(router, prestadorInput)

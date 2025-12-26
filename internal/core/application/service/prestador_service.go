@@ -53,6 +53,7 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 		cpf,
 		cmd.Email,
 		cmd.Telefone,
+		cmd.ImagemUrl,
 		catalogos,
 	)
 	if err != nil {

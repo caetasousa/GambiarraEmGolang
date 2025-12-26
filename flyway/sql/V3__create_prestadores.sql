@@ -5,6 +5,7 @@ CREATE TABLE prestadores (
     email VARCHAR(255),
     telefone VARCHAR(15) NOT NULL CHECK (char_length(telefone) BETWEEN 8 AND 15),
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
+    imagem_url VARCHAR(200),
     created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
 );
 

@@ -84,7 +84,7 @@ func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.
 }
 
 func SetupCriaPrestador(p port.PrestadorRepositorio, catalogo []domain.Catalogo) *domain.Prestador {
-	pres, _ := domain.NovoPrestador("Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481", catalogo)
+	pres, _ := domain.NovoPrestador("Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481","https://exemplo.com/img1.jpg", catalogo)
 	p.Salvar(pres)
 	return pres
 }
@@ -342,6 +342,7 @@ func TestPostAgendamento_ClienteOcupado(t *testing.T) {
 		"12345678900",
 		"outro@email.com",
 		"62988888888",
+		"https://exemplo.com/img1.jpg",
 		*listaDeCatalogos,
 	)
 	prestadorRepo.Salvar(prestador2)
