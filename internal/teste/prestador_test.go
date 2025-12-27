@@ -26,8 +26,8 @@ import (
 func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 	gin.SetMode(gin.TestMode)
 
-	prestadorRepo := repository.NovoFakePrestadorRepositorio()
 	catalogoRepo := repository.NovoCatalogoFakeRepo()
+	prestadorRepo := repository.NovoFakePrestadorRepositorio(catalogoRepo)
 	agendaRepo := repository.NovoFakeAgendaDiariaRepositorio()
 	cadastroService := service.NovoCatalogoService(catalogoRepo)
 
@@ -46,6 +46,7 @@ func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 		apiV1.POST("/prestadores", prestadorController.PostPrestador)
 		apiV1.GET("/prestadores/:id", prestadorController.GetPrestador)
 		apiV1.PUT("/prestadores/:id/agenda", prestadorController.PutAgenda)
+		apiV1.PUT("/prestadores/:id", prestadorController.UpdatePrestador)
 
 		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 	}
@@ -96,6 +97,19 @@ func SetupPutAgendaRequest(router *gin.Engine, prestadorID string, input request
 	rr := httptest.NewRecorder()
 	router.ServeHTTP(rr, req)
 
+	return rr
+}
+
+func SetupPutPrestadorRequest(router *gin.Engine, id string, input request_prestador.PrestadorUpdateRequest) *httptest.ResponseRecorder {
+	body, _ := json.Marshal(input)
+	
+	url := "/api/v1/prestadores/" + id
+	req, _ := http.NewRequest(http.MethodPut, url, bytes.NewBuffer(body))
+	req.Header.Set("Content-Type", "application/json")
+	
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+	
 	return rr
 }
 
@@ -401,4 +415,369 @@ func TestPutAgenda_AgendaSemIntervalos(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, rr.Code)
 	require.Contains(t, rr.Body.String(), domain.ErrAgendaSemIntervalos.Error())
+}
+
+func TestUpdatePrestador_Sucesso(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// 1️⃣ Criar catálogo
+	catalogoInput := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img-catalogo.jpg",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// 2️⃣ Criar prestador
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "Maria Silva",
+		Cpf:         "04423258196",
+		Email:       "maria@email.com",
+		Telefone:    "62999677482",
+		ImagemUrl:   "https://exemplo.com/img-original.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+
+	// 3️⃣ Atualizar prestador
+	updateInput := request_prestador.PrestadorUpdateRequest{
+		Nome:        "Maria Santos Atualizada",
+		Email:       "maria.santos@email.com",
+		Telefone:    "62988888888",
+		ImagemUrl:   "https://exemplo.com/img-atualizada.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrUpdate := SetupPutPrestadorRequest(router, createResp.ID, updateInput)
+	require.Equal(t, http.StatusNoContent, rrUpdate.Code)
+
+	// 4️⃣ Buscar prestador atualizado para validar
+	rrGet := SetupGetPrestadorRequest(router, createResp.ID)
+	require.Equal(t, http.StatusOK, rrGet.Code)
+
+	var prestadorAtualizado response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrGet.Body.Bytes(), &prestadorAtualizado)
+	require.NoError(t, err)
+
+	// Validações
+	assert.Equal(t, createResp.ID, prestadorAtualizado.ID, "ID não deve mudar")
+	assert.Equal(t, "04423258196", prestadorAtualizado.Cpf, "CPF não deve mudar")
+	assert.Equal(t, "Maria Santos Atualizada", prestadorAtualizado.Nome)
+	assert.Equal(t, "maria.santos@email.com", prestadorAtualizado.Email)
+	assert.Equal(t, "62988888888", prestadorAtualizado.Telefone)
+	assert.Equal(t, "https://exemplo.com/img-atualizada.jpg", prestadorAtualizado.ImagemUrl)
+}
+
+// TestUpdatePrestador_PrestadorNaoEncontrado testa atualização de prestador inexistente
+func TestUpdatePrestador_PrestadorNaoEncontrado(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// Criar catálogo válido
+	catalogoInput := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// Tentar atualizar prestador inexistente
+	updateInput := request_prestador.PrestadorUpdateRequest{
+		Nome:        "João Silva",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	
+	rr := SetupPutPrestadorRequest(router, "id-inexistente", updateInput)
+	
+	require.Equal(t, http.StatusNotFound, rr.Code)
+	require.Contains(t, rr.Body.String(), "prestador não encontrado")
+}
+
+// TestUpdatePrestador_CatalogoInexistente testa atualização com catálogo que não existe
+func TestUpdatePrestador_CatalogoInexistente(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// 1️⃣ Criar catálogo
+	catalogoInput := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// 2️⃣ Criar prestador
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "João Silva",
+		Cpf:         "04423258196",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+
+	// 3️⃣ Tentar atualizar com catálogo inexistente
+	updateInput := request_prestador.PrestadorUpdateRequest{
+		Nome:        "João Silva Atualizado",
+		Email:       "joao.novo@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img2.jpg",
+		CatalogoIDs: []string{"catalogo-inexistente"},
+	}
+	
+	rr := SetupPutPrestadorRequest(router, createResp.ID, updateInput)
+	
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Contains(t, rr.Body.String(), "catálogo")
+	require.Contains(t, rr.Body.String(), "não existe")
+}
+
+// TestUpdatePrestador_AtualizarCatalogos testa atualização dos catálogos associados
+func TestUpdatePrestador_AtualizarCatalogos(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// 1️⃣ Criar dois catálogos
+	catalogo1Input := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
+	}
+	rrCatalogo1 := SetupPostCatalogoRequest(router, catalogo1Input)
+	require.Equal(t, http.StatusCreated, rrCatalogo1.Code)
+
+	var catalogo1Resp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo1.Body.Bytes(), &catalogo1Resp)
+	require.NoError(t, err)
+
+	catalogo2Input := request_catalogo.CatalogoRequest{
+		Nome:          "Barba",
+		DuracaoPadrao: 20,
+		Preco:         2000.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img2.jpg",
+	}
+	rrCatalogo2 := SetupPostCatalogoRequest(router, catalogo2Input)
+	require.Equal(t, http.StatusCreated, rrCatalogo2.Code)
+
+	var catalogo2Resp response_catalogo.CatalogoResponse
+	err = json.Unmarshal(rrCatalogo2.Body.Bytes(), &catalogo2Resp)
+	require.NoError(t, err)
+
+	// 2️⃣ Criar prestador com primeiro catálogo
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "João Silva",
+		Cpf:         "04423258196",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogo1Resp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+
+	// 3️⃣ Atualizar prestador com ambos os catálogos
+	updateInput := request_prestador.PrestadorUpdateRequest{
+		Nome:        "João Silva",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogo1Resp.ID, catalogo2Resp.ID},
+	}
+	rrUpdate := SetupPutPrestadorRequest(router, createResp.ID, updateInput)
+	require.Equal(t, http.StatusNoContent, rrUpdate.Code)
+
+	// 4️⃣ Buscar e validar que tem 2 catálogos
+	rrGet := SetupGetPrestadorRequest(router, createResp.ID)
+	require.Equal(t, http.StatusOK, rrGet.Code)
+
+	var prestadorAtualizado response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrGet.Body.Bytes(), &prestadorAtualizado)
+	require.NoError(t, err)
+
+	assert.Len(t, prestadorAtualizado.Catalogo, 2, "Deve ter 2 catálogos")
+}
+
+// TestUpdatePrestador_DadosInvalidos testa validação de dados inválidos
+func TestUpdatePrestador_DadosInvalidos(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// Criar catálogo válido
+	catalogoInput := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// Criar prestador
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "João Silva",
+		Cpf:         "04423258196",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+
+	// Testes de validação
+	testCases := []struct {
+		name        string
+		input       request_prestador.PrestadorUpdateRequest
+		expectedMsg string
+	}{
+		{
+			name: "Nome muito curto",
+			input: request_prestador.PrestadorUpdateRequest{
+				Nome:        "Jo", // menos de 3 caracteres
+				Email:       "joao@email.com",
+				Telefone:    "62999677481",
+				ImagemUrl:   "https://exemplo.com/img1.jpg",
+				CatalogoIDs: []string{catalogoResp.ID},
+			},
+			expectedMsg: "Nome",
+		},
+		{
+			name: "Email inválido",
+			input: request_prestador.PrestadorUpdateRequest{
+				Nome:        "João Silva",
+				Email:       "email-invalido", // sem @
+				Telefone:    "62999677481",
+				ImagemUrl:   "https://exemplo.com/img1.jpg",
+				CatalogoIDs: []string{catalogoResp.ID},
+			},
+			expectedMsg: "Email",
+		},
+		{
+			name: "Telefone muito curto",
+			input: request_prestador.PrestadorUpdateRequest{
+				Nome:        "João Silva",
+				Email:       "joao@email.com",
+				Telefone:    "1234567", // menos de 8 caracteres
+				ImagemUrl:   "https://exemplo.com/img1.jpg",
+				CatalogoIDs: []string{catalogoResp.ID},
+			},
+			expectedMsg: "Telefone",
+		},
+		{
+			name: "URL inválida",
+			input: request_prestador.PrestadorUpdateRequest{
+				Nome:        "João Silva",
+				Email:       "joao@email.com",
+				Telefone:    "62999677481",
+				ImagemUrl:   "url-invalida", // não é URL
+				CatalogoIDs: []string{catalogoResp.ID},
+			},
+			expectedMsg: "ImagemUrl",
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			rr := SetupPutPrestadorRequest(router, createResp.ID, tc.input)
+			require.Equal(t, http.StatusBadRequest, rr.Code)
+			require.Contains(t, rr.Body.String(), tc.expectedMsg)
+		})
+	}
+}
+
+// TestUpdatePrestador_RemoverTodosCatalogos testa remoção de todos os catálogos (se permitido)
+func TestUpdatePrestador_SemCatalogos(t *testing.T) {
+	router, _ := SetupPostPrestador()
+
+	// 1️⃣ Criar catálogo
+	catalogoInput := request_catalogo.CatalogoRequest{
+		Nome:          "Corte de Cabelo",
+		DuracaoPadrao: 30,
+		Preco:         3500.0,
+		Categoria:     "Beleza",
+		ImagemUrl:     "https://exemplo.com/img1.jpg",
+	}
+	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
+	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
+
+	var catalogoResp response_catalogo.CatalogoResponse
+	err := json.Unmarshal(rrCatalogo.Body.Bytes(), &catalogoResp)
+	require.NoError(t, err)
+
+	// 2️⃣ Criar prestador
+	prestadorInput := request_prestador.PrestadorRequest{
+		Nome:        "João Silva",
+		Cpf:         "04423258196",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{catalogoResp.ID},
+	}
+	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
+	require.Equal(t, http.StatusCreated, rrCreate.Code)
+
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+
+	// 3️⃣ Tentar atualizar sem catálogos (array vazio)
+	updateInput := request_prestador.PrestadorUpdateRequest{
+		Nome:        "João Silva",
+		Email:       "joao@email.com",
+		Telefone:    "62999677481",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
+		CatalogoIDs: []string{}, // vazio
+	}
+	
+	rr := SetupPutPrestadorRequest(router, createResp.ID, updateInput)
+	
+	// Dependendo da regra de negócio, pode ser 400 ou aceitar
+	// Ajuste conforme sua regra
+	require.Equal(t, http.StatusNoContent, rr.Code)
 }

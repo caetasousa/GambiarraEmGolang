@@ -1,7 +1,9 @@
 package repository
 
 import (
+	"database/sql"
 	"errors"
+	"fmt"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
@@ -10,12 +12,14 @@ import (
 )
 
 type FakePrestadorRepositorio struct {
-	storage map[string]*domain.Prestador
+	storage      map[string]*domain.Prestador
+	catalogoRepo port.CatalogoRepositorio
 }
 
-func NovoFakePrestadorRepositorio() port.PrestadorRepositorio {
+func NovoFakePrestadorRepositorio(catalogoRepo port.CatalogoRepositorio) port.PrestadorRepositorio {
 	return &FakePrestadorRepositorio{
-		storage: make(map[string]*domain.Prestador),
+		storage:      make(map[string]*domain.Prestador),
+		catalogoRepo: catalogoRepo,
 	}
 }
 
@@ -58,5 +62,36 @@ func (r *FakePrestadorRepositorio) BuscarAgendaDoDia(prestadorID string, data st
 }
 
 func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput) error {
+	// 1️⃣ Verifica se o prestador existe
+	prestador, exists := r.storage[input.Id]
+	if !exists {
+		return sql.ErrNoRows // ✅ Mesmo erro que o repo real
+	}
+
+	// 2️⃣ Valida se os catálogos existem
+	for _, catalogoID := range input.CatalogoIDs {
+		_, err := r.catalogoRepo.BuscarPorId(catalogoID)
+		if err != nil {
+			return fmt.Errorf("catálogo %s não existe", catalogoID)
+		}
+	}
+
+	// 3️⃣ Atualiza os campos editáveis
+	prestador.Nome = input.Nome
+	prestador.Email = input.Email
+	prestador.Telefone = input.Telefone
+	prestador.ImagemUrl = input.ImagemUrl
+
+	// 4️⃣ Atualiza os catálogos
+	novos := make([]domain.Catalogo, len(input.CatalogoIDs))
+	for i, catalogoID := range input.CatalogoIDs {
+		catalogo, _ := r.catalogoRepo.BuscarPorId(catalogoID)
+		novos[i] = *catalogo
+	}
+	prestador.Catalogo = novos
+
+	// 5️⃣ Salva de volta
+	r.storage[input.Id] = prestador
+
 	return nil
 }

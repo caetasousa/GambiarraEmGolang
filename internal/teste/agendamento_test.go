@@ -29,9 +29,9 @@ import (
 func SetupRouterAgendamento() (*gin.Engine, port.PrestadorRepositorio, port.ClienteRepositorio, port.CatalogoRepositorio, port.AgendaDiariaRepositorio) {
 	gin.SetMode(gin.TestMode)
 
-	clienteRepo := repository.NewFakeClienteRepositorio()
-	prestadorRepo := repository.NovoFakePrestadorRepositorio()
 	catalogoRepo := repository.NovoCatalogoFakeRepo()
+	prestadorRepo := repository.NovoFakePrestadorRepositorio(catalogoRepo)
+	clienteRepo := repository.NewFakeClienteRepositorio()
 	agendaDiariaRepo := repository.NovoFakeAgendaDiariaRepositorio()
 	agendamentoRepo := repository.NovoFakeAgendamentoRepositorio()
 
