@@ -169,3 +169,34 @@ func (s *PrestadorService) Listar(input *input.PrestadorListInput) ([]*output.Bu
 
 	return prestadoresOutput, total, nil
 }
+
+
+// Service
+func (s *PrestadorService) Inativar(id string) error {
+	prestador, err := s.prestadorRepo.BuscarPorId(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return err
+	}
+
+	prestador.Ativo = false
+	
+	// Usar método específico no repo ou o Salvar existente
+	return s.prestadorRepo.AtualizarStatus(id, false)
+}
+
+func (s *PrestadorService) Ativar(id string) error {
+	prestador, err := s.prestadorRepo.BuscarPorId(id)
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return err
+	}
+
+	prestador.Ativo = true
+	
+	return s.prestadorRepo.AtualizarStatus(id, true)
+}

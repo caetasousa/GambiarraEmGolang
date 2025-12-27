@@ -13,4 +13,5 @@ type PrestadorRepositorio interface {
 	Atualizar(prestador *input.AlterarPrestadorInput) error
 	Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error)
 	Contar() (int, error)
+	AtualizarStatus(id string, ativo bool) error 
 }

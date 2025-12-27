@@ -600,3 +600,26 @@ func (r *PrestadorPostgresRepository) Contar() (int, error) {
 	}
 	return total, nil
 }
+
+func (r *PrestadorPostgresRepository) AtualizarStatus(id string, ativo bool) error {
+	result, err := r.db.Exec(`
+		UPDATE prestadores 
+		SET ativo = $1
+		WHERE id = $2
+	`, ativo, id)
+	
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar status: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows
+	}
+
+	return nil
+}

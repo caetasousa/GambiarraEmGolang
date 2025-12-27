@@ -3,6 +3,7 @@ package teste
 import (
 	"encoding/json"
 	"net/http"
+	"net/http/httptest"
 	"testing"
 
 	"meu-servico-agenda/internal/adapters/http/catalogo/request_catalogo"
@@ -300,3 +301,44 @@ func TestUpdatePrestador_MantémAgenda(t *testing.T) {
 	assert.Equal(t, "2030-01-03", prestadorAtualizado.Agenda[0].Data)
 }
 
+func TestInativarPrestador_Sucesso(t *testing.T) {
+	router, _ := SetupPostPrestador()
+	catalogoResp := CriarCatalogoValido(t, router)
+	prestadorResp := CriarPrestadorValido(t, router, catalogoResp.ID, "04423258196")
+
+	// Inativar
+	req, _ := http.NewRequest(http.MethodPut, "/api/v1/prestadores/"+prestadorResp.ID+"/inativar", nil)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusNoContent, rr.Code)
+
+	// Verificar que está inativo
+	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
+	var prestador response_prestador.PrestadorResponse
+	json.Unmarshal(rrGet.Body.Bytes(), &prestador)
+
+	assert.False(t, prestador.Ativo)
+}
+
+func TestAtivarPrestador_Sucesso(t *testing.T) {
+	router, prestadorResp, repo := CriarPrestadorValidoParaTeste(t)
+
+	// Inativar primeiro
+	prestadorResp.Ativo = false
+	repo.Salvar(&prestadorResp)
+
+	// Ativar
+	req, _ := http.NewRequest(http.MethodPut, "/api/v1/prestadores/"+prestadorResp.ID+"/ativar", nil)
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	require.Equal(t, http.StatusNoContent, rr.Code)
+
+	// Verificar que está ativo
+	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
+	var prestador response_prestador.PrestadorResponse
+	json.Unmarshal(rrGet.Body.Bytes(), &prestador)
+
+	assert.True(t, prestador.Ativo)
+}

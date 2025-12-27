@@ -214,6 +214,7 @@ definitions:
       catalogo_ids:
         items:
           type: string
+        minItems: 1
         type: array
       cpf:
         example: "04423258196"
@@ -868,6 +869,56 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
       summary: Define a agenda diária de um prestador
+      tags:
+      - Prestadores
+  /prestadores/{id}/ativar:
+    put:
+      description: Ativa um prestador, permitindo que ele receba novos agendamentos
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Prestador ativado com sucesso
+        "404":
+          description: Prestador não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Ativa um prestador
+      tags:
+      - Prestadores
+  /prestadores/{id}/inativar:
+    put:
+      description: Inativa um prestador, impedindo que ele receba novos agendamentos
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Prestador inativado com sucesso
+        "404":
+          description: Prestador não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Inativa um prestador
       tags:
       - Prestadores
 swagger: "2.0"

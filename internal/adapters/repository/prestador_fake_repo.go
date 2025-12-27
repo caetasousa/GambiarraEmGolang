@@ -130,3 +130,15 @@ func (r *FakePrestadorRepositorio) Listar(input *input.PrestadorListInput) ([]*d
 func (r *FakePrestadorRepositorio) Contar() (int, error) {
 	return len(r.storage), nil
 }
+
+func (r *FakePrestadorRepositorio) AtualizarStatus(id string, ativo bool) error {
+	prestador, exists := r.storage[id]
+	if !exists {
+		return sql.ErrNoRows
+	}
+
+	prestador.Ativo = ativo
+	r.storage[id] = prestador
+
+	return nil
+}

@@ -249,3 +249,57 @@ func (prc *PrestadorController) GetPreestadores(c *gin.Context) {
 
 	c.JSON(http.StatusOK, resp)
 }
+
+// @Summary Inativa um prestador
+// @Description Inativa um prestador, impedindo que ele receba novos agendamentos
+// @Tags Prestadores
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Success 204 "Prestador inativado com sucesso"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno"
+// @Router /prestadores/{id}/inativar [put]
+func (prc *PrestadorController) InativarPrestador(c *gin.Context) {
+	id := c.Param("id")
+
+	err := prc.prestadorService.Inativar(id)
+	if err != nil {
+		switch err {
+		case service.ErrPrestadorNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno"})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// @Summary Ativa um prestador
+// @Description Ativa um prestador, permitindo que ele receba novos agendamentos
+// @Tags Prestadores
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Success 204 "Prestador ativado com sucesso"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno"
+// @Router /prestadores/{id}/ativar [put]
+func (prc *PrestadorController) AtivarPrestador(c *gin.Context) {
+	id := c.Param("id")
+
+	err := prc.prestadorService.Ativar(id)
+	if err != nil {
+		switch err {
+		case service.ErrPrestadorNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno"})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
+}
