@@ -230,12 +230,16 @@ func TestUpdatePrestador_SemCatalogos(t *testing.T) {
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
-		CatalogoIDs: []string{},
+		CatalogoIDs: []string{}, // Vazio
 	}
 
 	rr := SetupPutPrestadorRequest(router, prestadorResp.ID, updateInput)
-	require.Equal(t, http.StatusNoContent, rr.Code)
+
+	// ✅ Agora espera erro
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Contains(t, rr.Body.String(), "catálogo")
 }
+
 func TestUpdatePrestador_CPFNaoMuda(t *testing.T) {
 	router, _ := SetupPostPrestador()
 	catalogoResp := CriarCatalogoValido(t, router)
@@ -295,3 +299,4 @@ func TestUpdatePrestador_MantémAgenda(t *testing.T) {
 	assert.Len(t, prestadorAtualizado.Agenda, 1)
 	assert.Equal(t, "2030-01-03", prestadorAtualizado.Agenda[0].Data)
 }
+

@@ -201,6 +201,9 @@ func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
 		case service.ErrCatalogoNaoExiste:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
+		case domain.ErrPrestadorDeveTerCatalogo: // ✅ NOVO
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao atualizar prestador"})
 			return

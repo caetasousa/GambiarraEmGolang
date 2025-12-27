@@ -119,6 +119,9 @@ func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput
 }
 
 func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
+	if len(input.CatalogoIDs) == 0 {
+		return domain.ErrPrestadorDeveTerCatalogo
+	}
 
 	if err := s.prestadorRepo.Atualizar(input); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -127,6 +130,7 @@ func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
 		if strings.Contains(err.Error(), "catálogo") && strings.Contains(err.Error(), "não existe") {
 			return ErrCatalogoNaoExiste
 		}
+
 		return err
 	}
 
@@ -138,15 +142,15 @@ func (s *PrestadorService) Listar(input *input.PrestadorListInput) ([]*output.Bu
 	if input.Page <= 0 {
 		input.Page = 1
 	}
-	
+
 	if input.Limit <= 0 {
 		input.Limit = 10
 	}
-	
+
 	if input.Limit > 100 {
 		input.Limit = 100
 	}
-	
+
 	// Busca prestadores do repositório
 	prestadores, err := s.prestadorRepo.Listar(input)
 
