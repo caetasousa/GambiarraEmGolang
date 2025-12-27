@@ -119,7 +119,7 @@ func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput
 }
 
 func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
-	// ✅ 
+
 	if err := s.prestadorRepo.Atualizar(input); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrPrestadorNaoEncontrado
@@ -131,4 +131,37 @@ func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
 	}
 
 	return nil
+}
+
+func (s *PrestadorService) Listar(input *input.PrestadorListInput) ([]*output.BuscarPrestadorOutput, int, error) {
+	// Validações
+	if input.Page <= 0 {
+		input.Page = 1
+	}
+	
+	if input.Limit <= 0 {
+		input.Limit = 10
+	}
+	
+	if input.Limit > 100 {
+		input.Limit = 100
+	}
+	
+	// Busca prestadores do repositório
+	prestadores, err := s.prestadorRepo.Listar(input)
+
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Busca o total de prestadores
+	total, err := s.prestadorRepo.Contar()
+	if err != nil {
+		return nil, 0, err
+	}
+
+	// Converte de domain para output usando mapper
+	prestadoresOutput := mapper.PrestadoresFromDomainOutput(prestadores)
+
+	return prestadoresOutput, total, nil
 }

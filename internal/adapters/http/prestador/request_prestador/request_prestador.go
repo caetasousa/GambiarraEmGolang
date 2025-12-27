@@ -13,7 +13,7 @@ type PrestadorRequest struct {
 	Email       string   `json:"email" binding:"omitempty,email" example:"joao@email.com" swagger:"desc('Email do prestador')"`
 	Telefone    string   `json:"telefone" binding:"required,min=8,max=15" example:"62999677481" swagger:"desc('Telefone do prestador')"`
 	ImagemUrl   string   `json:"image_url" binding:"required,url" example:"https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/bb515383d2f6ef76.jpg"`
-	CatalogoIDs []string `json:"catalogo_ids" binding:"omitempty,dive,required" swagger:"desc('IDs dos serviços no catálogo oferecidos pelo prestador')"`
+	CatalogoIDs []string `json:"catalogo_ids" binding:"required,min=1" swagger:"desc('IDs dos serviços no catálogo oferecidos pelo prestador')"`
 }
 
 func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestadorInput, error) {

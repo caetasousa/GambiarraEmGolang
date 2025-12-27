@@ -11,4 +11,6 @@ type PrestadorRepositorio interface {
 	BuscarPorCPF(cpf string) (*domain.Prestador, error)
 	BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error)
 	Atualizar(prestador *input.AlterarPrestadorInput) error
+	Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error)
+	Contar() (int, error)
 }

@@ -209,3 +209,40 @@ func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
 
 	c.Status(http.StatusNoContent)
 }
+
+// GetPrestadores godoc
+// @Summary Lista todos os prestadores
+// @Description Retorna uma lista paginada de prestadores com seus catálogos e agendas
+// @Tags Prestadores
+// @Accept json
+// @Produce json
+// @Param page query int false "Número da página (padrão: 1)" default(1) minimum(1)
+// @Param limit query int false "Itens por página (padrão: 10, máximo: 100)" default(10) minimum(1) maximum(100)
+// @Success 200 {object} response_prestador.PrestadorListResponse "Lista de prestadores retornada com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Parâmetros de paginação inválidos"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno ao listar prestadores"
+// @Router /prestadores [get]
+func (prc *PrestadorController) GetPreestadores(c *gin.Context) {
+	var req request_prestador.PrestadorListRequest
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	in := req.ToInputPrestador()
+
+	out, total, err := prc.prestadorService.Listar(in)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao listar catálogos"})
+		return
+	}
+
+	resp := response_prestador.PrestadorListResponse{
+		Data:  out,
+		Page:  in.Page,
+		Limit: in.Limit,
+		Total: total,
+	}
+
+	c.JSON(http.StatusOK, resp)
+}

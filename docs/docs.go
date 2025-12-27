@@ -432,6 +432,58 @@ const docTemplate = `{
             }
         },
         "/prestadores": {
+            "get": {
+                "description": "Retorna uma lista paginada de prestadores com seus catálogos e agendas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Lista todos os prestadores",
+                "parameters": [
+                    {
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 1,
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "maximum": 100,
+                        "minimum": 1,
+                        "type": "integer",
+                        "default": 10,
+                        "description": "Itens por página (padrão: 10, máximo: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de prestadores retornada com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/response_prestador.PrestadorListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Parâmetros de paginação inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno ao listar prestadores",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "post": {
                 "description": "Recebe os dados necessários para registrar um novo prestador.",
                 "consumes": [
@@ -685,6 +737,61 @@ const docTemplate = `{
                 "Concluido"
             ]
         },
+        "output.AgendaDiariaOutput": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "intervalos": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.IntervaloDiarioOutput"
+                    }
+                }
+            }
+        },
+        "output.BuscarPrestadorOutput": {
+            "type": "object",
+            "properties": {
+                "agenda": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.AgendaDiariaOutput"
+                    }
+                },
+                "ativo": {
+                    "type": "boolean"
+                },
+                "catalogo": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.CatalogoOutput"
+                    }
+                },
+                "cpf": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "imagemUrl": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
+                }
+            }
+        },
         "output.CatalogoOutput": {
             "type": "object",
             "properties": {
@@ -705,6 +812,20 @@ const docTemplate = `{
                 },
                 "preco": {
                     "type": "integer"
+                }
+            }
+        },
+        "output.IntervaloDiarioOutput": {
+            "type": "object",
+            "properties": {
+                "horaFim": {
+                    "type": "string"
+                },
+                "horaInicio": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
                 }
             }
         },
@@ -1071,6 +1192,26 @@ const docTemplate = `{
                 },
                 "id": {
                     "type": "string"
+                }
+            }
+        },
+        "response_prestador.PrestadorListResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.BuscarPrestadorOutput"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

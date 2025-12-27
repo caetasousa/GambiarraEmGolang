@@ -7,6 +7,7 @@ import (
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
+	"sort"
 
 	"github.com/klassmann/cpfcnpj"
 )
@@ -65,7 +66,7 @@ func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput)
 	// 1️⃣ Verifica se o prestador existe
 	prestador, exists := r.storage[input.Id]
 	if !exists {
-		return sql.ErrNoRows // ✅ Mesmo erro que o repo real
+		return sql.ErrNoRows
 	}
 
 	// 2️⃣ Valida se os catálogos existem
@@ -94,4 +95,38 @@ func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput)
 	r.storage[input.Id] = prestador
 
 	return nil
+}
+
+func (r *FakePrestadorRepositorio) Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error) {
+	// Converte map para slice
+	todos := make([]*domain.Prestador, 0, len(r.storage))
+	for _, p := range r.storage {
+		todos = append(todos, p)
+	}
+
+	// Ordena por ID (simulando ORDER BY created_at DESC do banco real)
+	sort.Slice(todos, func(i, j int) bool {
+		return todos[i].ID > todos[j].ID
+	})
+
+	// Calcula offset
+	offset := (input.Page - 1) * input.Limit
+
+	// Se offset estiver além do tamanho, retorna vazio
+	if offset >= len(todos) {
+		return []*domain.Prestador{}, nil
+	}
+
+	// Calcula o fim da página
+	fim := offset + input.Limit
+	if fim > len(todos) {
+		fim = len(todos)
+	}
+
+	// Retorna slice paginado
+	return todos[offset:fim], nil
+}
+
+func (r *FakePrestadorRepositorio) Contar() (int, error) {
+	return len(r.storage), nil
 }
