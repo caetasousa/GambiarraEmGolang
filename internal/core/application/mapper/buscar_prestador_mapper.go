@@ -27,12 +27,14 @@ func FromPrestador(p *domain.Prestador) *output.BuscarPrestadorOutput {
 	}
 
 	return &output.BuscarPrestadorOutput{
-		ID:       p.ID,
-		Nome:     p.Nome,
-		Email:    p.Email,
-		Telefone: p.Telefone,
-		Ativo:    p.Ativo,
-		Catalogo: CatalogosFromDomain(p.Catalogo),
-		Agenda:   agenda,
+		ID:        p.ID,
+		Nome:      p.Nome,
+		Email:     p.Email,
+		Telefone:  p.Telefone,
+		Cpf:       p.Cpf,
+		Ativo:     p.Ativo,
+		ImagemUrl: p.ImagemUrl,
+		Catalogo:  CatalogosFromDomain(p.Catalogo),
+		Agenda:    agenda,
 	}
 }

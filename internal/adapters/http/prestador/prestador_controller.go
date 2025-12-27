@@ -2,6 +2,7 @@ package prestador
 
 import (
 	"errors"
+
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/response_prestador"
 	"meu-servico-agenda/internal/core/application/service"
@@ -163,4 +164,48 @@ func (prc *PrestadorController) GetPrestador(c *gin.Context) {
 
 	resp := response_prestador.FromPrestadorOutput(*out)
 	c.JSON(http.StatusOK, resp)
+}
+
+// UpdatePrestador godoc
+// @Summary Atualiza um prestador existente
+// @Description Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado.
+// @Tags Prestadores
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Param prestador body request_prestador.PrestadorUpdateRequest true "Dados atualizados do prestador"
+// @Success 204 "Prestador atualizado com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos ou catálogo não existe"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /prestadores/{id} [put]
+func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
+	id := c.Param("id")
+
+	var req request_prestador.PrestadorUpdateRequest
+	if err := c.ShouldBindJSON(&req); err != nil {
+		// ✅ Já captura erros de validação (nome, email, telefone, url)
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	input := req.ToAlterarPrestadorInput()
+	input.Id = id
+
+	err := prc.prestadorService.Atualizar(input)
+	if err != nil {
+		switch err {
+		case service.ErrPrestadorNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case service.ErrCatalogoNaoExiste:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao atualizar prestador"})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
 }

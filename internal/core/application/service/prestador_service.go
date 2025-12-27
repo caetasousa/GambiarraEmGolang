@@ -1,7 +1,10 @@
 package service
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
+	"strings"
 
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
@@ -34,7 +37,7 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	if err != nil {
 		return nil, err
 	}
-	// log.Printf("✅ prestador de cpf %s", cmd.CPF)
+	//log.Printf("✅ prestador de cpf %s", cmd.CPF)
 	if prestadorExistente != nil {
 		return nil, fmt.Errorf("%w: %s", ErrCPFJaCadastrado, cpf)
 	}
@@ -109,7 +112,23 @@ func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput
 	if err != nil {
 		return nil, ErrPrestadorNaoEncontrado
 	}
+
 	out := mapper.FromPrestador(prestador)
 
 	return out, nil
+}
+
+func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
+	// ✅ 
+	if err := s.prestadorRepo.Atualizar(input); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrPrestadorNaoEncontrado
+		}
+		if strings.Contains(err.Error(), "catálogo") && strings.Contains(err.Error(), "não existe") {
+			return ErrCatalogoNaoExiste
+		}
+		return err
+	}
+
+	return nil
 }

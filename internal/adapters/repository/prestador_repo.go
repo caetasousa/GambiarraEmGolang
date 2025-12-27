@@ -2,13 +2,16 @@ package repository
 
 import (
 	"database/sql"
-	"encoding/json"
 	"fmt"
 	"log"
+	"strings"
 	"time"
 
+	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
+
+	"github.com/lib/pq"
 )
 
 type PrestadorPostgresRepository struct {
@@ -27,7 +30,6 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 	}
 	defer tx.Rollback() // rollback automático se ocorrer erro
 
-	log.Printf("✅ prestador de cpf %s", prestador.Cpf)
 	// 1️⃣ Insere prestador
 	_, err = tx.Exec(`
 		INSERT INTO prestadores (id, nome, cpf, email, telefone, ativo, imagem_url, created_at)
@@ -73,107 +75,167 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 		log.Printf("erro ao fazer commit: %v", err)
 		return err
 	}
-
-	log.Printf("Prestador %s inserido com sucesso", prestador.ID)
 	return nil
 }
 
 func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador, error) {
-	var prestador domain.Prestador
-	var catalogosJSON, agendasJSON []byte
-
 	query := `
-	SELECT
+	SELECT 
 		p.id,
 		p.nome,
 		p.cpf,
 		p.email,
 		p.telefone,
 		p.ativo,
-		p.imagem_url,
-		COALESCE(catalogos.catalogos, '[]') AS catalogos,
-		COALESCE(agendas.agendas, '[]') AS agendas
+		p.imagem_url AS prestador_imagem_url,
+		-- Dados do Catálogo
+		c.id AS catalogo_id,
+		c.nome AS catalogo_nome,
+		c.duracao_padrao AS catalogo_duracao_padrao,
+		c.preco AS catalogo_preco,
+		c.imagem_url AS catalogo_imagem_url,
+		c.categoria AS catalogo_categoria,
+		-- Dados da Agenda Diária
+		ad.id AS agenda_id,
+		ad.data AS agenda_data,
+		-- Dados dos Intervalos Diários
+		id.id AS intervalo_id,
+		id.hora_inicio AS intervalo_hora_inicio,
+		id.hora_fim AS intervalo_hora_fim
 	FROM prestadores p
-
-	-- Catálogos
-	LEFT JOIN (
-		SELECT
-			pc.prestador_id,
-			json_agg(
-				jsonb_build_object(
-					'id', c.id,
-					'nome', c.nome,
-					'duracao_padrao', c.duracao_padrao,
-					'preco', c.preco,
-					'categoria', c.categoria
-				)
-			) AS catalogos
-		FROM prestador_catalogos pc
-		JOIN catalogos c ON c.id = pc.catalogo_id
-		GROUP BY pc.prestador_id
-	) catalogos ON catalogos.prestador_id = p.id
-
-	-- Agendas com intervalos
-	LEFT JOIN (
-		SELECT
-			a.prestador_id,
-			json_agg(
-				jsonb_build_object(
-					'id', a.id,
-					'data', a.data,
-					'intervalos', COALESCE(i.intervalos, '[]')
-				)
-				ORDER BY a.data
-			) AS agendas
-		FROM agendas_diarias a
-		LEFT JOIN (
-			SELECT
-				agenda_id,
-				json_agg(
-					jsonb_build_object(
-						'id', id,
-						'hora_inicio', hora_inicio,
-						'hora_fim', hora_fim
-					)
-					ORDER BY hora_inicio
-				) AS intervalos
-			FROM intervalos_diarios
-			GROUP BY agenda_id
-		) i ON i.agenda_id = a.id
-		GROUP BY a.prestador_id
-	) agendas ON agendas.prestador_id = p.id
-
-	WHERE p.id = $1;
+	LEFT JOIN prestador_catalogos pc ON p.id = pc.prestador_id
+	LEFT JOIN catalogos c ON pc.catalogo_id = c.id
+	LEFT JOIN agendas_diarias ad ON p.id = ad.prestador_id
+	LEFT JOIN intervalos_diarios id ON ad.id = id.agenda_id
+	WHERE p.id = $1
+	ORDER BY 
+		c.nome,
+		ad.data,
+		id.hora_inicio
 	`
 
-	row := r.db.QueryRow(query, id)
-	err := row.Scan(
-		&prestador.ID,
-		&prestador.Nome,
-		&prestador.Cpf,
-		&prestador.Email,
-		&prestador.Telefone,
-		&prestador.Ativo,
-		&prestador.ImagemUrl,
-		&catalogosJSON,
-		&agendasJSON,
-	)
+	rows, err := r.db.Query(query, id)
 	if err != nil {
-		if err == sql.ErrNoRows {
-			return nil, err
+		return nil, fmt.Errorf("erro ao executar query: %w", err)
+	}
+	defer rows.Close()
+
+	var prestador *domain.Prestador
+	catalogosMap := make(map[string]*domain.Catalogo)
+	agendasMap := make(map[string]*domain.AgendaDiaria)
+
+	for rows.Next() {
+		var (
+			// Prestador
+			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl string
+			pAtivo                                          bool
+
+			// Catálogo (nullable)
+			catalogoID            sql.NullString
+			catalogoNome          sql.NullString
+			catalogoDuracaoPadrao sql.NullInt64
+			catalogoPreco         sql.NullInt64
+			catalogoImagemUrl     sql.NullString
+			catalogoCategoria     sql.NullString
+
+			// Agenda (nullable)
+			agendaID   sql.NullString
+			agendaData sql.NullTime
+
+			// Intervalo (nullable)
+			intervaloID         sql.NullString
+			intervaloHoraInicio sql.NullTime
+			intervaloHoraFim    sql.NullTime
+		)
+
+		err := rows.Scan(
+			&pID, &pNome, &pCpf, &pEmail, &pTelefone, &pAtivo, &pImagemUrl,
+			&catalogoID, &catalogoNome, &catalogoDuracaoPadrao, &catalogoPreco,
+			&catalogoImagemUrl, &catalogoCategoria,
+			&agendaID, &agendaData,
+			&intervaloID, &intervaloHoraInicio, &intervaloHoraFim,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao fazer scan: %w", err)
 		}
-		return nil, err
+
+		// Inicializa prestador apenas uma vez
+		if prestador == nil {
+			prestador = &domain.Prestador{
+				ID:        pID,
+				Nome:      pNome,
+				Cpf:       pCpf,
+				Email:     pEmail,
+				Telefone:  pTelefone,
+				Ativo:     pAtivo,
+				ImagemUrl: pImagemUrl,
+			}
+		}
+
+		// Adiciona catálogo se existir e ainda não foi adicionado
+		if catalogoID.Valid {
+			if _, exists := catalogosMap[catalogoID.String]; !exists {
+				catalogo := &domain.Catalogo{
+					ID:            catalogoID.String,
+					Nome:          catalogoNome.String,
+					DuracaoPadrao: int(catalogoDuracaoPadrao.Int64),
+					Preco:         int(catalogoPreco.Int64),
+					Categoria:     catalogoCategoria.String,
+				}
+				if catalogoImagemUrl.Valid {
+					catalogo.ImagemUrl = catalogoImagemUrl.String
+				}
+				catalogosMap[catalogoID.String] = catalogo
+			}
+		}
+
+		// Processa agenda e intervalos
+		if agendaID.Valid {
+			// Adiciona agenda se ainda não existe
+			if _, exists := agendasMap[agendaID.String]; !exists {
+				agendasMap[agendaID.String] = &domain.AgendaDiaria{
+					Id:         agendaID.String,
+					Data:       agendaData.Time.Format("2006-01-02"),
+					Intervalos: []domain.IntervaloDiario{},
+				}
+			}
+
+			// Adiciona intervalo se existir
+			if intervaloID.Valid {
+				intervalo := domain.IntervaloDiario{
+					Id:         intervaloID.String,
+					HoraInicio: intervaloHoraInicio.Time,
+					HoraFim:    intervaloHoraFim.Time,
+				}
+				agendasMap[agendaID.String].Intervalos = append(
+					agendasMap[agendaID.String].Intervalos,
+					intervalo,
+				)
+			}
+		}
 	}
 
-	if err := json.Unmarshal(catalogosJSON, &prestador.Catalogo); err != nil {
-		return nil, fmt.Errorf("erro ao deserializar catalogos: %w", err)
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar rows: %w", err)
 	}
 
-	if err := json.Unmarshal(agendasJSON, &prestador.Agenda); err != nil {
-		return nil, fmt.Errorf("erro ao deserializar agendas: %w", err)
+	// Se nenhum resultado foi encontrado
+	if prestador == nil {
+		return nil, sql.ErrNoRows
 	}
 
-	return &prestador, nil
+	// Converte maps para slices
+	prestador.Catalogo = make([]domain.Catalogo, 0, len(catalogosMap))
+	for _, cat := range catalogosMap {
+		prestador.Catalogo = append(prestador.Catalogo, *cat)
+	}
+
+	prestador.Agenda = make([]domain.AgendaDiaria, 0, len(agendasMap))
+	for _, agenda := range agendasMap {
+		prestador.Agenda = append(prestador.Agenda, *agenda)
+	}
+
+	return prestador, nil
 }
 
 func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
@@ -265,4 +327,87 @@ func (r *PrestadorPostgresRepository) BuscarAgendaDoDia(prestadorID string, data
 	}
 
 	return agenda, nil
+}
+
+func (r *PrestadorPostgresRepository) Atualizar(input *input.AlterarPrestadorInput) error {
+	// Inicia uma transação
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("erro ao iniciar transação: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1️⃣ Atualiza dados do prestador (APENAS campos editáveis - sem ID e CPF)
+	result, err := tx.Exec(`
+		UPDATE prestadores 
+		SET 
+			nome = $1,
+			email = $2,
+			telefone = $3,
+			imagem_url = $4
+		WHERE id = $5
+	`,
+		input.Nome,
+		input.Email,
+		input.Telefone,
+		input.ImagemUrl,
+		input.Id,
+	)
+	if err != nil {
+		return fmt.Errorf("erro ao atualizar prestador: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("erro ao verificar linhas afetadas: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return sql.ErrNoRows // ✅ Retorna erro padrão
+	}
+
+	// 2️⃣ Remove todos os catálogos antigos
+	_, err = tx.Exec(`
+		DELETE FROM prestador_catalogos WHERE prestador_id = $1
+	`, input.Id)
+	if err != nil {
+		return fmt.Errorf("erro ao remover catálogos antigos: %w", err)
+	}
+
+	// 3️⃣ Insere novos catálogos
+	if len(input.CatalogoIDs) > 0 {
+		stmt, err := tx.Prepare(`
+			INSERT INTO prestador_catalogos (prestador_id, catalogo_id)
+			VALUES ($1, $2)
+		`)
+		if err != nil {
+			return fmt.Errorf("erro ao preparar inserção de catálogos: %w", err)
+		}
+		defer stmt.Close()
+
+		for _, catalogoID := range input.CatalogoIDs {
+			_, err := stmt.Exec(input.Id, catalogoID)
+			if err != nil {
+				// Detecta erro de FK (catálogo não existe)
+				if pqErr, ok := err.(*pq.Error); ok {
+					if pqErr.Code == "23503" { // foreign_key_violation
+						return fmt.Errorf("catálogo %s não existe", catalogoID)
+					}
+				}
+				// Alternativa sem lib pq
+				if strings.Contains(err.Error(), "foreign key") ||
+					strings.Contains(err.Error(), "violates") {
+					return fmt.Errorf("catálogo %s não existe", catalogoID)
+				}
+				return fmt.Errorf("erro ao inserir catálogo %s: %w", catalogoID, err)
+			}
+		}
+	}
+
+	// 4️⃣ Commit da transação
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("erro ao fazer commit: %w", err)
+	}
+
+	return nil
 }

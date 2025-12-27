@@ -6,12 +6,13 @@ import (
 )
 
 type PrestadorPostResponse struct {
-	ID       string                               `json:"id"`
-	Nome     string                               `json:"nome"`
-	Email    string                               `json:"email"`
-	Telefone string                               `json:"telefone"`
-	Ativo    bool                                 `json:"ativo"`
-	Catalogo []response_catalogo.CatalogoResponse `json:"catalogo"`
+	ID        string                               `json:"id"`
+	Nome      string                               `json:"nome"`
+	Email     string                               `json:"email"`
+	Telefone  string                               `json:"telefone"`
+	Ativo     bool                                 `json:"ativo"`
+	ImagemUrl string                               `json:"image_url"`
+	Catalogo  []response_catalogo.CatalogoResponse `json:"catalogo"`
 }
 
 func FromCriarPrestadorOutput(o output.CriarPrestadorOutput) PrestadorPostResponse {
@@ -27,6 +28,7 @@ func FromCriarPrestadorOutput(o output.CriarPrestadorOutput) PrestadorPostRespon
 		Email:    o.Email,
 		Telefone: o.Telefone,
 		Ativo:    o.Ativo,
+		ImagemUrl: o.ImagemUrl,
 		Catalogo: catalogo,
 	}
 }

@@ -525,6 +525,60 @@ const docTemplate = `{
                         }
                     }
                 }
+            },
+            "put": {
+                "description": "Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Atualiza um prestador existente",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados atualizados do prestador",
+                        "name": "prestador",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request_prestador.PrestadorUpdateRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Prestador atualizado com sucesso"
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou catálogo não existe",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Prestador não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
             }
         },
         "/prestadores/{id}/agenda": {
@@ -821,6 +875,7 @@ const docTemplate = `{
             "required": [
                 "catalogo_ids",
                 "cpf",
+                "image_url",
                 "nome",
                 "telefone"
             ],
@@ -838,6 +893,47 @@ const docTemplate = `{
                 "email": {
                     "type": "string",
                     "example": "joao@email.com"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/bb515383d2f6ef76.jpg"
+                },
+                "nome": {
+                    "type": "string",
+                    "maxLength": 100,
+                    "minLength": 3,
+                    "example": "joao"
+                },
+                "telefone": {
+                    "type": "string",
+                    "maxLength": 15,
+                    "minLength": 8,
+                    "example": "62999677481"
+                }
+            }
+        },
+        "request_prestador.PrestadorUpdateRequest": {
+            "type": "object",
+            "required": [
+                "catalogo_ids",
+                "image_url",
+                "nome",
+                "telefone"
+            ],
+            "properties": {
+                "catalogo_ids": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "email": {
+                    "type": "string",
+                    "example": "joao@email.com"
+                },
+                "image_url": {
+                    "type": "string",
+                    "example": "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/bb515383d2f6ef76.jpg"
                 },
                 "nome": {
                     "type": "string",
@@ -996,6 +1092,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "image_url": {
+                    "type": "string"
+                },
                 "nome": {
                     "type": "string"
                 },
@@ -1022,10 +1121,16 @@ const docTemplate = `{
                         "$ref": "#/definitions/response_catalogo.CatalogoResponse"
                     }
                 },
+                "cpf": {
+                    "type": "string"
+                },
                 "email": {
                     "type": "string"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "image_url": {
                     "type": "string"
                 },
                 "nome": {

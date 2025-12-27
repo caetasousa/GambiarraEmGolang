@@ -12,12 +12,14 @@ import (
 	"meu-servico-agenda/internal/adapters/http/catalogo/response_catalogo"
 	"meu-servico-agenda/internal/adapters/http/prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
+	"meu-servico-agenda/internal/adapters/http/prestador/response_prestador"
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -120,7 +122,7 @@ func TestPostPrestador_Sucesso(t *testing.T) {
 		Email:       "joao@email.com",
 		Cpf:         "04423258196",
 		Telefone:    "62999677481",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 
@@ -136,7 +138,7 @@ func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{"catalogo-inexistente"},
 	}
 
@@ -158,7 +160,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 		DuracaoPadrao: 30,
 		Preco:         3500.0,
 		Categoria:     "Beleza",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:     "https://exemplo.com/img-catalogo.jpg",
 	}
 	rrCatalogo := SetupPostCatalogoRequest(router, catalogoInput)
 	require.Equal(t, http.StatusCreated, rrCatalogo.Code)
@@ -169,23 +171,57 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 
 	// 2️⃣ Criar prestador usando o ID do catálogo
 	prestadorInput := request_prestador.PrestadorRequest{
-		Nome:        "Maria",
+		Nome:        "Maria Silva",
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:   "https://exemplo.com/img-prestador.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
 	require.Equal(t, http.StatusCreated, rrCreate.Code)
 
-	// 3️⃣ Buscar prestador criado
-	var resp map[string]interface{}
-	_ = json.Unmarshal(rrCreate.Body.Bytes(), &resp)
-	id := resp["id"].(string)
+	// 3️⃣ Extrair ID do prestador criado
+	var createResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrCreate.Body.Bytes(), &createResp)
+	require.NoError(t, err)
+	require.NotEmpty(t, createResp.ID)
 
-	rrGet := SetupGetPrestadorRequest(router, id)
+	// 4️⃣ Buscar prestador criado
+	rrGet := SetupGetPrestadorRequest(router, createResp.ID)
 	require.Equal(t, http.StatusOK, rrGet.Code)
+
+	// 5️⃣ Validar todos os dados retornados
+	var prestadorResp response_prestador.PrestadorResponse
+	err = json.Unmarshal(rrGet.Body.Bytes(), &prestadorResp)
+	require.NoError(t, err)
+
+	// Validar dados do prestador
+	assert.Equal(t, createResp.ID, prestadorResp.ID, "ID do prestador deve ser igual")
+	assert.Equal(t, "Maria Silva", prestadorResp.Nome, "Nome do prestador deve ser igual")
+	assert.Equal(t, "04423258196", prestadorResp.Cpf, "CPF do prestador deve ser igual")
+	assert.Equal(t, "maria@email.com", prestadorResp.Email, "Email do prestador deve ser igual")
+	assert.Equal(t, "62999677482", prestadorResp.Telefone, "Telefone do prestador deve ser igual")
+	assert.True(t, prestadorResp.Ativo, "Prestador deve estar ativo")
+	assert.Equal(t, "https://exemplo.com/img-prestador.jpg", prestadorResp.ImagemUrl, "URL da imagem do prestador deve ser igual")
+	assert.NotEmpty(t, prestadorResp.ImagemUrl, "URL da imagem do prestador não deve estar vazia")
+
+	// Validar catálogos
+	require.NotEmpty(t, prestadorResp.Catalogo, "Prestador deve ter pelo menos um catálogo")
+	assert.Len(t, prestadorResp.Catalogo, 1, "Prestador deve ter exatamente 1 catálogo")
+
+	catalogoRetornado := prestadorResp.Catalogo[0]
+	assert.Equal(t, catalogoResp.ID, catalogoRetornado.ID, "ID do catálogo deve ser igual")
+	assert.Equal(t, "Corte de Cabelo", catalogoRetornado.Nome, "Nome do catálogo deve ser igual")
+	assert.Equal(t, 30, catalogoRetornado.DuracaoPadrao, "Duração padrão do catálogo deve ser igual")
+	assert.Equal(t, 3500, catalogoRetornado.Preco, "Preço do catálogo deve ser igual")
+	assert.Equal(t, "Beleza", catalogoRetornado.Categoria, "Categoria do catálogo deve ser igual")
+	assert.Equal(t, "https://exemplo.com/img-catalogo.jpg", catalogoRetornado.ImagemUrl, "URL da imagem do catálogo deve ser igual")
+	assert.NotEmpty(t, catalogoRetornado.ImagemUrl, "URL da imagem do catálogo não deve estar vazia")
+
+	// Validar que agenda está vazia (já que não foi criada nenhuma)
+	assert.NotNil(t, prestadorResp.Agenda, "Agenda não deve ser nil")
+	assert.Empty(t, prestadorResp.Agenda, "Agenda deve estar vazia")
 }
 
 func TestGetPrestador_UsuarioExistente(t *testing.T) {
@@ -212,7 +248,7 @@ func TestGetPrestador_UsuarioExistente(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
@@ -251,7 +287,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
-		ImagemUrl:     "https://exemplo.com/img1.jpg",
+		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
 	rrPrestador := SetupPostPrestadorRequest(router, prestadorInput)

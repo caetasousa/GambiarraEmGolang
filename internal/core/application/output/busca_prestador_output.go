@@ -1,13 +1,15 @@
 package output
 
 type BuscarPrestadorOutput struct {
-	ID       string
-	Nome     string
-	Email    string
-	Telefone string
-	Ativo    bool
-	Catalogo []CatalogoOutput
-	Agenda   []AgendaDiariaOutput
+	ID        string
+	Nome      string
+	Email     string
+	Telefone  string
+	Cpf       string
+	Ativo     bool
+	ImagemUrl string
+	Catalogo  []CatalogoOutput
+	Agenda    []AgendaDiariaOutput
 }
 type AgendaDiariaOutput struct {
 	ID         string

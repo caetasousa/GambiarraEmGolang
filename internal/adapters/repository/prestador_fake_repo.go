@@ -2,6 +2,7 @@ package repository
 
 import (
 	"errors"
+	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 
@@ -54,4 +55,8 @@ func (r *FakePrestadorRepositorio) BuscarAgendaDoDia(prestadorID string, data st
 	}
 
 	return nil, nil
+}
+
+func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput) error {
+	return nil
 }

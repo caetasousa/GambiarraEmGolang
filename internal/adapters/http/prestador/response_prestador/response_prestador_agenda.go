@@ -6,13 +6,15 @@ import (
 )
 
 type PrestadorResponse struct {
-	ID       string                               `json:"id"`
-	Nome     string                               `json:"nome"`
-	Email    string                               `json:"email"`
-	Telefone string                               `json:"telefone"`
-	Ativo    bool                                 `json:"ativo"`
-	Catalogo []response_catalogo.CatalogoResponse `json:"catalogo"`
-	Agenda   []AgendaDiariaResponse               `json:"agenda"`
+	ID        string                               `json:"id"`
+	Nome      string                               `json:"nome"`
+	Email     string                               `json:"email"`
+	Telefone  string                               `json:"telefone"`
+	Cpf       string                               `json:"cpf"`
+	Ativo     bool                                 `json:"ativo"`
+	ImagemUrl string                               `json:"image_url"`
+	Catalogo  []response_catalogo.CatalogoResponse `json:"catalogo"`
+	Agenda    []AgendaDiariaResponse               `json:"agenda"`
 }
 
 func FromPrestadorOutput(o output.BuscarPrestadorOutput) PrestadorResponse {
@@ -28,12 +30,14 @@ func FromPrestadorOutput(o output.BuscarPrestadorOutput) PrestadorResponse {
 	}
 
 	return PrestadorResponse{
-		ID:       o.ID,
-		Nome:     o.Nome,
-		Email:    o.Email,
-		Telefone: o.Telefone,
-		Ativo:    o.Ativo,
-		Catalogo: catalogo,
-		Agenda:   agenda,
+		ID:        o.ID,
+		Nome:      o.Nome,
+		Email:     o.Email,
+		Cpf:       o.Cpf,
+		Telefone:  o.Telefone,
+		Ativo:     o.Ativo,
+		ImagemUrl: o.ImagemUrl,
+		Catalogo:  catalogo,
+		Agenda:    agenda,
 	}
 }
