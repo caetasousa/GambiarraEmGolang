@@ -433,7 +433,7 @@ const docTemplate = `{
         },
         "/prestadores": {
             "get": {
-                "description": "Retorna uma lista paginada de prestadores com seus catálogos e agendas",
+                "description": "Retorna lista paginada de prestadores ativos ou inativos",
                 "consumes": [
                     "application/json"
                 ],
@@ -443,41 +443,37 @@ const docTemplate = `{
                 "tags": [
                     "Prestadores"
                 ],
-                "summary": "Lista todos os prestadores",
+                "summary": "Lista prestadores filtrados por status",
                 "parameters": [
                     {
-                        "minimum": 1,
                         "type": "integer",
-                        "default": 1,
                         "description": "Número da página (padrão: 1)",
                         "name": "page",
                         "in": "query"
                     },
                     {
-                        "maximum": 100,
-                        "minimum": 1,
                         "type": "integer",
-                        "default": 10,
                         "description": "Itens por página (padrão: 10, máximo: 100)",
                         "name": "limit",
                         "in": "query"
+                    },
+                    {
+                        "type": "boolean",
+                        "description": "Status do prestador (obrigatório)",
+                        "name": "ativo",
+                        "in": "query",
+                        "required": true
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Lista de prestadores retornada com sucesso",
+                        "description": "OK",
                         "schema": {
                             "$ref": "#/definitions/response_prestador.PrestadorListResponse"
                         }
                     },
                     "400": {
-                        "description": "Parâmetros de paginação inválidos",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Erro interno ao listar prestadores",
+                        "description": "Parâmetro 'ativo' é obrigatório",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -635,7 +631,7 @@ const docTemplate = `{
         },
         "/prestadores/{id}/agenda": {
             "put": {
-                "description": "Adiciona uma nova agenda diária à disponibilidade do prestador.",
+                "description": "Cria uma nova agenda ou atualiza uma existente para a data especificada",
                 "consumes": [
                     "application/json"
                 ],
@@ -645,7 +641,7 @@ const docTemplate = `{
                 "tags": [
                     "Prestadores"
                 ],
-                "summary": "Define a agenda diária de um prestador",
+                "summary": "Cria ou atualiza uma agenda",
                 "parameters": [
                     {
                         "type": "string",
@@ -655,7 +651,7 @@ const docTemplate = `{
                         "required": true
                     },
                     {
-                        "description": "Agenda diária",
+                        "description": "Dados da agenda",
                         "name": "agenda",
                         "in": "body",
                         "required": true,
@@ -665,8 +661,8 @@ const docTemplate = `{
                     }
                 ],
                 "responses": {
-                    "204": {
-                        "description": "Agenda adicionada com sucesso"
+                    "200": {
+                        "description": "Agenda criada ou atualizada com sucesso"
                     },
                     "400": {
                         "description": "Dados inválidos",
@@ -681,13 +677,56 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Conflito de agenda",
+                        "description": "Prestador inativo",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Remove uma agenda de um prestador em uma data específica",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Deleta uma agenda",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Data da agenda (formato: 2006-01-02)",
+                        "name": "data",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Agenda deletada com sucesso"
+                    },
+                    "400": {
+                        "description": "Data inválida",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
-                    "500": {
-                        "description": "Erro interno",
+                    "404": {
+                        "description": "Prestador ou agenda não encontrada",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Prestador inativo",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }

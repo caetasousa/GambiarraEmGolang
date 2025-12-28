@@ -23,7 +23,37 @@ func (r *AgendaDiariaRequest) ToAdicionarAgendaInput() (*input.AdicionarAgendaIn
 		return nil, fmt.Errorf("data inválida: %w", err)
 	}
 
+	intervalos, err := r.parseIntervalos()
+	if err != nil {
+		return nil, err
+	}
+
+	return &input.AdicionarAgendaInput{
+		Data:       data,
+		Intervalos: intervalos,
+	}, nil
+}
+
+func (r *AgendaDiariaRequest) ToAtualizarAgendaInput() (*input.AtualizarAgendaInput, error) {
+	data, err := time.Parse("2006-01-02", r.Data)
+	if err != nil {
+		return nil, fmt.Errorf("data inválida: %w", err)
+	}
+
+	intervalos, err := r.parseIntervalos()
+	if err != nil {
+		return nil, err
+	}
+
+	return &input.AtualizarAgendaInput{
+		Data:       data,
+		Intervalos: intervalos,
+	}, nil
+}
+
+func (r *AgendaDiariaRequest) parseIntervalos() ([]input.IntervaloInput, error) {
 	intervalos := make([]input.IntervaloInput, 0, len(r.Intervalos))
+	
 	for _, i := range r.Intervalos {
 		inicio, err := time.Parse("15:04", i.HoraInicio)
 		if err != nil {
@@ -41,8 +71,5 @@ func (r *AgendaDiariaRequest) ToAdicionarAgendaInput() (*input.AdicionarAgendaIn
 		})
 	}
 
-	return &input.AdicionarAgendaInput{
-		Data:       data,
-		Intervalos: intervalos,
-	}, nil
+	return intervalos, nil
 }

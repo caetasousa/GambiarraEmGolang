@@ -123,6 +123,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 	var prestador *domain.Prestador
 	catalogosMap := make(map[string]*domain.Catalogo)
 	agendasMap := make(map[string]*domain.AgendaDiaria)
+	intervalosMap := make(map[string]bool) // ✅ NOVO: Controle de intervalos duplicados
 
 	for rows.Next() {
 		var (
@@ -200,17 +201,26 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 				}
 			}
 
-			// Adiciona intervalo se existir
+			// ✅ Adiciona intervalo se existir E ainda não foi adicionado
 			if intervaloID.Valid {
-				intervalo := domain.IntervaloDiario{
-					Id:         intervaloID.String,
-					HoraInicio: intervaloHoraInicio.Time,
-					HoraFim:    intervaloHoraFim.Time,
+				// Cria chave única: agendaID + intervaloID
+				chaveIntervalo := fmt.Sprintf("%s:%s", agendaID.String, intervaloID.String)
+				
+				// ✅ Verifica se já foi adicionado
+				if !intervalosMap[chaveIntervalo] {
+					intervalo := domain.IntervaloDiario{
+						Id:         intervaloID.String,
+						HoraInicio: intervaloHoraInicio.Time,
+						HoraFim:    intervaloHoraFim.Time,
+					}
+					agendasMap[agendaID.String].Intervalos = append(
+						agendasMap[agendaID.String].Intervalos,
+						intervalo,
+					)
+					
+					// ✅ Marca como adicionado
+					intervalosMap[chaveIntervalo] = true
 				}
-				agendasMap[agendaID.String].Intervalos = append(
-					agendasMap[agendaID.String].Intervalos,
-					intervalo,
-				)
 			}
 		}
 	}
@@ -413,7 +423,6 @@ func (r *PrestadorPostgresRepository) Atualizar(input *input.AlterarPrestadorInp
 }
 
 func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error) {
-	// Calcula offset a partir da página
 	offset := (input.Page - 1) * input.Limit
 
 	query := `
@@ -421,6 +430,7 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 		SELECT 
 			id, nome, cpf, email, telefone, ativo, imagem_url, created_at
 		FROM prestadores
+		WHERE ativo = $3
 		ORDER BY created_at DESC
 		LIMIT $1 OFFSET $2
 	)
@@ -458,7 +468,7 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 		id.hora_inicio NULLS LAST
 	`
 
-	rows, err := r.db.Query(query, input.Limit, offset)
+	rows, err := r.db.Query(query, input.Limit, offset, input.Ativo)
 	if err != nil {
 		return nil, fmt.Errorf("erro ao executar query: %w", err)
 	}
@@ -469,6 +479,7 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 	prestadoresMap := make(map[string]*domain.Prestador)
 	catalogosMap := make(map[string]map[string]*domain.Catalogo)
 	agendasMap := make(map[string]map[string]*domain.AgendaDiaria)
+	intervalosMap := make(map[string]map[string]bool) // ✅ NOVO: Controle de intervalos duplicados
 
 	for rows.Next() {
 		var (
@@ -521,6 +532,7 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 			}
 			catalogosMap[pID] = make(map[string]*domain.Catalogo)
 			agendasMap[pID] = make(map[string]*domain.AgendaDiaria)
+			intervalosMap[pID] = make(map[string]bool) // ✅ Inicializa controle de intervalos
 		}
 
 		// Adiciona catálogo se existir e ainda não foi adicionado
@@ -552,17 +564,26 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 				}
 			}
 
-			// Adiciona intervalo se existir
+			// ✅ Adiciona intervalo se existir E ainda não foi adicionado
 			if intervaloID.Valid {
-				intervalo := domain.IntervaloDiario{
-					Id:         intervaloID.String,
-					HoraInicio: intervaloHoraInicio.Time,
-					HoraFim:    intervaloHoraFim.Time,
+				// Cria chave única: agendaID + intervaloID
+				chaveIntervalo := fmt.Sprintf("%s:%s", agendaID.String, intervaloID.String)
+				
+				// ✅ Verifica se já foi adicionado
+				if !intervalosMap[pID][chaveIntervalo] {
+					intervalo := domain.IntervaloDiario{
+						Id:         intervaloID.String,
+						HoraInicio: intervaloHoraInicio.Time,
+						HoraFim:    intervaloHoraFim.Time,
+					}
+					agendasMap[pID][agendaID.String].Intervalos = append(
+						agendasMap[pID][agendaID.String].Intervalos,
+						intervalo,
+					)
+					
+					// ✅ Marca como adicionado
+					intervalosMap[pID][chaveIntervalo] = true
 				}
-				agendasMap[pID][agendaID.String].Intervalos = append(
-					agendasMap[pID][agendaID.String].Intervalos,
-					intervalo,
-				)
 			}
 		}
 	}
@@ -592,12 +613,19 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 	return prestadores, nil
 }
 
-func (r *PrestadorPostgresRepository) Contar() (int, error) {
+// ✅ Contar com filtro obrigatório
+func (r *PrestadorPostgresRepository) Contar(ativo bool) (int, error) {
 	var total int
-	err := r.db.QueryRow("SELECT COUNT(*) FROM prestadores").Scan(&total)
+	err := r.db.QueryRow(`
+		SELECT COUNT(*) 
+		FROM prestadores 
+		WHERE ativo = $1
+	`, ativo).Scan(&total)
+	
 	if err != nil {
 		return 0, fmt.Errorf("erro ao contar prestadores: %w", err)
 	}
+	
 	return total, nil
 }
 
@@ -622,4 +650,46 @@ func (r *PrestadorPostgresRepository) AtualizarStatus(id string, ativo bool) err
 	}
 
 	return nil
+}
+
+func (r *AgendaDiariaPostgresRepository) DeletarAgenda(prestadorID string, data string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("erro ao iniciar transação: %w", err)
+	}
+	defer tx.Rollback()
+
+	// 1. Buscar ID da agenda
+	var agendaID string
+	err = tx.QueryRow(`
+		SELECT id FROM agendas_diarias 
+		WHERE prestador_id = $1 AND data = $2
+	`, prestadorID, data).Scan(&agendaID)
+	
+	if err == sql.ErrNoRows {
+		return sql.ErrNoRows
+	}
+	if err != nil {
+		return fmt.Errorf("erro ao buscar agenda: %w", err)
+	}
+
+	// 2. Deletar intervalos
+	_, err = tx.Exec(`
+		DELETE FROM intervalos_diarios 
+		WHERE agenda_id = $1
+	`, agendaID)
+	if err != nil {
+		return fmt.Errorf("erro ao deletar intervalos: %w", err)
+	}
+
+	// 3. Deletar agenda
+	_, err = tx.Exec(`
+		DELETE FROM agendas_diarias 
+		WHERE id = $1
+	`, agendaID)
+	if err != nil {
+		return fmt.Errorf("erro ao deletar agenda: %w", err)
+	}
+
+	return tx.Commit()
 }

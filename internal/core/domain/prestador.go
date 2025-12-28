@@ -48,3 +48,28 @@ func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
 	p.Agenda = append(p.Agenda, *agenda)
 	return nil
 }
+
+func (p *Prestador) RemoverAgenda(data string) error {
+	if !p.Ativo {
+		return ErrPrestadorInativo
+	}
+
+	// Buscar índice da agenda
+	indice := -1
+	for i, agenda := range p.Agenda {
+		if agenda.Data == data {
+			indice = i
+			break
+		}
+	}
+
+	// Se não encontrou, retorna erro
+	if indice == -1 {
+		return ErrAgendaNaoEncontrada
+	}
+
+	// Remove agenda do slice
+	p.Agenda = append(p.Agenda[:indice], p.Agenda[indice+1:]...)
+	
+	return nil
+}

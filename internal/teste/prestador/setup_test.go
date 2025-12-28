@@ -44,12 +44,13 @@ func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 	apiV1 := router.Group("/api/v1")
 	{
 		apiV1.POST("/prestadores", prestadorController.PostPrestador)
-		apiV1.GET("/prestadores", prestadorController.GetPreestadores)
+		apiV1.GET("/prestadores", prestadorController.GetPrestadores)
 		apiV1.GET("/prestadores/:id", prestadorController.GetPrestador)
 		apiV1.PUT("/prestadores/:id/agenda", prestadorController.PutAgenda)
 		apiV1.PUT("/prestadores/:id", prestadorController.UpdatePrestador)
 		apiV1.PUT("/prestadores/:id/inativar", prestadorController.InativarPrestador) 
 		apiV1.PUT("/prestadores/:id/ativar", prestadorController.AtivarPrestador)
+		apiV1.DELETE("/prestadores/:id/agenda", prestadorController.DeleteAgenda)
 
 		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
 	}

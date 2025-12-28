@@ -696,38 +696,33 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna uma lista paginada de prestadores com seus catálogos e
-        agendas
+      description: Retorna lista paginada de prestadores ativos ou inativos
       parameters:
-      - default: 1
-        description: 'Número da página (padrão: 1)'
+      - description: 'Número da página (padrão: 1)'
         in: query
-        minimum: 1
         name: page
         type: integer
-      - default: 10
-        description: 'Itens por página (padrão: 10, máximo: 100)'
+      - description: 'Itens por página (padrão: 10, máximo: 100)'
         in: query
-        maximum: 100
-        minimum: 1
         name: limit
         type: integer
+      - description: Status do prestador (obrigatório)
+        in: query
+        name: ativo
+        required: true
+        type: boolean
       produces:
       - application/json
       responses:
         "200":
-          description: Lista de prestadores retornada com sucesso
+          description: OK
           schema:
             $ref: '#/definitions/response_prestador.PrestadorListResponse'
         "400":
-          description: Parâmetros de paginação inválidos
+          description: Parâmetro 'ativo' é obrigatório
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Erro interno ao listar prestadores
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Lista todos os prestadores
+      summary: Lista prestadores filtrados por status
       tags:
       - Prestadores
     post:
@@ -831,17 +826,50 @@ paths:
       tags:
       - Prestadores
   /prestadores/{id}/agenda:
-    put:
-      consumes:
-      - application/json
-      description: Adiciona uma nova agenda diária à disponibilidade do prestador.
+    delete:
+      description: Remove uma agenda de um prestador em uma data específica
       parameters:
       - description: ID do prestador
         in: path
         name: id
         required: true
         type: string
-      - description: Agenda diária
+      - description: 'Data da agenda (formato: 2006-01-02)'
+        in: query
+        name: data
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Agenda deletada com sucesso
+        "400":
+          description: Data inválida
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Prestador ou agenda não encontrada
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "409":
+          description: Prestador inativo
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Deleta uma agenda
+      tags:
+      - Prestadores
+    put:
+      consumes:
+      - application/json
+      description: Cria uma nova agenda ou atualiza uma existente para a data especificada
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Dados da agenda
         in: body
         name: agenda
         required: true
@@ -850,8 +878,8 @@ paths:
       produces:
       - application/json
       responses:
-        "204":
-          description: Agenda adicionada com sucesso
+        "200":
+          description: Agenda criada ou atualizada com sucesso
         "400":
           description: Dados inválidos
           schema:
@@ -861,14 +889,10 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
         "409":
-          description: Conflito de agenda
+          description: Prestador inativo
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Erro interno
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Define a agenda diária de um prestador
+      summary: Cria ou atualiza uma agenda
       tags:
       - Prestadores
   /prestadores/{id}/ativar:

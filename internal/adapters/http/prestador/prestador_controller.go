@@ -2,9 +2,12 @@ package prestador
 
 import (
 	"errors"
+	"fmt"
+	"time"
 
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
 	"meu-servico-agenda/internal/adapters/http/prestador/response_prestador"
+
 	"meu-servico-agenda/internal/core/application/service"
 	"meu-servico-agenda/internal/core/domain"
 	"net/http"
@@ -72,64 +75,6 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 	// 4️⃣ Response
 	resp := response_prestador.FromCriarPrestadorOutput(*prestador)
 	c.JSON(http.StatusCreated, resp)
-}
-
-// @Summary Define a agenda diária de um prestador
-// @Description Adiciona uma nova agenda diária à disponibilidade do prestador.
-// @Tags Prestadores
-// @Accept json
-// @Produce json
-// @Param id path string true "ID do prestador"
-// @Param agenda body request_prestador.AgendaDiariaRequest true "Agenda diária"
-// @Success 204 "Agenda adicionada com sucesso"
-// @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
-// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
-// @Failure 409 {object} domain.ErrorResponse "Conflito de agenda"
-// @Failure 500 {object} domain.ErrorResponse "Erro interno"
-// @Router /prestadores/{id}/agenda [put]
-func (prc *PrestadorController) PutAgenda(c *gin.Context) {
-	prestadorID := c.Param("id")
-
-	var input request_prestador.AgendaDiariaRequest
-
-	// 1️⃣ Binding / validação de formato
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 2️⃣ Adapter → Command (mantém time.Parse e validações)
-	cmd, err := input.ToAdicionarAgendaInput()
-	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
-
-	// 3️⃣ Caso de uso
-	err = prc.prestadorService.AdicionarAgenda(prestadorID, cmd)
-	if err != nil {
-		switch {
-		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
-			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
-
-		case errors.Is(err, domain.ErrAgendaDuplicada),
-			errors.Is(err, service.ErrPrestadorInativo),
-			errors.Is(err, domain.ErrPrestadorInativo):
-			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
-
-		case errors.Is(err, domain.ErrAgendaSemIntervalos),
-			errors.Is(err, domain.ErrIntervaloHorarioInvalido),
-			errors.Is(err, domain.ErrDataEstaNoPassado):
-
-			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-
-		default:
-			c.JSON(http.StatusInternalServerError, gin.H{"error": "erro interno"})
-		}
-		return
-	}
-
-	c.Status(http.StatusNoContent)
 }
 
 // @Summary Consulta prestador pelo ID
@@ -214,40 +159,45 @@ func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
 }
 
 // GetPrestadores godoc
-// @Summary Lista todos os prestadores
-// @Description Retorna uma lista paginada de prestadores com seus catálogos e agendas
+// @Summary Lista prestadores filtrados por status
+// @Description Retorna lista paginada de prestadores ativos ou inativos
 // @Tags Prestadores
 // @Accept json
 // @Produce json
-// @Param page query int false "Número da página (padrão: 1)" default(1) minimum(1)
-// @Param limit query int false "Itens por página (padrão: 10, máximo: 100)" default(10) minimum(1) maximum(100)
-// @Success 200 {object} response_prestador.PrestadorListResponse "Lista de prestadores retornada com sucesso"
-// @Failure 400 {object} domain.ErrorResponse "Parâmetros de paginação inválidos"
-// @Failure 500 {object} domain.ErrorResponse "Erro interno ao listar prestadores"
+// @Param page query int false "Número da página (padrão: 1)"
+// @Param limit query int false "Itens por página (padrão: 10, máximo: 100)"
+// @Param ativo query boolean true "Status do prestador (obrigatório)"
+// @Success 200 {object} response_prestador.PrestadorListResponse
+// @Failure 400 {object} domain.ErrorResponse "Parâmetro 'ativo' é obrigatório"
 // @Router /prestadores [get]
-func (prc *PrestadorController) GetPreestadores(c *gin.Context) {
+func (prc *PrestadorController) GetPrestadores(c *gin.Context) {
 	var req request_prestador.PrestadorListRequest
+
 	if err := c.ShouldBindQuery(&req); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Parâmetro 'ativo' é obrigatório: %s", err.Error()),
+		})
 		return
 	}
 
-	in := req.ToInputPrestador()
+	input := req.ToInputPrestador()
 
-	out, total, err := prc.prestadorService.Listar(in)
+	prestadores, total, err := prc.prestadorService.ListarPrestadores(input)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao listar catálogos"})
+		c.JSON(http.StatusInternalServerError, gin.H{
+			"error": "Erro ao listar prestadores",
+		})
 		return
 	}
 
-	resp := response_prestador.PrestadorListResponse{
-		Data:  out,
-		Page:  in.Page,
-		Limit: in.Limit,
+	response := response_prestador.PrestadorListResponse{
+		Data:  prestadores,
+		Page:  input.Page,
+		Limit: input.Limit,
 		Total: total,
 	}
 
-	c.JSON(http.StatusOK, resp)
+	c.JSON(http.StatusOK, response)
 }
 
 // @Summary Inativa um prestador
@@ -297,6 +247,139 @@ func (prc *PrestadorController) AtivarPrestador(c *gin.Context) {
 			return
 		default:
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno"})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// func (r *PrestadorController) ToAtualizarAgendaInput() (*input.AtualizarAgendaInput, error) {
+// 	data, err := time.Parse("2006-01-02", r.Data)
+// 	if err != nil {
+// 		return nil, fmt.Errorf("data inválida: %w", err)
+// 	}
+
+// 	intervalos := make([]input.IntervaloInput, 0, len(r.Intervalos))
+// 	for _, i := range r.Intervalos {
+// 		inicio, err := time.Parse("15:04", i.HoraInicio)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("hora_inicio inválida: %w", err)
+// 		}
+
+// 		fim, err := time.Parse("15:04", i.HoraFim)
+// 		if err != nil {
+// 			return nil, fmt.Errorf("hora_fim inválida: %w", err)
+// 		}
+
+// 		intervalos = append(intervalos, input.IntervaloInput{
+// 			Inicio: inicio,
+// 			Fim:    fim,
+// 		})
+// 	}
+
+// 	return &input.AtualizarAgendaInput{
+// 		Data:       data,
+// 		Intervalos: intervalos,
+// 	}, nil
+// }
+
+// @Summary Cria ou atualiza uma agenda
+// @Description Cria uma nova agenda ou atualiza uma existente para a data especificada
+// @Tags Prestadores
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Param agenda body request_prestador.AgendaDiariaRequest true "Dados da agenda"
+// @Success 200 "Agenda criada ou atualizada com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 409 {object} domain.ErrorResponse "Prestador inativo"
+// @Router /prestadores/{id}/agenda [put]
+func (prc *PrestadorController) PutAgenda(c *gin.Context) {
+	prestadorID := c.Param("id")
+
+	var input request_prestador.AgendaDiariaRequest
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Dados inválidos: %s", err.Error()),
+		})
+		return
+	}
+
+	cmd, err := input.ToAdicionarAgendaInput() // Um método só
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		return
+	}
+
+	cmd.PrestadorID = prestadorID
+
+	err = prc.prestadorService.SalvarAgenda(cmd)
+	if err != nil {
+		switch err {
+		case service.ErrPrestadorNaoEncontrado:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case service.ErrPrestadorInativo:
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		case domain.ErrIntervaloHorarioInvalido,
+			domain.ErrAgendaSemIntervalos,
+			domain.ErrDataEstaNoPassado,
+			domain.ErrIntervalosSesobrepoe: // ✅ NOVO
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro ao salvar agenda",
+			})
+			return
+		}
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// DeleteAgenda godoc
+// @Summary Deleta uma agenda
+// @Description Remove uma agenda de um prestador em uma data específica
+// @Tags Prestadores
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Param data query string true "Data da agenda (formato: 2006-01-02)"
+// @Success 204 "Agenda deletada com sucesso"
+// @Failure 400 {object} domain.ErrorResponse "Data inválida"
+// @Failure 404 {object} domain.ErrorResponse "Prestador ou agenda não encontrada"
+// @Failure 409 {object} domain.ErrorResponse "Prestador inativo"
+// @Router /prestadores/{id}/agenda [delete]
+func (prc *PrestadorController) DeleteAgenda(c *gin.Context) {
+	prestadorID := c.Param("id")
+	data := c.Query("data") // Ex: ?data=2030-01-03
+
+	// Validar formato da data
+	_, err := time.Parse("2006-01-02", data)
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": "Data inválida. Use o formato YYYY-MM-DD",
+		})
+		return
+	}
+
+	err = prc.prestadorService.DeletarAgenda(prestadorID, data)
+	if err != nil {
+		switch err {
+		case service.ErrPrestadorNaoEncontrado,
+			service.ErrAgendaNaoEncontrada:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case service.ErrPrestadorInativo:
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro ao deletar agenda",
+			})
 			return
 		}
 	}

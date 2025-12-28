@@ -241,14 +241,19 @@ func TestUpdatePrestador_SemCatalogos(t *testing.T) {
 	require.Contains(t, rr.Body.String(), "catálogo")
 }
 
-func TestUpdatePrestador_CPFNaoMuda(t *testing.T) {
-	router, _ := SetupPostPrestador()
+func TestUpdatePrestador_CPFNaoMuda_Isolado(t *testing.T) {
+	router, repo := SetupPostPrestador()
 	catalogoResp := CriarCatalogoValido(t, router)
+
+	// 1. Criar prestador
 	prestadorResp := CriarPrestadorValido(t, router, catalogoResp.ID, "04423258196")
 
-	cpfOriginal := prestadorResp.Cpf
+	// 2. Buscar diretamente do repo (sem HTTP)
+	prestadorRepo, err := repo.BuscarPorId(prestadorResp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "04423258196", prestadorRepo.Cpf)
 
-	// Tentar atualizar (CPF não está no request de update, mas vamos validar)
+	// 3. Atualizar via HTTP
 	updateInput := request_prestador.PrestadorUpdateRequest{
 		Nome:        "Nome Atualizado",
 		Email:       "novo@email.com",
@@ -259,12 +264,18 @@ func TestUpdatePrestador_CPFNaoMuda(t *testing.T) {
 	rrUpdate := SetupPutPrestadorRequest(router, prestadorResp.ID, updateInput)
 	require.Equal(t, http.StatusNoContent, rrUpdate.Code)
 
-	// Verificar que CPF permanece o mesmo
-	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
-	var prestadorAtualizado response_prestador.PrestadorResponse
-	json.Unmarshal(rrGet.Body.Bytes(), &prestadorAtualizado)
+	// 4. Buscar novamente do repo
+	prestadorRepo2, err := repo.BuscarPorId(prestadorResp.ID)
+	require.NoError(t, err)
+	assert.Equal(t, "04423258196", prestadorRepo2.Cpf, "CPF não deve mudar no repo")
 
-	assert.Equal(t, cpfOriginal, prestadorAtualizado.Cpf, "CPF não deve mudar")
+	// 5. Buscar via HTTP
+	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
+	
+	var prestadorHTTP response_prestador.PrestadorResponse
+	json.Unmarshal(rrGet.Body.Bytes(), &prestadorHTTP)
+
+	assert.Equal(t, "04423258196", prestadorHTTP.Cpf, "CPF não deve mudar no HTTP")
 }
 
 // 5. Verificar que agenda é mantida após atualização

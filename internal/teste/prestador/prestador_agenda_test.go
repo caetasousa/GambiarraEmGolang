@@ -1,12 +1,15 @@
 package teste
 
 import (
+	"encoding/json"
 	"net/http"
 	"testing"
 
 	"meu-servico-agenda/internal/adapters/http/prestador/request_prestador"
+	"meu-servico-agenda/internal/adapters/http/prestador/response_prestador"
 	"meu-servico-agenda/internal/core/domain"
 
+	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
 
@@ -41,7 +44,7 @@ func TestPutAgenda_PrestadorNaoEncontrado(t *testing.T) {
 	require.Contains(t, rr.Body.String(), "prestador não encontrado")
 }
 
-func TestPutAgenda_AgendaDuplicada(t *testing.T) {
+func TestPutAgenda_PermiteAtualizacao(t *testing.T) {
 	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
 
 	agendaInput := request_prestador.AgendaDiariaRequest{
@@ -51,12 +54,20 @@ func TestPutAgenda_AgendaDuplicada(t *testing.T) {
 		},
 	}
 
+	// 1. Criar agenda
 	rr1 := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
 	require.Equal(t, http.StatusNoContent, rr1.Code)
 
+	// 2. Chamar novamente com a MESMA data (atualiza)
 	rr2 := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
-	require.Equal(t, http.StatusConflict, rr2.Code)
-	require.Contains(t, rr2.Body.String(), "agenda")
+	require.Equal(t, http.StatusNoContent, rr2.Code, "Deve permitir atualizar (upsert)")
+
+	// 3. Validar que ainda tem apenas 1 agenda
+	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
+	var prestador response_prestador.PrestadorResponse
+	json.Unmarshal(rrGet.Body.Bytes(), &prestador)
+
+	assert.Len(t, prestador.Agenda, 1, "Deve ter apenas 1 agenda (upsert)")
 }
 
 func TestPutAgenda_PrestadorInativo(t *testing.T) {
@@ -142,4 +153,21 @@ func TestPutAgenda_MultiposIntervalos(t *testing.T) {
 
 	rr := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
 	require.Equal(t, http.StatusNoContent, rr.Code)
+}
+func TestPutAgenda_IntervalosSesobrepoe(t *testing.T) {
+	router, prestadorResp, _ := CriarPrestadorValidoParaTeste(t)
+
+	// Intervalos sobrepostos
+	agendaInput := request_prestador.AgendaDiariaRequest{
+		Data: "2030-01-03",
+		Intervalos: []request_prestador.IntervaloDiarioRequest{
+			{HoraInicio: "08:00", HoraFim: "12:00"},
+			{HoraInicio: "12:00", HoraFim: "18:00"}, // ❌ Começa quando o anterior termina
+		},
+	}
+
+	rr := SetupPutAgendaRequest(router, prestadorResp.ID, agendaInput)
+
+	require.Equal(t, http.StatusBadRequest, rr.Code)
+	require.Contains(t, rr.Body.String(), "sobrepor")
 }

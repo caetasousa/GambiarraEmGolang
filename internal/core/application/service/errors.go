@@ -32,4 +32,6 @@ var (
 	ErrHorarioIndisponivel = errors.New("horário indisponível")
 	ErrDiaIndisponivel     = errors.New("dia indisponível para agendamentos")
 	ErrAgendaDuplicada     = errors.New("Agenda diaria duplicada")
+	ErrAgendaNaoEncontrada = errors.New("agenda não encontrada")
+	ErrAgendaJaExiste      = errors.New("agenda ja existe")
 )

@@ -12,6 +12,6 @@ type PrestadorRepositorio interface {
 	BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error)
 	Atualizar(prestador *input.AlterarPrestadorInput) error
 	Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error)
-	Contar() (int, error)
+	Contar(ativo bool) (int, error)
 	AtualizarStatus(id string, ativo bool) error 
 }

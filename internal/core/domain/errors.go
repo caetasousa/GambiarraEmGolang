@@ -11,6 +11,7 @@ var (
 	ErrAgendaDuplicada          = errors.New("agenda duplicada")
 	ErrPrestadorInativo         = errors.New("prestador inativo")
 	ErrPrestadorDeveTerCatalogo = errors.New("prestador deve ter ao menos um catálogo de serviços")
+	ErrAgendaNaoEncontrada = errors.New("agenda não encontrada para esta data")
 
 	//Valida Catalogo
 	ErrDuracaoInvalida   = errors.New("duração padrão inválida")
@@ -25,4 +26,5 @@ var (
 	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
 	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
 	ErrDataEstaNoPassado        = errors.New("Esta data está passado")
+	ErrIntervalosSesobrepoe     = errors.New("intervalos de horário não podem se sobrepor")
 )

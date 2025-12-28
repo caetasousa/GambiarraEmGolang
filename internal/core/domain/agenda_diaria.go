@@ -1,6 +1,7 @@
 package domain
 
 import (
+	"sort"
 	"time"
 
 	"github.com/rs/xid"
@@ -24,11 +25,18 @@ func NovaAgendaDiaria(data time.Time, intervalos []IntervaloDiario) (*AgendaDiar
 		return nil, ErrAgendaSemIntervalos
 	}
 
+	// Validar cada intervalo individualmente
 	for _, it := range intervalos {
 		if !it.HoraInicio.Before(it.HoraFim) {
 			return nil, ErrIntervaloHorarioInvalido
 		}
 	}
+
+	// ✅ NOVO: Validar sobreposição de intervalos
+	if err := validarSobreposicao(intervalos); err != nil {
+		return nil, err
+	}
+
 	err := ValidarDataNoPassado(data)
 	if err != nil {
 		return nil, err
@@ -51,6 +59,38 @@ func NovoIntervaloDiario(horaInicio, horaFim time.Time) (*IntervaloDiario, error
 		HoraInicio: horaInicio,
 		HoraFim:    horaFim,
 	}, nil
+}
+
+func validarSobreposicao(intervalos []IntervaloDiario) error {
+	if len(intervalos) < 2 {
+		return nil // Nada a validar
+	}
+
+	// Criar cópia para não modificar o slice original
+	ordenados := make([]IntervaloDiario, len(intervalos))
+	copy(ordenados, intervalos)
+
+	// Ordenar por hora de início
+	sort.Slice(ordenados, func(i, j int) bool {
+		hi := ordenados[i].HoraInicio
+		hj := ordenados[j].HoraInicio
+		return hi.Hour() < hj.Hour() || (hi.Hour() == hj.Hour() && hi.Minute() < hj.Minute())
+	})
+
+	// Verificar sobreposição
+	for i := 0; i < len(ordenados)-1; i++ {
+		fimAtual := ordenados[i].HoraFim
+		inicioProximo := ordenados[i+1].HoraInicio
+
+		// Fim do atual deve ser ANTES do início do próximo
+		// Se fimAtual >= inicioProximo, há sobreposição
+		if fimAtual.Hour() > inicioProximo.Hour() ||
+			(fimAtual.Hour() == inicioProximo.Hour() && fimAtual.Minute() >= inicioProximo.Minute()) {
+			return ErrIntervalosSesobrepoe
+		}
+	}
+
+	return nil
 }
 
 func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {

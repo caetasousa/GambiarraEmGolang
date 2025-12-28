@@ -98,13 +98,15 @@ func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput)
 }
 
 func (r *FakePrestadorRepositorio) Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error) {
-	// Converte map para slice
+	// ✅ Sempre filtra por status (obrigatório)
 	todos := make([]*domain.Prestador, 0, len(r.storage))
 	for _, p := range r.storage {
-		todos = append(todos, p)
+		if p.Ativo == input.Ativo {
+			todos = append(todos, p)
+		}
 	}
 
-	// Ordena por ID (simulando ORDER BY created_at DESC do banco real)
+	// Ordena por ID (simulando ORDER BY created_at DESC)
 	sort.Slice(todos, func(i, j int) bool {
 		return todos[i].ID > todos[j].ID
 	})
@@ -112,23 +114,28 @@ func (r *FakePrestadorRepositorio) Listar(input *input.PrestadorListInput) ([]*d
 	// Calcula offset
 	offset := (input.Page - 1) * input.Limit
 
-	// Se offset estiver além do tamanho, retorna vazio
 	if offset >= len(todos) {
 		return []*domain.Prestador{}, nil
 	}
 
-	// Calcula o fim da página
 	fim := offset + input.Limit
 	if fim > len(todos) {
 		fim = len(todos)
 	}
 
-	// Retorna slice paginado
 	return todos[offset:fim], nil
 }
 
-func (r *FakePrestadorRepositorio) Contar() (int, error) {
-	return len(r.storage), nil
+func (r *FakePrestadorRepositorio) Contar(ativo bool) (int, error) {
+	// ✅ Conta apenas os que correspondem ao filtro
+	count := 0
+	for _, p := range r.storage {
+		if p.Ativo == ativo {
+			count++
+		}
+	}
+	
+	return count, nil
 }
 
 func (r *FakePrestadorRepositorio) AtualizarStatus(id string, ativo bool) error {
@@ -140,5 +147,16 @@ func (r *FakePrestadorRepositorio) AtualizarStatus(id string, ativo bool) error 
 	prestador.Ativo = ativo
 	r.storage[id] = prestador
 
+	return nil
+}
+
+func (r *FakeAgendaDiariaRepositorio) DeletarAgenda(prestadorID string, data string) error {
+	chave := fmt.Sprintf("%s:%s", prestadorID, data)
+	
+	if _, exists := r.storage[chave]; !exists {
+		return sql.ErrNoRows
+	}
+
+	delete(r.storage, chave)
 	return nil
 }
