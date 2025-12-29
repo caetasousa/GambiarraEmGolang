@@ -160,3 +160,69 @@ func (r *FakeAgendaDiariaRepositorio) DeletarAgenda(prestadorID string, data str
 	delete(r.storage, chave)
 	return nil
 }
+
+func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error) {
+	// Filtra prestadores ativos que têm agenda na data
+	disponiveis := make([]*domain.Prestador, 0)
+	
+	for _, p := range r.storage {
+		// Só considera prestadores ativos
+		if !p.Ativo {
+			continue
+		}
+		
+		// Verifica se tem agenda na data
+		temAgenda := false
+		for _, agenda := range p.Agenda {
+			if agenda.Data == data {
+				temAgenda = true
+				break
+			}
+		}
+		
+		if temAgenda {
+			disponiveis = append(disponiveis, p)
+		}
+	}
+
+	// Ordena por ID (simulando ORDER BY created_at DESC)
+	sort.Slice(disponiveis, func(i, j int) bool {
+		return disponiveis[i].ID > disponiveis[j].ID
+	})
+
+	// Calcula offset
+	offset := (page - 1) * limit
+
+	if offset >= len(disponiveis) {
+		return []*domain.Prestador{}, nil
+	}
+
+	fim := offset + limit
+	if fim > len(disponiveis) {
+		fim = len(disponiveis)
+	}
+
+	return disponiveis[offset:fim], nil
+}
+
+// ContarPrestadoresDisponiveisPorData conta quantos prestadores ativos têm agenda na data informada
+func (r *FakePrestadorRepositorio) ContarPrestadoresDisponiveisPorData(data string) (int, error) {
+	count := 0
+	
+	for _, p := range r.storage {
+		// Só conta prestadores ativos
+		if !p.Ativo {
+			continue
+		}
+		
+		// Verifica se tem agenda na data
+		for _, agenda := range p.Agenda {
+			if agenda.Data == data {
+				count++
+				break // Já encontrou, não precisa continuar
+			}
+		}
+	}
+	
+	return count, nil
+}

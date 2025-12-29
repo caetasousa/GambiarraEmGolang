@@ -945,4 +945,42 @@ paths:
       summary: Inativa um prestador
       tags:
       - Prestadores
+  /prestadores/disponiveis:
+    get:
+      consumes:
+      - application/json
+      description: Retorna lista paginada de prestadores ativos que possuem agenda
+        configurada para a data informada
+      parameters:
+      - description: 'Data da disponibilidade (formato: YYYY-MM-DD)'
+        in: query
+        name: data
+        required: true
+        type: string
+      - description: 'Número da página (padrão: 1)'
+        in: query
+        name: page
+        type: integer
+      - description: 'Itens por página (padrão: 10, máximo: 100)'
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de prestadores disponíveis
+          schema:
+            $ref: '#/definitions/response_prestador.PrestadorListResponse'
+        "400":
+          description: Parâmetro 'data' é obrigatório ou formato inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno ao buscar prestadores
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Lista prestadores disponíveis em uma data específica
+      tags:
+      - Prestadores
 swagger: "2.0"

@@ -254,36 +254,6 @@ func (prc *PrestadorController) AtivarPrestador(c *gin.Context) {
 	c.Status(http.StatusNoContent)
 }
 
-// func (r *PrestadorController) ToAtualizarAgendaInput() (*input.AtualizarAgendaInput, error) {
-// 	data, err := time.Parse("2006-01-02", r.Data)
-// 	if err != nil {
-// 		return nil, fmt.Errorf("data inválida: %w", err)
-// 	}
-
-// 	intervalos := make([]input.IntervaloInput, 0, len(r.Intervalos))
-// 	for _, i := range r.Intervalos {
-// 		inicio, err := time.Parse("15:04", i.HoraInicio)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("hora_inicio inválida: %w", err)
-// 		}
-
-// 		fim, err := time.Parse("15:04", i.HoraFim)
-// 		if err != nil {
-// 			return nil, fmt.Errorf("hora_fim inválida: %w", err)
-// 		}
-
-// 		intervalos = append(intervalos, input.IntervaloInput{
-// 			Inicio: inicio,
-// 			Fim:    fim,
-// 		})
-// 	}
-
-// 	return &input.AtualizarAgendaInput{
-// 		Data:       data,
-// 		Intervalos: intervalos,
-// 	}, nil
-// }
-
 // @Summary Cria ou atualiza uma agenda
 // @Description Cria uma nova agenda ou atualiza uma existente para a data especificada
 // @Tags Prestadores
@@ -385,4 +355,57 @@ func (prc *PrestadorController) DeleteAgenda(c *gin.Context) {
 	}
 
 	c.Status(http.StatusNoContent)
+}
+
+// GetPrestadoresPorData godoc
+// @Summary Lista prestadores disponíveis em uma data específica
+// @Description Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada
+// @Tags Prestadores
+// @Accept json
+// @Produce json
+// @Param data query string true "Data da disponibilidade (formato: YYYY-MM-DD)"
+// @Param page query int false "Número da página (padrão: 1)"
+// @Param limit query int false "Itens por página (padrão: 10, máximo: 100)"
+// @Success 200 {object} response_prestador.PrestadorListResponse "Lista de prestadores disponíveis"
+// @Failure 400 {object} domain.ErrorResponse "Parâmetro 'data' é obrigatório ou formato inválido"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno ao buscar prestadores"
+// @Router /prestadores/disponiveis [get]
+func (prc *PrestadorController) GetPrestadoresPorData(c *gin.Context) {
+	var req request_prestador.BuscarPrestadoresDataRequest
+
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error": fmt.Sprintf("Parâmetro 'data' é obrigatório: %s", err.Error()),
+		})
+		return
+	}
+
+	input := req.ToInputPrestador()
+
+	prestadores, total, err := prc.prestadorService.BuscarPrestadoresDisponiveisPorData(input)
+	if err != nil {
+		switch err {
+		case service.ErrAoBuscarPrestadoresDisponiveis,
+			service.ErrAoContarPrestadoresDisponiveis:
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+			return
+		case service.ErrFormatoDataInvalido, domain.ErrDataEstaNoPassado:
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+			return
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": "Erro ao listar prestadores",
+			})
+			return
+		}
+	}
+
+	response := response_prestador.PrestadorListResponse{
+		Data:  prestadores,
+		Page:  input.Page,
+		Limit: input.Limit,
+		Total: total,
+	}
+
+	c.JSON(http.StatusOK, response)
 }

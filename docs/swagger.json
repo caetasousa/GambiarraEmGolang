@@ -525,6 +525,62 @@
                 }
             }
         },
+        "/prestadores/disponiveis": {
+            "get": {
+                "description": "Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Lista prestadores disponíveis em uma data específica",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Data da disponibilidade (formato: YYYY-MM-DD)",
+                        "name": "data",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Itens por página (padrão: 10, máximo: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de prestadores disponíveis",
+                        "schema": {
+                            "$ref": "#/definitions/response_prestador.PrestadorListResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Parâmetro 'data' é obrigatório ou formato inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno ao buscar prestadores",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/prestadores/{id}": {
             "get": {
                 "description": "Retorna informações do prestador, incluindo catálogo de serviços e agenda diária.",

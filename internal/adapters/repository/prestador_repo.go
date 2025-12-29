@@ -693,3 +693,206 @@ func (r *AgendaDiariaPostgresRepository) DeletarAgenda(prestadorID string, data 
 
 	return tx.Commit()
 }
+
+func (r *PrestadorPostgresRepository) BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error) {
+	offset := (page - 1) * limit
+
+	query := `
+	WITH prestadores_paginados AS (
+		SELECT DISTINCT
+			p.id, p.nome, p.cpf, p.email, p.telefone, p.ativo, p.imagem_url, p.created_at
+		FROM prestadores p
+		INNER JOIN agendas_diarias ad ON p.id = ad.prestador_id AND ad.data = $1
+		WHERE p.ativo = TRUE
+		ORDER BY p.created_at DESC
+		LIMIT $2 OFFSET $3
+	)
+	SELECT 
+		p.id,
+		p.nome,
+		p.cpf,
+		p.email,
+		p.telefone,
+		p.ativo,
+		p.imagem_url,
+		-- Dados do Catálogo
+		c.id AS catalogo_id,
+		c.nome AS catalogo_nome,
+		c.duracao_padrao AS catalogo_duracao_padrao,
+		c.preco AS catalogo_preco,
+		c.imagem_url AS catalogo_imagem_url,
+		c.categoria AS catalogo_categoria,
+		-- Dados da Agenda Diária
+		ad.id AS agenda_id,
+		ad.data AS agenda_data,
+		-- Dados dos Intervalos Diários
+		id.id AS intervalo_id,
+		id.hora_inicio AS intervalo_hora_inicio,
+		id.hora_fim AS intervalo_hora_fim
+	FROM prestadores_paginados p
+	LEFT JOIN prestador_catalogos pc ON p.id = pc.prestador_id
+	LEFT JOIN catalogos c ON pc.catalogo_id = c.id
+	LEFT JOIN agendas_diarias ad ON p.id = ad.prestador_id AND ad.data = $1
+	LEFT JOIN intervalos_diarios id ON ad.id = id.agenda_id
+	ORDER BY 
+		p.created_at DESC,
+		c.nome NULLS LAST,
+		id.hora_inicio NULLS LAST
+	`
+
+	rows, err := r.db.Query(query, data, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao executar query: %w", err)
+	}
+	defer rows.Close()
+
+	// Maps para controlar duplicação e manter a ordem
+	var prestadoresOrdem []string // Mantém a ordem de inserção
+	prestadoresMap := make(map[string]*domain.Prestador)
+	catalogosMap := make(map[string]map[string]*domain.Catalogo)
+	agendasMap := make(map[string]*domain.AgendaDiaria)
+	intervalosMap := make(map[string]bool)
+
+	for rows.Next() {
+		var (
+			// Prestador
+			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl string
+			pAtivo                                          bool
+
+			// Catálogo (nullable devido ao LEFT JOIN)
+			catalogoID            sql.NullString
+			catalogoNome          sql.NullString
+			catalogoDuracaoPadrao sql.NullInt64
+			catalogoPreco         sql.NullInt64
+			catalogoImagemUrl     sql.NullString
+			catalogoCategoria     sql.NullString
+
+			// Agenda (sempre presente devido ao INNER JOIN com a data)
+			agendaID   string
+			agendaData sql.NullTime
+
+			// Intervalo (nullable devido ao LEFT JOIN)
+			intervaloID         sql.NullString
+			intervaloHoraInicio sql.NullTime
+			intervaloHoraFim    sql.NullTime
+		)
+
+		err := rows.Scan(
+			&pID, &pNome, &pCpf, &pEmail, &pTelefone, &pAtivo, &pImagemUrl,
+			&catalogoID, &catalogoNome, &catalogoDuracaoPadrao, &catalogoPreco,
+			&catalogoImagemUrl, &catalogoCategoria,
+			&agendaID, &agendaData,
+			&intervaloID, &intervaloHoraInicio, &intervaloHoraFim,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("erro ao fazer scan: %w", err)
+		}
+
+		// Inicializa prestador se não existe
+		if _, exists := prestadoresMap[pID]; !exists {
+			prestadoresOrdem = append(prestadoresOrdem, pID)
+			prestadoresMap[pID] = &domain.Prestador{
+				ID:        pID,
+				Nome:      pNome,
+				Cpf:       pCpf,
+				Email:     pEmail,
+				Telefone:  pTelefone,
+				Ativo:     pAtivo,
+				ImagemUrl: pImagemUrl,
+				Catalogo:  []domain.Catalogo{},
+				Agenda:    []domain.AgendaDiaria{},
+			}
+			catalogosMap[pID] = make(map[string]*domain.Catalogo)
+		}
+
+		// Adiciona catálogo se existir e ainda não foi adicionado
+		if catalogoID.Valid {
+			if _, exists := catalogosMap[pID][catalogoID.String]; !exists {
+				catalogo := &domain.Catalogo{
+					ID:            catalogoID.String,
+					Nome:          catalogoNome.String,
+					DuracaoPadrao: int(catalogoDuracaoPadrao.Int64),
+					Preco:         int(catalogoPreco.Int64),
+					Categoria:     catalogoCategoria.String,
+					ImagemUrl:     "", // Inicializa vazio
+				}
+				if catalogoImagemUrl.Valid {
+					catalogo.ImagemUrl = catalogoImagemUrl.String
+				}
+				catalogosMap[pID][catalogoID.String] = catalogo
+			}
+		}
+
+		// Adiciona agenda se ainda não existe (será sempre a mesma para este prestador)
+		if _, exists := agendasMap[pID]; !exists {
+			agendasMap[pID] = &domain.AgendaDiaria{
+				Id:         agendaID,
+				Data:       agendaData.Time.Format("2006-01-02"),
+				Intervalos: []domain.IntervaloDiario{},
+			}
+		}
+
+		// Adiciona intervalo se existir e ainda não foi adicionado
+		if intervaloID.Valid {
+			chaveIntervalo := fmt.Sprintf("%s:%s", agendaID, intervaloID.String)
+
+			if !intervalosMap[chaveIntervalo] {
+				intervalo := domain.IntervaloDiario{
+					Id:         intervaloID.String,
+					HoraInicio: intervaloHoraInicio.Time,
+					HoraFim:    intervaloHoraFim.Time,
+				}
+				agendasMap[pID].Intervalos = append(
+					agendasMap[pID].Intervalos,
+					intervalo,
+				)
+				intervalosMap[chaveIntervalo] = true
+			}
+		}
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("erro ao iterar rows: %w", err)
+	}
+
+	// Se nenhum prestador foi encontrado
+	if len(prestadoresMap) == 0 {
+		return []*domain.Prestador{}, nil
+	}
+
+	// Converte maps para slice final mantendo a ordem
+	prestadores := make([]*domain.Prestador, 0, len(prestadoresOrdem))
+	for _, prestadorID := range prestadoresOrdem {
+		prestador := prestadoresMap[prestadorID]
+
+		// Adiciona catálogos ao prestador
+		for _, cat := range catalogosMap[prestadorID] {
+			prestador.Catalogo = append(prestador.Catalogo, *cat)
+		}
+
+		// Adiciona agenda ao prestador
+		if agenda, exists := agendasMap[prestadorID]; exists {
+			prestador.Agenda = append(prestador.Agenda, *agenda)
+		}
+
+		prestadores = append(prestadores, prestador)
+	}
+
+	return prestadores, nil
+}
+
+func (r *PrestadorPostgresRepository) ContarPrestadoresDisponiveisPorData(data string) (int, error) {
+	var total int
+	err := r.db.QueryRow(`
+		SELECT COUNT(DISTINCT p.id)
+		FROM prestadores p
+		INNER JOIN agendas_diarias ad ON p.id = ad.prestador_id AND ad.data = $1
+		WHERE p.ativo = TRUE
+	`, data).Scan(&total)
+	
+	if err != nil {
+		return 0, fmt.Errorf("erro ao contar prestadores disponíveis: %w", err)
+	}
+	
+	return total, nil
+}

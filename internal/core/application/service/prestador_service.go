@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
@@ -71,7 +72,6 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 
 	return out, nil
 }
-
 
 func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput, error) {
 	prestador, err := s.prestadorRepo.BuscarPorId(id)
@@ -246,4 +246,35 @@ func (s *PrestadorService) DeletarAgenda(prestadorID string, data string) error 
 
 	// 6. Deletar do repositório
 	return s.agendaDiariaRepo.DeletarAgenda(prestadorID, data)
+}
+
+func (s *PrestadorService) BuscarPrestadoresDisponiveisPorData(input *input.PrestadorListDataInput) ([]*output.BuscarPrestadorOutput, int, error) {
+
+	// Validar formato da data
+	dataTime, err := time.Parse("2006-01-02", input.Data)
+	if err != nil {
+		return nil, 0, ErrFormatoDataInvalido
+	}
+
+	// Validar se a data não está no passado
+	if err := domain.ValidarDataNoPassado(dataTime); err != nil {
+		return nil, 0, err
+	}
+
+	// Buscar prestadores disponíveis
+	prestadores, err := s.prestadorRepo.BuscarPrestadoresDisponiveisPorData(input.Data, input.Page, input.Limit)
+	if err != nil {
+		return nil, 0, ErrAoBuscarPrestadoresDisponiveis
+	}
+
+	// Contar total
+	total, err := s.prestadorRepo.ContarPrestadoresDisponiveisPorData(input.Data)
+	if err != nil {
+		return nil, 0, ErrAoContarPrestadoresDisponiveis
+	}
+
+	// Mapear para output
+	outputs := mapper.PrestadoresFromDomainOutput(prestadores)
+
+	return outputs, total, nil
 }

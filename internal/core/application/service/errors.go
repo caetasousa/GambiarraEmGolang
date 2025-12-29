@@ -14,11 +14,14 @@ var (
 	ErrFalhaInfraestrutura = errors.New("falha na infraestrutura")
 
 	//validação de prestador
-	ErrPrestadorNaoEncontrado = errors.New("prestador não encontrado")
-	ErrPrestadorInvalido      = errors.New("prestador inválido")
-	ErrPrestadorNaoExiste     = errors.New("prestador não encontrado")
-	ErrPrestadorOcupado       = errors.New("prestador já possui agendamento neste horário")
-	ErrPrestadorInativo       = errors.New("prestador está inativo")
+	ErrPrestadorNaoEncontrado         = errors.New("prestador não encontrado")
+	ErrPrestadorInvalido              = errors.New("prestador inválido")
+	ErrPrestadorNaoExiste             = errors.New("prestador não encontrado")
+	ErrPrestadorOcupado               = errors.New("prestador já possui agendamento neste horário")
+	ErrPrestadorInativo               = errors.New("prestador está inativo")
+	ErrFormatoDataInvalido            = errors.New("formato de data inválido. Use YYYY-MM-DD")
+	ErrAoBuscarPrestadoresDisponiveis = errors.New("erro ao buscar prestadores disponíveis")
+	ErrAoContarPrestadoresDisponiveis = errors.New("erro ao contar prestadores disponíveis")
 
 	//validação de cliente
 	ErrClienteNaoEncontrado = errors.New("cliente não encontrado")
