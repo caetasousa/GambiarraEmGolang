@@ -70,8 +70,8 @@ func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID s
 	JOIN prestadores p ON p.id = a.prestador_id
 	JOIN catalogos cat ON cat.id = a.catalogo_id
 	WHERE a.prestador_id = $1
-	  AND a.data_hora_inicio >= $2
-	  AND a.data_hora_fim    <= $3
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
 	ORDER BY a.data_hora_inicio
 	`
 
@@ -143,8 +143,8 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 	JOIN prestadores p ON p.id = a.prestador_id
 	JOIN catalogos cat ON cat.id = a.catalogo_id
 	WHERE a.cliente_id = $1
-	  AND a.data_hora_inicio >= $2
-	  AND a.data_hora_fim    <= $3
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
 	ORDER BY a.data_hora_inicio
 	`
 
