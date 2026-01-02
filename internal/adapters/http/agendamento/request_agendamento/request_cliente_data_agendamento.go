@@ -1,0 +1,22 @@
+package request_agendamento
+
+import (
+	"fmt"
+	"meu-servico-agenda/internal/core/application/input"
+	"time"
+)
+
+type AgendamentoClienteDataRequest struct {
+    Data string `form:"data" binding:"required,datetime=2006-01-02" example:"2025-01-03"`
+}
+
+func (r *AgendamentoClienteDataRequest) ToAgendamentoClienteDataInput() (*input.AgendamentoClienteDataInput, error) {
+    data, err := time.Parse("2006-01-02", r.Data)
+    if err != nil {
+        return nil, fmt.Errorf("data inválida: %w", err)
+    }
+
+    return &input.AgendamentoClienteDataInput{
+        Data: data,
+    }, nil
+}

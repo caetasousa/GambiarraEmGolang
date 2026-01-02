@@ -3,6 +3,7 @@ package repository
 import (
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
+	"sort"
 	"time"
 )
 
@@ -47,6 +48,26 @@ func (r *FakeAgendamentoRepositorio) BuscarPorClienteEPeriodo(clienteID string, 
 			resultados = append(resultados, agendamento)
 		}
 	}
+
+	return resultados, nil
+}
+func (r *FakeAgendamentoRepositorio) BuscarPorClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
+	var resultados []*domain.Agendamento
+
+	for _, agendamento := range r.storage {
+		// Verifica se é do cliente correto
+		// E se o agendamento inicia na data informada ou depois
+		if agendamento.Cliente != nil && 
+		   agendamento.Cliente.ID == clienteID &&
+		   !agendamento.DataHoraInicio.Before(data) {
+			resultados = append(resultados, agendamento)
+		}
+	}
+
+	// Ordena por data/hora de início (do mais antigo para o mais recente)
+	sort.Slice(resultados, func(i, j int) bool {
+		return resultados[i].DataHoraInicio.Before(resultados[j].DataHoraInicio)
+	})
 
 	return resultados, nil
 }

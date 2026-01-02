@@ -80,6 +80,7 @@ func main() {
 		apiV1.DELETE(("/catalogos/:id"), catalogoController.Deletar)
 
 		apiV1.POST("/agendamentos", agendamentoController.PostAgendamento)
+		apiV1.GET("/agendamentos/cliente/:id", agendamentoController.GetAgendamentoClienteData)
 	}
 
 	router.GET("/ping", func(c *gin.Context) {

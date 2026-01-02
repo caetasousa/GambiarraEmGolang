@@ -73,6 +73,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/agendamentos/cliente/{id}": {
+            "get": {
+                "description": "Retorna todos os agendamentos de um cliente a partir da data especificada, ordenados por data/hora de início",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendamentos"
+                ],
+                "summary": "Busca agendamentos de um cliente a partir de uma data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-03",
+                        "description": "Data de início da busca (formato: YYYY-MM-DD)",
+                        "name": "data",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de agendamentos encontrados",
+                        "schema": {
+                            "$ref": "#/definitions/response_agendamento.BuscaClienteDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou formato de data incorreto",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Cliente não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/catalogos": {
             "get": {
                 "description": "Retorna uma lista de catálogos, com page e limit para paginação",
@@ -925,6 +983,41 @@ const docTemplate = `{
                 }
             }
         },
+        "output.AgendamentoOutput": {
+            "type": "object",
+            "properties": {
+                "dataHoraFim": {
+                    "type": "string"
+                },
+                "dataHoraInicio": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "notas": {
+                    "type": "string"
+                },
+                "prestadorNome": {
+                    "type": "string"
+                },
+                "prestadorTel": {
+                    "type": "string"
+                },
+                "servicoDuracao": {
+                    "type": "integer"
+                },
+                "servicoNome": {
+                    "type": "string"
+                },
+                "servicoPreco": {
+                    "type": "integer"
+                },
+                "status": {
+                    "$ref": "#/definitions/domain.StatusDoAgendamento"
+                }
+            }
+        },
         "output.BuscarPrestadorOutput": {
             "type": "object",
             "properties": {
@@ -1265,6 +1358,17 @@ const docTemplate = `{
                 },
                 "status": {
                     "$ref": "#/definitions/domain.StatusDoAgendamento"
+                }
+            }
+        },
+        "response_agendamento.BuscaClienteDataResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/output.AgendamentoOutput"
+                    }
                 }
             }
         },

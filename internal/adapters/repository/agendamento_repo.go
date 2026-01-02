@@ -192,3 +192,76 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 
 	return agendamentos, nil
 }
+
+func (r *AgendamentoPostgresRepository) BuscarPorClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
+	query := `
+	SELECT
+		a.id,
+		a.data_hora_inicio,
+		a.data_hora_fim,
+		a.status,
+		a.notas,
+
+		c.id, c.nome, c.email, c.telefone,
+		p.id, p.nome, p.cpf, p.email, p.telefone,
+		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.categoria
+	FROM agendamentos a
+	JOIN clientes c   ON c.id = a.cliente_id
+	JOIN prestadores p ON p.id = a.prestador_id
+	JOIN catalogos cat ON cat.id = a.catalogo_id
+	WHERE a.cliente_id = $1
+	  AND a.data_hora_inicio >= $2
+	ORDER BY a.data_hora_inicio
+	`
+
+	rows, err := r.db.Query(query, clienteID, data)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var agendamentos []*domain.Agendamento
+
+	for rows.Next() {
+		var a domain.Agendamento
+		var cliente domain.Cliente
+		var prestador domain.Prestador
+		var catalogo domain.Catalogo
+
+		err := rows.Scan(
+			&a.ID,
+			&a.DataHoraInicio,
+			&a.DataHoraFim,
+			&a.Status,
+			&a.Notas,
+
+			&cliente.ID,
+			&cliente.Nome,
+			&cliente.Email,
+			&cliente.Telefone,
+
+			&prestador.ID,
+			&prestador.Nome,
+			&prestador.Cpf,
+			&prestador.Email,
+			&prestador.Telefone,
+
+			&catalogo.ID,
+			&catalogo.Nome,
+			&catalogo.DuracaoPadrao,
+			&catalogo.Preco,
+			&catalogo.Categoria,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		a.Cliente = &cliente
+		a.Prestador = &prestador
+		a.Catalogo = &catalogo
+
+		agendamentos = append(agendamentos, &a)
+	}
+
+	return agendamentos, rows.Err()
+}

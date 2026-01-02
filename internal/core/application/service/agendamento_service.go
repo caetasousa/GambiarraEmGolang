@@ -1,8 +1,8 @@
 package service
 
 import (
-	"log"
 	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
+	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
 	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/application/port"
@@ -28,40 +28,67 @@ func NovaAgendamentoService(pr port.PrestadorRepositorio, ar port.AgendamentoRep
 
 func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.AgendamentoRequest) (*output.AgendamentoOutput, error) {
 	input, err := request.ToAgendamento()
+	if err != nil {
+		return nil, err
+	}
 
 	validaDataErr := domain.ValidarDataNoPassado(input.DataHoraInicio)
-	log.Print(validaDataErr)
 	if validaDataErr != nil {
 		return nil, domain.ErrDataEstaNoPassado
 	}
 
-	//log.Printf("✅ prestador de cpf %s", input.ClienteID)
 	cliente, err := s.clienteRepo.BuscarPorId(input.ClienteID)
 	if err != nil || cliente == nil {
 		return nil, ErrClienteNaoExiste
 	}
-	//log.Printf("✅ prestador de cpf %s", input.ClienteID)
+
 	prestador, err := s.prestadorRepo.BuscarPorId(input.PrestadorID)
 	if err != nil || prestador == nil {
 		return nil, ErrPrestadorNaoExiste
 	}
-	//log.Printf("✅ prestador de cpf %s", prestador.Cpf)
+
 	catalogo, err := s.catalogoRepo.BuscarPorId(input.CatalogoID)
 	if err != nil || catalogo == nil {
 		return nil, ErrCatalogoNaoExiste
 	}
 
 	dataHorarioFim := input.DataHoraInicio.Add(time.Duration(catalogo.DuracaoPadrao) * time.Minute)
-	//log.Printf("✅ prestador de cpf %s", dataHorarioFim)
+
+	// Extrai apenas a data (sem hora) para validações por dia
+	inicioDoDia := time.Date(
+		input.DataHoraInicio.Year(),
+		input.DataHoraInicio.Month(),
+		input.DataHoraInicio.Day(),
+		0, 0, 0, 0,
+		input.DataHoraInicio.Location(),
+	)
+	fimDoDia := inicioDoDia.Add(24 * time.Hour)
+
+	// ✅ Valida se já existe agendamento da mesma categoria no mesmo dia
+	agendamentosDoDia, err := s.agendamentoRepo.BuscarPorClienteEPeriodo(
+		input.ClienteID,
+		inicioDoDia,
+		fimDoDia,
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	// Verifica se algum agendamento do dia é da mesma categoria
+	for _, agend := range agendamentosDoDia {
+		if agend.Catalogo.ID == catalogo.ID {
+			return nil, ErrAgendamentoDuplo
+		}
+	}
+
 	// Busca a agenda do prestador para o dia solicitado
-	// Aqui validamos se o prestador trabalha nesse dia específico
-	agendaDoDia, err := s.prestadorRepo.BuscarAgendaDoDia(prestador.ID, input.DataHoraInicio.Format("2006-01-02"))
+	dia := input.DataHoraInicio.Format("2006-01-02")
+	agendaDoDia, err := s.prestadorRepo.BuscarAgendaDoDia(prestador.ID, dia)
 	if err != nil {
 		return nil, err
 	}
 
 	// Valida se o dia é atendido pelo prestador
-	// Exemplo: prestador não trabalha à tarde ou não trabalha nesse dia
 	if agendaDoDia == nil {
 		return nil, ErrDiaIndisponivel
 	}
@@ -88,6 +115,7 @@ func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.Age
 	if len(conflitosCliente) > 0 {
 		return nil, ErrClienteOcupado
 	}
+
 	agendamento, err := domain.NovoAgendamento(
 		cliente,
 		prestador,
@@ -105,5 +133,24 @@ func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.Age
 	}
 
 	out := mapper.NovoAgendamentoOutput(agendamento)
+	return out, nil
+}
+
+func (s *AgendamentoService) ConsultaAgendamentoClienteData(request input.AgendamentoClienteDataInput, id string) ([]*output.AgendamentoOutput, error) {
+	cliente, err := s.clienteRepo.BuscarPorId(id)
+	if err != nil {
+		return nil, err
+	}
+	if cliente == nil {
+		return nil, ErrClienteNaoEncontrado
+	}
+
+	agendamentos, err := s.agendamentoRepo.BuscarPorClienteAPartirDaData(id, request.Data)
+	if err != nil {
+		return nil, err
+	}
+
+	out := mapper.BuscaAgendamentoClienteData(agendamentos)
+
 	return out, nil
 }

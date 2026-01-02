@@ -39,6 +39,29 @@ definitions:
           $ref: '#/definitions/output.IntervaloDiarioOutput'
         type: array
     type: object
+  output.AgendamentoOutput:
+    properties:
+      dataHoraFim:
+        type: string
+      dataHoraInicio:
+        type: string
+      id:
+        type: string
+      notas:
+        type: string
+      prestadorNome:
+        type: string
+      prestadorTel:
+        type: string
+      servicoDuracao:
+        type: integer
+      servicoNome:
+        type: string
+      servicoPreco:
+        type: integer
+      status:
+        $ref: '#/definitions/domain.StatusDoAgendamento'
+    type: object
   output.BuscarPrestadorOutput:
     properties:
       agenda:
@@ -287,6 +310,13 @@ definitions:
       status:
         $ref: '#/definitions/domain.StatusDoAgendamento'
     type: object
+  response_agendamento.BuscaClienteDataResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/output.AgendamentoOutput'
+        type: array
+    type: object
   response_agendamento.PrestadorInfo:
     properties:
       nome:
@@ -452,6 +482,46 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
       summary: Cria um novo agendamento
+      tags:
+      - Agendamentos
+  /agendamentos/cliente/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todos os agendamentos de um cliente a partir da data especificada,
+        ordenados por data/hora de início
+      parameters:
+      - description: ID do cliente
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'Data de início da busca (formato: YYYY-MM-DD)'
+        example: "2025-01-03"
+        in: query
+        name: data
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos encontrados
+          schema:
+            $ref: '#/definitions/response_agendamento.BuscaClienteDataResponse'
+        "400":
+          description: Dados inválidos ou formato de data incorreto
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: Cliente não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Busca agendamentos de um cliente a partir de uma data
       tags:
       - Agendamentos
   /catalogos:

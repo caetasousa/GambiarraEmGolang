@@ -37,4 +37,5 @@ var (
 	ErrAgendaDuplicada     = errors.New("Agenda diaria duplicada")
 	ErrAgendaNaoEncontrada = errors.New("agenda não encontrada")
 	ErrAgendaJaExiste      = errors.New("agenda ja existe")
+	ErrAgendamentoDuplo  = errors.New("Ja existe um agendamento para essa categoria neste dia")
 )
