@@ -193,7 +193,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 	return agendamentos, nil
 }
 
-func (r *AgendamentoPostgresRepository) BuscarPorClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
+func (r *AgendamentoPostgresRepository) BuscarAgendamentoClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
 	query := `
 	SELECT
 		a.id,
@@ -261,6 +261,127 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteAPartirDaData(clienteID 
 		a.Catalogo = &catalogo
 
 		agendamentos = append(agendamentos, &a)
+	}
+
+	return agendamentos, rows.Err()
+}
+
+func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(prestadorID string, data time.Time) ([]*domain.Agendamento, error) {
+	query := `
+	SELECT
+		a.id,
+		a.data_hora_inicio,
+		a.data_hora_fim,
+		a.status,
+		a.notas,
+
+		c.id, c.nome, c.email, c.telefone,
+		p.id, p.nome, p.cpf, p.email, p.telefone, p.ativo, p.imagem_url,
+		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.imagem_url, cat.categoria
+
+	FROM agendamentos a
+	JOIN clientes c ON c.id = a.cliente_id
+	JOIN prestadores p ON p.id = a.prestador_id
+	JOIN catalogos cat ON cat.id = a.catalogo_id
+	WHERE a.prestador_id = $1
+	  AND a.data_hora_inicio >= $2
+	ORDER BY a.data_hora_inicio
+	`
+
+	rows, err := r.db.Query(query, prestadorID, data)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var agendamentos []*domain.Agendamento
+
+	for rows.Next() {
+		var agendamentoID, clienteID, clienteNome, clienteEmail, clienteTelefone string
+		var prestadorID, prestadorNome, prestadorCpf, prestadorEmail, prestadorTelefone string
+		var prestadorAtivo bool
+		var prestadorImagemUrl, catalogoImagemUrl sql.NullString
+		var catalogoID, catalogoNome, catalogoCategoria string
+		var catalogoDuracao, catalogoPreco int
+		var dataHoraInicio, dataHoraFim time.Time
+		var status int
+		var notas sql.NullString
+
+		err := rows.Scan(
+			&agendamentoID,
+			&dataHoraInicio,
+			&dataHoraFim,
+			&status,
+			&notas,
+
+			&clienteID,
+			&clienteNome,
+			&clienteEmail,
+			&clienteTelefone,
+
+			&prestadorID,
+			&prestadorNome,
+			&prestadorCpf,
+			&prestadorEmail,
+			&prestadorTelefone,
+			&prestadorAtivo,
+			&prestadorImagemUrl,
+
+			&catalogoID,
+			&catalogoNome,
+			&catalogoDuracao,
+			&catalogoPreco,
+			&catalogoImagemUrl,
+			&catalogoCategoria,
+		)
+		if err != nil {
+			return nil, err
+		}
+
+		cliente := &domain.Cliente{
+			ID:       clienteID,
+			Nome:     clienteNome,
+			Email:    clienteEmail,
+			Telefone: clienteTelefone,
+		}
+
+		prestador := &domain.Prestador{
+			ID:        prestadorID,
+			Nome:      prestadorNome,
+			Cpf:       prestadorCpf,
+			Email:     prestadorEmail,
+			Telefone:  prestadorTelefone,
+			Ativo:     prestadorAtivo,
+			ImagemUrl: prestadorImagemUrl.String,
+			Agenda:    []domain.AgendaDiaria{},
+		}
+
+		catalogo := &domain.Catalogo{
+			ID:            catalogoID,
+			Nome:          catalogoNome,
+			DuracaoPadrao: catalogoDuracao,
+			Preco:         catalogoPreco,
+			ImagemUrl:     catalogoImagemUrl.String,
+			Categoria:     catalogoCategoria,
+		}
+
+		notasStr := ""
+		if notas.Valid {
+			notasStr = notas.String
+		}
+
+		agendamento := &domain.Agendamento{
+			ID:             agendamentoID,
+			Cliente:        cliente,
+			Prestador:      prestador,
+			Catalogo:       catalogo,
+			DataHoraInicio: dataHoraInicio,
+			DataHoraFim:    dataHoraFim,
+			Status:         domain.StatusDoAgendamento(status),
+			Notas:          notasStr,
+		}
+
+		agendamentos = append(agendamentos, agendamento)
 	}
 
 	return agendamentos, rows.Err()

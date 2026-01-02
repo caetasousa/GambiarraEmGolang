@@ -655,7 +655,7 @@ func TestGetAgendamentoClienteData_ValidaDadosCompletos(t *testing.T) {
 	require.Equal(t, http.StatusOK, rr.Code)
 
 	// Parse da resposta
-	var response response_agendamento.BuscaClienteDataResponse
+	var response response_agendamento.BuscaDataResponse
 	err = json.Unmarshal(rr.Body.Bytes(), &response)
 	require.NoError(t, err)
 

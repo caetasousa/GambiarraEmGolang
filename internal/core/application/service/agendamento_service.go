@@ -136,7 +136,7 @@ func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.Age
 	return out, nil
 }
 
-func (s *AgendamentoService) ConsultaAgendamentoClienteData(request input.AgendamentoClienteDataInput, id string) ([]*output.AgendamentoOutput, error) {
+func (s *AgendamentoService) ConsultaAgendamentoClienteData(request input.AgendamentoDataInput, id string) ([]*output.AgendamentoOutput, error) {
 	cliente, err := s.clienteRepo.BuscarPorId(id)
 	if err != nil {
 		return nil, err
@@ -145,12 +145,31 @@ func (s *AgendamentoService) ConsultaAgendamentoClienteData(request input.Agenda
 		return nil, ErrClienteNaoEncontrado
 	}
 
-	agendamentos, err := s.agendamentoRepo.BuscarPorClienteAPartirDaData(id, request.Data)
+	agendamentos, err := s.agendamentoRepo.BuscarAgendamentoClienteAPartirDaData(id, request.Data)
 	if err != nil {
 		return nil, err
 	}
 
-	out := mapper.BuscaAgendamentoClienteData(agendamentos)
+	out := mapper.BuscaAgendamentoData(agendamentos)
+
+	return out, nil
+}
+
+func (s *AgendamentoService) ConsultaAgendamentoPrestadorData(request input.AgendamentoDataInput, id string) ([]*output.AgendamentoOutput, error) {
+	prestador, err := s.prestadorRepo.BuscarPorId(id)
+	if err != nil {
+		return nil, err
+	}
+	if prestador == nil {
+		return nil, ErrPrestadorNaoEncontrado
+	}
+
+	agendamentos, err := s.agendamentoRepo.BuscarAgendamentoPrestadorAPartirDaData(id, request.Data)
+	if err != nil {
+		return nil, err
+	}
+	
+	out := mapper.BuscaAgendamentoData(agendamentos)
 
 	return out, nil
 }

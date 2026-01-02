@@ -107,7 +107,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Lista de agendamentos encontrados",
                         "schema": {
-                            "$ref": "#/definitions/response_agendamento.BuscaClienteDataResponse"
+                            "$ref": "#/definitions/response_agendamento.BuscaDataResponse"
                         }
                     },
                     "400": {
@@ -118,6 +118,64 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Cliente não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/agendamentos/prestador/{id}": {
+            "get": {
+                "description": "Retorna todos os agendamentos de um prestador a partir da data especificada, ordenados por data/hora de início",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendamentos"
+                ],
+                "summary": "Busca agendamentos de um prestador a partir de uma data",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-03",
+                        "description": "Data de início da busca (formato: YYYY-MM-DD)",
+                        "name": "data",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista de agendamentos encontrados",
+                        "schema": {
+                            "$ref": "#/definitions/response_agendamento.BuscaDataResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou formato de data incorreto",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "prestador não encontrado",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -983,41 +1041,6 @@ const docTemplate = `{
                 }
             }
         },
-        "output.AgendamentoOutput": {
-            "type": "object",
-            "properties": {
-                "dataHoraFim": {
-                    "type": "string"
-                },
-                "dataHoraInicio": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "notas": {
-                    "type": "string"
-                },
-                "prestadorNome": {
-                    "type": "string"
-                },
-                "prestadorTel": {
-                    "type": "string"
-                },
-                "servicoDuracao": {
-                    "type": "integer"
-                },
-                "servicoNome": {
-                    "type": "string"
-                },
-                "servicoPreco": {
-                    "type": "integer"
-                },
-                "status": {
-                    "$ref": "#/definitions/domain.StatusDoAgendamento"
-                }
-            }
-        },
         "output.BuscarPrestadorOutput": {
             "type": "object",
             "properties": {
@@ -1338,6 +1361,9 @@ const docTemplate = `{
         "response_agendamento.AgendamentoResponse": {
             "type": "object",
             "properties": {
+                "cliente": {
+                    "$ref": "#/definitions/response_agendamento.ClienteInfo"
+                },
                 "data_fim": {
                     "type": "string"
                 },
@@ -1361,20 +1387,49 @@ const docTemplate = `{
                 }
             }
         },
-        "response_agendamento.BuscaClienteDataResponse": {
+        "response_agendamento.BuscaDataResponse": {
             "type": "object",
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/output.AgendamentoOutput"
+                        "$ref": "#/definitions/response_agendamento.AgendamentoResponse"
                     }
+                }
+            }
+        },
+        "response_agendamento.ClienteInfo": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
                 }
             }
         },
         "response_agendamento.PrestadorInfo": {
             "type": "object",
             "properties": {
+                "ativo": {
+                    "type": "boolean"
+                },
+                "cpf": {
+                    "type": "string"
+                },
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
                 "nome": {
                     "type": "string"
                 },
@@ -1386,8 +1441,14 @@ const docTemplate = `{
         "response_agendamento.ServicoInfo": {
             "type": "object",
             "properties": {
+                "categoria": {
+                    "type": "string"
+                },
                 "duracao": {
                     "type": "integer"
+                },
+                "id": {
+                    "type": "string"
                 },
                 "nome": {
                     "type": "string"

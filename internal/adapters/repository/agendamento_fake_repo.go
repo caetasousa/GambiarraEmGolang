@@ -51,7 +51,7 @@ func (r *FakeAgendamentoRepositorio) BuscarPorClienteEPeriodo(clienteID string, 
 
 	return resultados, nil
 }
-func (r *FakeAgendamentoRepositorio) BuscarPorClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
+func (r *FakeAgendamentoRepositorio) BuscarAgendamentoClienteAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
 	var resultados []*domain.Agendamento
 
 	for _, agendamento := range r.storage {
@@ -70,4 +70,8 @@ func (r *FakeAgendamentoRepositorio) BuscarPorClienteAPartirDaData(clienteID str
 	})
 
 	return resultados, nil
+}
+
+func (r *FakeAgendamentoRepositorio) BuscarAgendamentoPrestadorAPartirDaData(clienteID string, data time.Time) ([]*domain.Agendamento, error) {
+	return nil,nil
 }

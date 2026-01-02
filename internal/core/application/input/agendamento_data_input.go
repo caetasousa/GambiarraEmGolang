@@ -2,6 +2,6 @@ package input
 
 import "time"
 
-type AgendamentoClienteDataInput struct {
+type AgendamentoDataInput struct {
 	Data        time.Time
 }

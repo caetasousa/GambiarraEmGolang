@@ -2,17 +2,17 @@ package response_agendamento
 
 import "meu-servico-agenda/internal/core/application/output"
 
-type BuscaClienteDataResponse struct {
+type BuscaDataResponse struct {
 	Data []*AgendamentoResponse `json:"data"`
 }
 
-func ToBuscaClienteDataResponse(outputs []*output.AgendamentoOutput) *BuscaClienteDataResponse {
+func ToBuscaDataResponse(outputs []*output.AgendamentoOutput) *BuscaDataResponse {
 	responses := make([]*AgendamentoResponse, len(outputs))
 	for i, output := range outputs {
 		responses[i] = NovoAgendamentoResponse(output)
 	}
 
-	return &BuscaClienteDataResponse{
+	return &BuscaDataResponse{
 		Data: responses,
 	}
 }

@@ -18,7 +18,7 @@ func NovoAgendamentoOutput(a *domain.Agendamento) *output.AgendamentoOutput {
 	}
 }
 
-func BuscaAgendamentoClienteData(agendamentos []*domain.Agendamento) []*output.AgendamentoOutput {
+func BuscaAgendamentoData(agendamentos []*domain.Agendamento) []*output.AgendamentoOutput {
 	outputs := make([]*output.AgendamentoOutput, len(agendamentos))
 	for i, ag := range agendamentos {
 		outputs[i] = NovoAgendamentoOutput(ag)

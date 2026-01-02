@@ -39,29 +39,6 @@ definitions:
           $ref: '#/definitions/output.IntervaloDiarioOutput'
         type: array
     type: object
-  output.AgendamentoOutput:
-    properties:
-      dataHoraFim:
-        type: string
-      dataHoraInicio:
-        type: string
-      id:
-        type: string
-      notas:
-        type: string
-      prestadorNome:
-        type: string
-      prestadorTel:
-        type: string
-      servicoDuracao:
-        type: integer
-      servicoNome:
-        type: string
-      servicoPreco:
-        type: integer
-      status:
-        $ref: '#/definitions/domain.StatusDoAgendamento'
-    type: object
   output.BuscarPrestadorOutput:
     properties:
       agenda:
@@ -295,6 +272,8 @@ definitions:
     type: object
   response_agendamento.AgendamentoResponse:
     properties:
+      cliente:
+        $ref: '#/definitions/response_agendamento.ClienteInfo'
       data_fim:
         type: string
       data_inicio:
@@ -310,15 +289,34 @@ definitions:
       status:
         $ref: '#/definitions/domain.StatusDoAgendamento'
     type: object
-  response_agendamento.BuscaClienteDataResponse:
+  response_agendamento.BuscaDataResponse:
     properties:
       data:
         items:
-          $ref: '#/definitions/output.AgendamentoOutput'
+          $ref: '#/definitions/response_agendamento.AgendamentoResponse'
         type: array
+    type: object
+  response_agendamento.ClienteInfo:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      telefone:
+        type: string
     type: object
   response_agendamento.PrestadorInfo:
     properties:
+      ativo:
+        type: boolean
+      cpf:
+        type: string
+      email:
+        type: string
+      id:
+        type: string
       nome:
         type: string
       telefone:
@@ -326,8 +324,12 @@ definitions:
     type: object
   response_agendamento.ServicoInfo:
     properties:
+      categoria:
+        type: string
       duracao:
         type: integer
+      id:
+        type: string
       nome:
         type: string
       preco:
@@ -508,7 +510,7 @@ paths:
         "200":
           description: Lista de agendamentos encontrados
           schema:
-            $ref: '#/definitions/response_agendamento.BuscaClienteDataResponse'
+            $ref: '#/definitions/response_agendamento.BuscaDataResponse'
         "400":
           description: Dados inválidos ou formato de data incorreto
           schema:
@@ -522,6 +524,46 @@ paths:
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
       summary: Busca agendamentos de um cliente a partir de uma data
+      tags:
+      - Agendamentos
+  /agendamentos/prestador/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retorna todos os agendamentos de um prestador a partir da data
+        especificada, ordenados por data/hora de início
+      parameters:
+      - description: ID do prestador
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: 'Data de início da busca (formato: YYYY-MM-DD)'
+        example: "2025-01-03"
+        in: query
+        name: data
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Lista de agendamentos encontrados
+          schema:
+            $ref: '#/definitions/response_agendamento.BuscaDataResponse'
+        "400":
+          description: Dados inválidos ou formato de data incorreto
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "404":
+          description: prestador não encontrado
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Busca agendamentos de um prestador a partir de uma data
       tags:
       - Agendamentos
   /catalogos:
