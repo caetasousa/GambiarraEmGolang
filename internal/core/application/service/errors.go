@@ -16,7 +16,7 @@ var (
 	//validação de prestador
 	ErrPrestadorNaoEncontrado         = errors.New("prestador não encontrado")
 	ErrPrestadorInvalido              = errors.New("prestador inválido")
-	ErrPrestadorNaoExiste             = errors.New("prestador não encontrado")
+	ErrPrestadorNaoExiste             = errors.New("prestador não existe")
 	ErrPrestadorOcupado               = errors.New("prestador já possui agendamento neste horário")
 	ErrPrestadorInativo               = errors.New("prestador está inativo")
 	ErrFormatoDataInvalido            = errors.New("formato de data inválido. Use YYYY-MM-DD")
@@ -27,7 +27,7 @@ var (
 	ErrClienteNaoEncontrado = errors.New("cliente não encontrado")
 	ErrAoSalvarCliente      = errors.New("falha ao salvar cliente: ")
 	ErrClienteInvalido      = errors.New("cliente inválido")
-	ErrClienteNaoExiste     = errors.New("cliente não encontrado")
+	ErrClienteNaoExiste     = errors.New("cliente não existe")
 	ErrClienteOcupado       = errors.New("cliente já possui agendamento neste horário")
 
 	//validação de agendamento

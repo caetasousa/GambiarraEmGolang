@@ -12,7 +12,6 @@ import (
 
 	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/service"
-	"net/http"
 
 	"github.com/gin-gonic/gin"
 	swaggerFiles "github.com/swaggo/files"
@@ -84,9 +83,13 @@ func main() {
 		apiV1.GET("/agendamentos/prestador/:id", agendamentoController.GetAgendamentoPrestadorData)
 	}
 
-	router.GET("/ping", func(c *gin.Context) {
-		c.JSON(http.StatusOK, gin.H{"mensagem": "Pong"})
-	})
+	router.GET("/health", func(c *gin.Context) {
+    if err := db.Ping(); err != nil {
+        c.JSON(503, gin.H{"status": "unhealthy"})
+        return
+    }
+    c.JSON(200, gin.H{"status": "healthy"})
+})
 
 	// 6. Inicia o Servidor
 	log.Println("Servidor Gin rodando na porta 8080...")

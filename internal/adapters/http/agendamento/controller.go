@@ -34,13 +34,19 @@ func NovoAgendamentoController(ag *service.AgendamentoService) *AgendamentoContr
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
 // @Router /agendamentos [post]
 func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
-	var input request_agendamento.AgendamentoRequest
+	var req request_agendamento.AgendamentoRequest
 	// 1️⃣ Validação estrutural (JSON)
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{
 			"error":  "dados inválidos",
 			"detail": err.Error(),
 		})
+		return
+	}
+
+	input, err := req.ToAgendamento()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
@@ -139,7 +145,6 @@ func (ag *AgendamentoController) GetAgendamentoClienteData(c *gin.Context) {
 	response := response_agendamento.ToBuscaDataResponse(agendamentos)
 	c.JSON(http.StatusOK, response)
 }
-
 
 // @Summary Busca agendamentos de um prestador a partir de uma data
 // @Description Retorna todos os agendamentos de um prestador a partir da data especificada, ordenados por data/hora de início

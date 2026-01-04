@@ -1,7 +1,6 @@
 package service
 
 import (
-	"meu-servico-agenda/internal/adapters/http/agendamento/request_agendamento"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
 	"meu-servico-agenda/internal/core/application/output"
@@ -26,12 +25,7 @@ func NovaAgendamentoService(pr port.PrestadorRepositorio, ar port.AgendamentoRep
 	}
 }
 
-func (s *AgendamentoService) CadastraAgendamento(request request_agendamento.AgendamentoRequest) (*output.AgendamentoOutput, error) {
-	input, err := request.ToAgendamento()
-	if err != nil {
-		return nil, err
-	}
-
+func (s *AgendamentoService) CadastraAgendamento(input *input.CadastrarAgendamentoInput) (*output.AgendamentoOutput, error) {
 	validaDataErr := domain.ValidarDataNoPassado(input.DataHoraInicio)
 	if validaDataErr != nil {
 		return nil, domain.ErrDataEstaNoPassado

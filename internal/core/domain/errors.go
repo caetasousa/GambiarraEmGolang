@@ -26,5 +26,5 @@ var (
 	ErrAgendaSemIntervalos      = errors.New("agenda deve conter ao menos um intervalo")
 	ErrIntervaloHorarioInvalido = errors.New("hora início deve ser menor que hora fim")
 	ErrDataEstaNoPassado        = errors.New("Esta data está passado")
-	ErrIntervalosSesobrepoe     = errors.New("intervalos de horário não podem se sobrepor")
+	ErrIntervalosSesobreporem     = errors.New("intervalos de horário não podem se sobrepor")
 )

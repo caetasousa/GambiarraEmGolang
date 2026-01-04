@@ -86,7 +86,7 @@ func validarSobreposicao(intervalos []IntervaloDiario) error {
 		// Se fimAtual >= inicioProximo, há sobreposição
 		if fimAtual.Hour() > inicioProximo.Hour() ||
 			(fimAtual.Hour() == inicioProximo.Hour() && fimAtual.Minute() >= inicioProximo.Minute()) {
-			return ErrIntervalosSesobrepoe
+			return ErrIntervalosSesobreporem
 		}
 	}
 
@@ -130,10 +130,8 @@ func (a *AgendaDiaria) PermiteAgendamento(inicio, fim time.Time) bool {
 		)
 
 		if !inicioUTC.Before(inicioIntervalo) && !fimUTC.After(fimIntervalo) {
-			//log.Printf("✅ retornei true, %s data inicio e %s data final", inicioIntervalo, fimIntervalo)
 			return true
 		}
 	}
-	//log.Printf("✅ retornei false")
 	return false
 }

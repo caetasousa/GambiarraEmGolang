@@ -297,7 +297,7 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 		case domain.ErrIntervaloHorarioInvalido,
 			domain.ErrAgendaSemIntervalos,
 			domain.ErrDataEstaNoPassado,
-			domain.ErrIntervalosSesobrepoe: // ✅ NOVO
+			domain.ErrIntervalosSesobreporem: 
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		default:
