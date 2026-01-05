@@ -68,7 +68,7 @@ func (r *CatalogoPostgresRepositorio) BuscarPorId(id string) (*domain.Catalogo, 
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, err
+			return nil, ErrCatalogoNaoEncontrado
 		}
 		return nil, err
 	}
@@ -155,7 +155,7 @@ func (r *CatalogoPostgresRepositorio) Atualizar(c *domain.Catalogo) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("catálogo não encontrado")
+		return ErrCatalogoNaoEncontrado
 	}
 
 	return nil
@@ -175,7 +175,7 @@ func (r *CatalogoPostgresRepositorio) Deletar(id string) error {
 	}
 
 	if rowsAffected == 0 {
-		return errors.New("catálogo não encontrado")
+		return ErrCatalogoNaoEncontrado
 	}
 
 	return nil

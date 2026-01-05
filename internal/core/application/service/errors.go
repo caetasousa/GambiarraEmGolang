@@ -3,39 +3,34 @@ package service
 import "errors"
 
 var (
-	//validação de cpf
+	// Validação de CPF
 	ErrCPFJaCadastrado = errors.New("cpf já possui um cadastro")
 
-	//validação de catálogo
-	ErrCatalogoNaoExiste     = errors.New("catálogo não existe")
+	// Validação de catálogo
 	ErrCatalogoNaoEncontrado = errors.New("catálogo não encontrado")
 	ErrCatalogoInvalido      = errors.New("catálogo inválido")
 
+	// Erro genérico de infraestrutura
 	ErrFalhaInfraestrutura = errors.New("falha na infraestrutura")
 
-	//validação de prestador
+	// Validação de prestador
 	ErrPrestadorNaoEncontrado         = errors.New("prestador não encontrado")
 	ErrPrestadorInvalido              = errors.New("prestador inválido")
-	ErrPrestadorNaoExiste             = errors.New("prestador não existe")
 	ErrPrestadorOcupado               = errors.New("prestador já possui agendamento neste horário")
 	ErrPrestadorInativo               = errors.New("prestador está inativo")
 	ErrFormatoDataInvalido            = errors.New("formato de data inválido. Use YYYY-MM-DD")
 	ErrAoBuscarPrestadoresDisponiveis = errors.New("erro ao buscar prestadores disponíveis")
 	ErrAoContarPrestadoresDisponiveis = errors.New("erro ao contar prestadores disponíveis")
 
-	//validação de cliente
+	// Validação de cliente
 	ErrClienteNaoEncontrado = errors.New("cliente não encontrado")
-	ErrAoSalvarCliente      = errors.New("falha ao salvar cliente: ")
 	ErrClienteInvalido      = errors.New("cliente inválido")
-	ErrClienteNaoExiste     = errors.New("cliente não existe")
 	ErrClienteOcupado       = errors.New("cliente já possui agendamento neste horário")
 
-	//validação de agendamento
+	// Validação de agendamento
 	ErrDataHoraInvalida    = errors.New("data/hora de agendamento inválida")
 	ErrHorarioIndisponivel = errors.New("horário indisponível")
 	ErrDiaIndisponivel     = errors.New("dia indisponível para agendamentos")
-	ErrAgendaDuplicada     = errors.New("Agenda diaria duplicada")
 	ErrAgendaNaoEncontrada = errors.New("agenda não encontrada")
-	ErrAgendaJaExiste      = errors.New("agenda ja existe")
-	ErrAgendamentoDuplo  = errors.New("Ja existe um agendamento para essa categoria neste dia")
+	ErrAgendamentoDuplo    = errors.New("já existe um agendamento para essa categoria neste dia")
 )

@@ -1,6 +1,8 @@
 package service
 
 import (
+	"errors"
+	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
 	"meu-servico-agenda/internal/core/application/output"
@@ -17,7 +19,6 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 }
 
 func (s *CatalogoService) Cadastra(input *input.CatalogoInput) (*output.CatalogoOutput, error) {
-
 	catalogo, err := domain.NovoCatalogo(
 		input.Nome,
 		input.DuracaoPadrao,
@@ -25,13 +26,12 @@ func (s *CatalogoService) Cadastra(input *input.CatalogoInput) (*output.Catalogo
 		input.Categoria,
 		input.ImagemUrl,
 	)
-
 	if err != nil {
 		return nil, err
 	}
 
 	if err := s.repo.Salvar(catalogo); err != nil {
-		return nil, err
+		return nil, ErrFalhaInfraestrutura
 	}
 
 	return mapper.FromCatalogoOutput(catalogo), nil
@@ -40,13 +40,16 @@ func (s *CatalogoService) Cadastra(input *input.CatalogoInput) (*output.Catalogo
 func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error) {
 	catalogo, err := s.repo.BuscarPorId(id)
 	if err != nil {
-		return nil, ErrCatalogoNaoEncontrado
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return nil, ErrCatalogoNaoEncontrado
+		}
+		return nil, ErrFalhaInfraestrutura
 	}
+
 	return mapper.FromCatalogoOutput(catalogo), nil
 }
 
 func (s *CatalogoService) Listar(in *input.ListCatalogoInput) ([]*output.CatalogoOutput, int, error) {
-
 	page := in.Page
 	limit := in.Limit
 
@@ -62,25 +65,26 @@ func (s *CatalogoService) Listar(in *input.ListCatalogoInput) ([]*output.Catalog
 
 	catalogos, err := s.repo.Listar(limit, offset)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, ErrFalhaInfraestrutura
 	}
 
 	total, err := s.repo.Contar()
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, ErrFalhaInfraestrutura
 	}
 
 	return mapper.CatalogosFromDomainOutput(catalogos), total, nil
 }
 
 func (s *CatalogoService) Atualizar(input *input.CatalogoUpdateInput) error {
-	// Verifica se existe
 	catalogo, err := s.repo.BuscarPorId(input.ID)
 	if err != nil {
-		return ErrCatalogoNaoEncontrado
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return ErrCatalogoNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
 
-	// objeto para update
 	catalogo.Nome = input.Nome
 	catalogo.Categoria = input.Categoria
 
@@ -101,21 +105,28 @@ func (s *CatalogoService) Atualizar(input *input.CatalogoUpdateInput) error {
 	catalogo.ImagemUrl = input.ImagemUrl
 
 	if err := s.repo.Atualizar(catalogo); err != nil {
-		return err
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return ErrCatalogoNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
 
 	return nil
 }
 
 func (s *CatalogoService) Deletar(id string) error {
-	// Verifica se o catálogo existe
 	_, err := s.repo.BuscarPorId(id)
 	if err != nil {
-		return ErrCatalogoNaoEncontrado
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return ErrCatalogoNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
 
-	// Deleta o catálogo
 	if err := s.repo.Deletar(id); err != nil {
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return ErrCatalogoNaoEncontrado
+		}
 		return ErrFalhaInfraestrutura
 	}
 

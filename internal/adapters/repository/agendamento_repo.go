@@ -2,6 +2,7 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 	"time"
@@ -18,7 +19,7 @@ func NovoAgendamentoPostgresRepository(db *sql.DB) port.AgendamentoRepositorio {
 func (r *AgendamentoPostgresRepository) CriaAgendamento(a *domain.Agendamento) error {
 	tx, err := r.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
 	}
 	defer tx.Rollback()
 
@@ -46,14 +47,17 @@ func (r *AgendamentoPostgresRepository) CriaAgendamento(a *domain.Agendamento) e
 		a.Notas,
 	)
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrFalhaAoSalvar, err)
 	}
 
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
+	}
+
+	return nil
 }
 
 func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID string, inicio time.Time, fim time.Time) ([]*domain.Agendamento, error) {
-
 	query := `
 	SELECT
 		a.id,
@@ -77,7 +81,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID s
 
 	rows, err := r.db.Query(query, prestadorID, inicio, fim)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 	defer rows.Close()
 
@@ -114,7 +118,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID s
 			&catalogo.Categoria,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
 		a.Cliente = &cliente
@@ -124,11 +128,14 @@ func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID s
 		agendamentos = append(agendamentos, &a)
 	}
 
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
 	return agendamentos, nil
 }
 
 func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID string, inicio time.Time, fim time.Time) ([]*domain.Agendamento, error) {
-
 	query := `
 	SELECT
 		a.id,
@@ -150,7 +157,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 
 	rows, err := r.db.Query(query, clienteID, inicio, fim)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 	defer rows.Close()
 
@@ -181,13 +188,17 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 			&catalogo.Categoria,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
 		a.Prestador = &prestador
 		a.Catalogo = &catalogo
 
 		agendamentos = append(agendamentos, &a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 
 	return agendamentos, nil
@@ -216,7 +227,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoClienteAPartirDaData(cl
 
 	rows, err := r.db.Query(query, clienteID, data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 	defer rows.Close()
 
@@ -253,7 +264,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoClienteAPartirDaData(cl
 			&catalogo.Categoria,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
 		a.Cliente = &cliente
@@ -263,7 +274,11 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoClienteAPartirDaData(cl
 		agendamentos = append(agendamentos, &a)
 	}
 
-	return agendamentos, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
+	return agendamentos, nil
 }
 
 func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(prestadorID string, data time.Time) ([]*domain.Agendamento, error) {
@@ -290,7 +305,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 
 	rows, err := r.db.Query(query, prestadorID, data)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 	defer rows.Close()
 
@@ -298,7 +313,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 
 	for rows.Next() {
 		var agendamentoID, clienteID, clienteNome, clienteEmail, clienteTelefone string
-		var prestadorID, prestadorNome, prestadorCpf, prestadorEmail, prestadorTelefone string
+		var pID, prestadorNome, prestadorCpf, prestadorEmail, prestadorTelefone string
 		var prestadorAtivo bool
 		var prestadorImagemUrl, catalogoImagemUrl sql.NullString
 		var catalogoID, catalogoNome, catalogoCategoria string
@@ -319,7 +334,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 			&clienteEmail,
 			&clienteTelefone,
 
-			&prestadorID,
+			&pID,
 			&prestadorNome,
 			&prestadorCpf,
 			&prestadorEmail,
@@ -335,7 +350,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 			&catalogoCategoria,
 		)
 		if err != nil {
-			return nil, err
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
 		cliente := &domain.Cliente{
@@ -346,7 +361,7 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 		}
 
 		prestador := &domain.Prestador{
-			ID:        prestadorID,
+			ID:        pID,
 			Nome:      prestadorNome,
 			Cpf:       prestadorCpf,
 			Email:     prestadorEmail,
@@ -384,5 +399,9 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 		agendamentos = append(agendamentos, agendamento)
 	}
 
-	return agendamentos, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
+	return agendamentos, nil
 }

@@ -2,6 +2,7 @@ package request_prestador
 
 import (
 	"fmt"
+	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
 
 	"time"
@@ -20,7 +21,7 @@ type AgendaDiariaRequest struct {
 func (r *AgendaDiariaRequest) ToAdicionarAgendaInput() (*input.AdicionarAgendaInput, error) {
 	data, err := time.Parse("2006-01-02", r.Data)
 	if err != nil {
-		return nil, fmt.Errorf("data inválida: %w", err)
+		return nil, fmt.Errorf("%w: %v", http.ErrDataInvalida, err)
 	}
 
 	intervalos, err := r.parseIntervalos()
@@ -37,7 +38,7 @@ func (r *AgendaDiariaRequest) ToAdicionarAgendaInput() (*input.AdicionarAgendaIn
 func (r *AgendaDiariaRequest) ToAtualizarAgendaInput() (*input.AtualizarAgendaInput, error) {
 	data, err := time.Parse("2006-01-02", r.Data)
 	if err != nil {
-		return nil, fmt.Errorf("data inválida: %w", err)
+		return nil, fmt.Errorf("%w: %v", http.ErrDataInvalida, err)
 	}
 
 	intervalos, err := r.parseIntervalos()
@@ -53,16 +54,16 @@ func (r *AgendaDiariaRequest) ToAtualizarAgendaInput() (*input.AtualizarAgendaIn
 
 func (r *AgendaDiariaRequest) parseIntervalos() ([]input.IntervaloInput, error) {
 	intervalos := make([]input.IntervaloInput, 0, len(r.Intervalos))
-	
+
 	for _, i := range r.Intervalos {
 		inicio, err := time.Parse("15:04", i.HoraInicio)
 		if err != nil {
-			return nil, fmt.Errorf("hora_inicio inválida: %w", err)
+			return nil, fmt.Errorf("%w: %v", http.ErrHoraInicioInvalida, err)
 		}
 
 		fim, err := time.Parse("15:04", i.HoraFim)
 		if err != nil {
-			return nil, fmt.Errorf("hora_fim inválida: %w", err)
+			return nil, fmt.Errorf("%w: %v", http.ErrHoraFimInvalida, err)
 		}
 
 		intervalos = append(intervalos, input.IntervaloInput{

@@ -1,7 +1,7 @@
 package request_prestador
 
 import (
-	"errors"
+	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
 
 	"github.com/klassmann/cpfcnpj"
@@ -33,7 +33,7 @@ func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestado
 
 func ValidaCPF(cpf string) (string, error) {
 	if !cpfcnpj.ValidateCPF(cpf) {
-		return "", errors.New("cpf inválido")
+		return "", http.ErrCPFInvalido
 	}
 	return cpf, nil
 }

@@ -63,7 +63,7 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 		case errors.Is(err, service.ErrCPFJaCadastrado):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 
-		case errors.Is(err, service.ErrCatalogoNaoExiste):
+		case errors.Is(err, service.ErrCatalogoNaoEncontrado):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 
 		default:
@@ -143,7 +143,7 @@ func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
 		case service.ErrPrestadorNaoEncontrado:
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 			return
-		case service.ErrCatalogoNaoExiste:
+		case service.ErrCatalogoNaoEncontrado:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		case domain.ErrPrestadorDeveTerCatalogo: // ✅ NOVO

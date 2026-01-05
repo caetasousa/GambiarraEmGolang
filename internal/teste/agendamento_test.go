@@ -429,7 +429,7 @@ func TestPostAgendamento_AgendamentoDuploMesmaCategoriaMesmoDia(t *testing.T) {
 	var response map[string]interface{}
 	err := json.Unmarshal(rr2.Body.Bytes(), &response)
 	require.NoError(t, err)
-	require.Contains(t, response["error"], "Ja existe um agendamento para essa categoria neste dia")
+	require.Contains(t, response["error"], "já existe um agendamento para essa categoria neste dia")
 }
 
 func TestPostAgendamento_CategoriasDiferentesMesmoDia_Permitido(t *testing.T) {

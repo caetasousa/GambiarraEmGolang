@@ -1,7 +1,6 @@
 package repository
 
 import (
-	"errors"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
 	"sort"
@@ -23,7 +22,7 @@ func (r *CatalogoFakeRepo) Salvar(catalogo *domain.Catalogo) error {
 func (r *CatalogoFakeRepo) BuscarPorId(id string) (*domain.Catalogo, error) {
 	catalogo := r.Catalogo[id]
 	if catalogo == nil {
-		return nil, errors.New("não encontrado")
+		return nil, ErrCatalogoNaoEncontrado
 	}
 	return catalogo, nil
 }
@@ -60,7 +59,7 @@ func (r *CatalogoFakeRepo) Contar() (int, error) {
 func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error {
 	// Verifica se o catálogo existe antes de atualizar
 	if _, exists := r.Catalogo[catalogo.ID]; !exists {
-		return errors.New("catálogo não encontrado")
+		return ErrCatalogoNaoEncontrado
 	}
 	
 	// Atualiza o catálogo no map (simula UPDATE no banco)
@@ -71,7 +70,7 @@ func (r *CatalogoFakeRepo) Atualizar(catalogo *domain.Catalogo) error {
 func (r *CatalogoFakeRepo) Deletar(id string) error {
 	// Verifica se o catálogo existe
 	if _, exists := r.Catalogo[id]; !exists {
-		return errors.New("catálogo não encontrado")
+		return ErrCatalogoNaoEncontrado
 	}
 	
 	// Remove o catálogo do map

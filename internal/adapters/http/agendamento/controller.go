@@ -57,9 +57,9 @@ func (ag *AgendamentoController) PostAgendamento(c *gin.Context) {
 		switch {
 
 		// 404 — recurso inexistente
-		case errors.Is(err, service.ErrClienteNaoExiste),
-			errors.Is(err, service.ErrPrestadorNaoExiste),
-			errors.Is(err, service.ErrCatalogoNaoExiste):
+		case errors.Is(err, service.ErrClienteNaoEncontrado),
+			errors.Is(err, service.ErrPrestadorNaoEncontrado),
+			errors.Is(err, service.ErrCatalogoNaoEncontrado):
 
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 

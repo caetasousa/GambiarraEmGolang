@@ -2,7 +2,6 @@ package repository
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/port"
@@ -32,7 +31,7 @@ func (r *FakePrestadorRepositorio) Salvar(prestador *domain.Prestador) error {
 func (r *FakePrestadorRepositorio) BuscarPorId(id string) (*domain.Prestador, error) {
 	prestador := r.storage[id]
 	if prestador == nil {
-		return nil, errors.New("não encontrado")
+		return nil, ErrPrestadorNaoEncontrado
 	}
 	return prestador, nil
 }
@@ -73,7 +72,7 @@ func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput)
 	for _, catalogoID := range input.CatalogoIDs {
 		_, err := r.catalogoRepo.BuscarPorId(catalogoID)
 		if err != nil {
-			return fmt.Errorf("catálogo %s não existe", catalogoID)
+			return ErrCatalogoNaoEncontrado
 		}
 	}
 

@@ -1,12 +1,11 @@
 package service
 
 import (
-	"database/sql"
 	"errors"
-	"fmt"
-	"strings"
+
 	"time"
 
+	"meu-servico-agenda/internal/adapters/repository"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
 	"meu-servico-agenda/internal/core/application/output"
@@ -31,23 +30,26 @@ func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoReposito
 }
 
 func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output.CriarPrestadorOutput, error) {
-
 	cpf := cpfcnpj.Clean(cmd.CPF)
 
+	// BuscarPorCPF retorna (nil, nil) se não encontrar - isso é esperado para novo cadastro
 	prestadorExistente, err := s.prestadorRepo.BuscarPorCPF(cpf)
 	if err != nil {
-		return nil, err
+		return nil, ErrFalhaInfraestrutura
 	}
-	//log.Printf("✅ prestador de cpf %s", cmd.CPF)
+
 	if prestadorExistente != nil {
-		return nil, fmt.Errorf("%w: %s", ErrCPFJaCadastrado, cpf)
+		return nil, ErrCPFJaCadastrado
 	}
 
 	catalogos := []domain.Catalogo{}
 	for _, id := range cmd.CatalogoIDs {
 		c, err := s.catalogoRepo.BuscarPorId(id)
 		if err != nil {
-			return nil, fmt.Errorf("%w: %s", ErrCatalogoNaoExiste, id)
+			if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+				return nil, ErrCatalogoNaoEncontrado
+			}
+			return nil, ErrFalhaInfraestrutura
 		}
 		catalogos = append(catalogos, *c)
 	}
@@ -65,22 +67,26 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	}
 
 	if err := s.prestadorRepo.Salvar(prestador); err != nil {
-		return nil, err
+		if errors.Is(err, repository.ErrCPFDuplicado) {
+			return nil, ErrCPFJaCadastrado
+		}
+		return nil, ErrFalhaInfraestrutura
 	}
 
 	out := mapper.FromDomainToCriarOutput(prestador)
-
 	return out, nil
 }
 
 func (s *PrestadorService) BuscarPorId(id string) (*output.BuscarPrestadorOutput, error) {
 	prestador, err := s.prestadorRepo.BuscarPorId(id)
 	if err != nil {
-		return nil, ErrPrestadorNaoEncontrado
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return nil, ErrPrestadorNaoEncontrado
+		}
+		return nil, ErrFalhaInfraestrutura
 	}
 
 	out := mapper.FromPrestador(prestador)
-
 	return out, nil
 }
 
@@ -90,21 +96,19 @@ func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
 	}
 
 	if err := s.prestadorRepo.Atualizar(input); err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
 			return ErrPrestadorNaoEncontrado
 		}
-		if strings.Contains(err.Error(), "catálogo") && strings.Contains(err.Error(), "não existe") {
-			return ErrCatalogoNaoExiste
+		if errors.Is(err, repository.ErrCatalogoNaoEncontrado) {
+			return ErrCatalogoNaoEncontrado
 		}
-
-		return err
+		return ErrFalhaInfraestrutura
 	}
 
 	return nil
 }
 
 func (s *PrestadorService) ListarPrestadores(input *input.PrestadorListInput) ([]*output.BuscarPrestadorOutput, int, error) {
-	// Validações
 	if input.Page <= 0 {
 		input.Page = 1
 	}
@@ -115,70 +119,71 @@ func (s *PrestadorService) ListarPrestadores(input *input.PrestadorListInput) ([
 		input.Limit = 100
 	}
 
-	// Buscar prestadores (sempre com filtro)
 	prestadores, err := s.prestadorRepo.Listar(input)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, ErrFalhaInfraestrutura
 	}
 
-	// Contar total (sempre com filtro)
 	total, err := s.prestadorRepo.Contar(input.Ativo)
 	if err != nil {
-		return nil, 0, err
+		return nil, 0, ErrFalhaInfraestrutura
 	}
 
 	outputs := mapper.PrestadoresFromDomainOutput(prestadores)
-
 	return outputs, total, nil
 }
 
-// Service
 func (s *PrestadorService) Inativar(id string) error {
-	prestador, err := s.prestadorRepo.BuscarPorId(id)
+	_, err := s.prestadorRepo.BuscarPorId(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
 			return ErrPrestadorNaoEncontrado
 		}
-		return err
+		return ErrFalhaInfraestrutura
 	}
 
-	prestador.Ativo = false
+	if err := s.prestadorRepo.AtualizarStatus(id, false); err != nil {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
+	}
 
-	// Usar método específico no repo ou o Salvar existente
-	return s.prestadorRepo.AtualizarStatus(id, false)
+	return nil
 }
 
 func (s *PrestadorService) Ativar(id string) error {
-	prestador, err := s.prestadorRepo.BuscarPorId(id)
+	_, err := s.prestadorRepo.BuscarPorId(id)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
 			return ErrPrestadorNaoEncontrado
 		}
-		return err
+		return ErrFalhaInfraestrutura
 	}
 
-	prestador.Ativo = true
-
-	err = s.prestadorRepo.AtualizarStatus(id, true)
-	if err != nil {
-		return err
+	if err := s.prestadorRepo.AtualizarStatus(id, true); err != nil {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
+
 	return nil
 }
 
 func (s *PrestadorService) SalvarAgenda(cmd *input.AdicionarAgendaInput) error {
-	// 1. Buscar prestador
 	prestador, err := s.prestadorRepo.BuscarPorId(cmd.PrestadorID)
 	if err != nil {
-		return ErrPrestadorNaoEncontrado
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
 
-	// 2. Validar se prestador está ativo
 	if !prestador.Ativo {
 		return ErrPrestadorInativo
 	}
 
-	// 3. Criar intervalos usando construtor do domínio
 	intervalos := make([]domain.IntervaloDiario, 0, len(cmd.Intervalos))
 	for _, i := range cmd.Intervalos {
 		intervalo, err := domain.NovoIntervaloDiario(i.Inicio, i.Fim)
@@ -188,93 +193,95 @@ func (s *PrestadorService) SalvarAgenda(cmd *input.AdicionarAgendaInput) error {
 		intervalos = append(intervalos, *intervalo)
 	}
 
-	// 4. Criar agenda usando construtor do domínio
 	novaAgenda, err := domain.NovaAgendaDiaria(cmd.Data, intervalos)
 	if err != nil {
 		return err
 	}
 
-	// 5. Verificar se já existe agenda para essa data
+	// BuscarAgendaDoDia retorna (nil, nil) se não encontrar - isso é esperado
 	dataFormatada := cmd.Data.Format("2006-01-02")
 	agendaExistente, err := s.agendaDiariaRepo.BuscarAgendaDoDia(cmd.PrestadorID, dataFormatada)
-	if err != nil && !errors.Is(err, sql.ErrNoRows) {
-		return err
+	if err != nil {
+		return ErrFalhaInfraestrutura
 	}
 
-	// 6. Se existe, ATUALIZAR. Se não existe, CRIAR
 	if agendaExistente != nil {
 		// ATUALIZAÇÃO
 		novaAgenda.Id = agendaExistente.Id
-		return s.agendaDiariaRepo.AtualizarAgenda(novaAgenda, cmd.PrestadorID)
-	} else {
-		// CRIAÇÃO
-		if err := prestador.AdicionarAgenda(novaAgenda); err != nil {
-			return err
+		if err := s.agendaDiariaRepo.AtualizarAgenda(novaAgenda, cmd.PrestadorID); err != nil {
+			return ErrFalhaInfraestrutura
 		}
-		return s.agendaDiariaRepo.Salvar(novaAgenda, cmd.PrestadorID)
+		return nil
 	}
+
+	// CRIAÇÃO
+	if err := prestador.AdicionarAgenda(novaAgenda); err != nil {
+		return err
+	}
+
+	if err := s.agendaDiariaRepo.Salvar(novaAgenda, cmd.PrestadorID); err != nil {
+		return ErrFalhaInfraestrutura
+	}
+
+	return nil
 }
 
 func (s *PrestadorService) DeletarAgenda(prestadorID string, data string) error {
-	// 1. Buscar prestador
 	prestador, err := s.prestadorRepo.BuscarPorId(prestadorID)
 	if err != nil {
-		return ErrPrestadorNaoEncontrado
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return ErrPrestadorNaoEncontrado
+		}
+		return ErrFalhaInfraestrutura
 	}
 
-	// 2. Validar se prestador está ativo
 	if !prestador.Ativo {
 		return ErrPrestadorInativo
 	}
 
-	// 3. Verificar se agenda existe
-	_, err = s.agendaDiariaRepo.BuscarAgendaDoDia(prestadorID, data)
+	// Verificar se agenda existe
+	agendaExistente, err := s.agendaDiariaRepo.BuscarAgendaDoDia(prestadorID, data)
 	if err != nil {
-		if errors.Is(err, sql.ErrNoRows) {
-			return ErrAgendaNaoEncontrada
-		}
-		return err
+		return ErrFalhaInfraestrutura
+	}
+	if agendaExistente == nil {
+		return ErrAgendaNaoEncontrada
 	}
 
-	// 4. TODO: Verificar se não tem agendamentos para esta data
-	// (implementar quando tiver a entidade Agendamento)
-
-	// 5. Remover agenda do domínio
 	if err := prestador.RemoverAgenda(data); err != nil {
 		return err
 	}
 
-	// 6. Deletar do repositório
-	return s.agendaDiariaRepo.DeletarAgenda(prestadorID, data)
+	if err := s.agendaDiariaRepo.DeletarAgenda(prestadorID, data); err != nil {
+		if errors.Is(err, repository.ErrAgendaNaoEncontrada) {
+			return ErrAgendaNaoEncontrada
+		}
+		return ErrFalhaInfraestrutura
+	}
+
+	return nil
 }
 
 func (s *PrestadorService) BuscarPrestadoresDisponiveisPorData(input *input.PrestadorListDataInput) ([]*output.BuscarPrestadorOutput, int, error) {
-
-	// Validar formato da data
 	dataTime, err := time.Parse("2006-01-02", input.Data)
 	if err != nil {
 		return nil, 0, ErrFormatoDataInvalido
 	}
 
-	// Validar se a data não está no passado
 	if err := domain.ValidarDataNoPassado(dataTime); err != nil {
 		return nil, 0, err
 	}
 
-	// Buscar prestadores disponíveis
 	prestadores, err := s.prestadorRepo.BuscarPrestadoresDisponiveisPorData(input.Data, input.Page, input.Limit)
 	if err != nil {
 		return nil, 0, ErrAoBuscarPrestadoresDisponiveis
 	}
 
-	// Contar total
 	total, err := s.prestadorRepo.ContarPrestadoresDisponiveisPorData(input.Data)
 	if err != nil {
 		return nil, 0, ErrAoContarPrestadoresDisponiveis
 	}
 
-	// Mapear para output
 	outputs := mapper.PrestadoresFromDomainOutput(prestadores)
-
 	return outputs, total, nil
 }

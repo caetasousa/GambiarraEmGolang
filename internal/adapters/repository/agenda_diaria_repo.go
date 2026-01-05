@@ -16,57 +16,55 @@ func NovoAgendaDiariaPostgresRepository(db *sql.DB) port.AgendaDiariaRepositorio
 }
 
 func (r *AgendaDiariaPostgresRepository) Salvar(agenda *domain.AgendaDiaria, prestadorId string) error {
-	// Inicia transação
 	tx, err := r.db.Begin()
 	if err != nil {
-		return err
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
 	}
-	defer tx.Rollback() // rollback automático em caso de erro
+	defer tx.Rollback()
 
-	// 1️⃣ Insere agenda
 	_, err = tx.Exec(`
 		INSERT INTO agendas_diarias (id, prestador_id, data, created_at)
 		VALUES ($1, $2, $3, NOW())
 	`,
 		agenda.Id,
-		prestadorId, // precisa ter PrestadorID no domínio
+		prestadorId,
 		agenda.Data,
 	)
 	if err != nil {
-		return fmt.Errorf("erro ao inserir agenda: %w", err)
+		return fmt.Errorf("%w: %v", ErrFalhaAoSalvar, err)
 	}
 
-	// 2️⃣ Insere intervalos
 	if len(agenda.Intervalos) > 0 {
 		stmt, err := tx.Prepare(`
 			INSERT INTO intervalos_diarios (id, agenda_id, hora_inicio, hora_fim)
 			VALUES ($1, $2, $3, $4)
 		`)
 		if err != nil {
-			return fmt.Errorf("erro ao preparar insert de intervalos: %w", err)
+			return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
 		}
 		defer stmt.Close()
 
 		for _, it := range agenda.Intervalos {
 			if _, err := stmt.Exec(it.Id, agenda.Id, it.HoraInicio.Format("15:04:05"), it.HoraFim.Format("15:04:05")); err != nil {
-				return fmt.Errorf("erro ao inserir intervalo: %w", err)
+				return fmt.Errorf("%w: %v", ErrFalhaAoSalvar, err)
 			}
 		}
 	}
 
-	// 3️⃣ Commit
-	return tx.Commit()
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
+	}
+
+	return nil
 }
 
 func (r *AgendaDiariaPostgresRepository) AtualizarAgenda(agenda *domain.AgendaDiaria, prestadorID string) error {
-	// Inicia transação
 	tx, err := r.db.Begin()
 	if err != nil {
-		return fmt.Errorf("erro ao iniciar transação: %w", err)
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
 	}
 	defer tx.Rollback()
 
-	// 0. ✅ VALIDAÇÃO: Verificar se a agenda pertence ao prestador
 	var count int
 	err = tx.QueryRow(`
 		SELECT COUNT(*) 
@@ -74,35 +72,32 @@ func (r *AgendaDiariaPostgresRepository) AtualizarAgenda(agenda *domain.AgendaDi
 		WHERE id = $1 AND prestador_id = $2
 	`, agenda.Id, prestadorID).Scan(&count)
 	if err != nil {
-		return fmt.Errorf("erro ao verificar agenda: %w", err)
+		return fmt.Errorf("%w: %v", ErrFalhaAoAtualizar, err)
 	}
 	if count == 0 {
-		return sql.ErrNoRows // Agenda não pertence a este prestador
+		return ErrAgendaNaoEncontrada
 	}
 
-	// 1. Deletar todos os intervalos antigos
 	_, err = tx.Exec(`
 		DELETE FROM intervalos_diarios 
 		WHERE agenda_id = $1
 	`, agenda.Id)
 	if err != nil {
-		return fmt.Errorf("erro ao deletar intervalos antigos: %w", err)
+		return fmt.Errorf("%w: %v", ErrFalhaAoAtualizar, err)
 	}
 
-	// 2. Inserir novos intervalos
 	for _, intervalo := range agenda.Intervalos {
 		_, err = tx.Exec(`
 			INSERT INTO intervalos_diarios (id, agenda_id, hora_inicio, hora_fim)
 			VALUES ($1, $2, $3, $4)
 		`, intervalo.Id, agenda.Id, intervalo.HoraInicio, intervalo.HoraFim)
 		if err != nil {
-			return fmt.Errorf("erro ao inserir novo intervalo: %w", err)
+			return fmt.Errorf("%w: %v", ErrFalhaAoSalvar, err)
 		}
 	}
 
-	// 3. Commit da transação
 	if err := tx.Commit(); err != nil {
-		return fmt.Errorf("erro ao commitar transação: %w", err)
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
 	}
 
 	return nil
@@ -124,12 +119,12 @@ func (r *AgendaDiariaPostgresRepository) BuscarAgendaDoDia(prestadorID string, d
 
 	rows, err := r.db.Query(query, prestadorID, data)
 	if err != nil {
-		return nil, fmt.Errorf("erro ao buscar agenda: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 	defer rows.Close()
 
 	var agenda *domain.AgendaDiaria
-	intervalosMap := make(map[string]bool) // ✅ Controle de duplicação
+	intervalosMap := make(map[string]bool)
 
 	for rows.Next() {
 		var (
@@ -149,10 +144,9 @@ func (r *AgendaDiariaPostgresRepository) BuscarAgendaDoDia(prestadorID string, d
 			&intervaloHoraFim,
 		)
 		if err != nil {
-			return nil, fmt.Errorf("erro ao fazer scan: %w", err)
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
-		// Inicializa agenda apenas uma vez
 		if agenda == nil {
 			agenda = &domain.AgendaDiaria{
 				Id:         agendaID,
@@ -161,9 +155,7 @@ func (r *AgendaDiariaPostgresRepository) BuscarAgendaDoDia(prestadorID string, d
 			}
 		}
 
-		// Adiciona intervalo se existir e não foi adicionado ainda
 		if intervaloID.Valid {
-			// ✅ Verifica duplicação
 			if !intervalosMap[intervaloID.String] {
 				intervalo := domain.IntervaloDiario{
 					Id:         intervaloID.String,
@@ -177,13 +169,55 @@ func (r *AgendaDiariaPostgresRepository) BuscarAgendaDoDia(prestadorID string, d
 	}
 
 	if err := rows.Err(); err != nil {
-		return nil, fmt.Errorf("erro ao iterar rows: %w", err)
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
 
-	// Se não encontrou nenhuma agenda
 	if agenda == nil {
-		return nil, sql.ErrNoRows
+		return nil, nil // Busca opcional — agenda não existe para esta data
 	}
 
 	return agenda, nil
+}
+
+func (r *AgendaDiariaPostgresRepository) DeletarAgenda(prestadorID string, data string) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
+	}
+	defer tx.Rollback()
+
+	var agendaID string
+	err = tx.QueryRow(`
+		SELECT id FROM agendas_diarias 
+		WHERE prestador_id = $1 AND data = $2
+	`, prestadorID, data).Scan(&agendaID)
+
+	if err == sql.ErrNoRows {
+		return ErrAgendaNaoEncontrada
+	}
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaAoDeletar, err)
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM intervalos_diarios 
+		WHERE agenda_id = $1
+	`, agendaID)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaAoDeletar, err)
+	}
+
+	_, err = tx.Exec(`
+		DELETE FROM agendas_diarias 
+		WHERE id = $1
+	`, agendaID)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaAoDeletar, err)
+	}
+
+	if err := tx.Commit(); err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaDeTransacao, err)
+	}
+
+	return nil
 }

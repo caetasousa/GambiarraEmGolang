@@ -1,7 +1,7 @@
 package request_agendamento
 
 import (
-	"errors"
+	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
 	"time"
 )
@@ -18,7 +18,7 @@ func (ag *AgendamentoRequest) ToAgendamento() (*input.CadastrarAgendamentoInput,
 	// Convertendo DataHoraInicio de string para time.Time
 	dataHoraInicio, err := time.Parse(time.RFC3339, ag.DataHoraInicio)
 	if err != nil {
-		return nil, errors.New("formato de data/hora inválido")
+		return nil, http.ErrFormatoDataHoraInvalido
 	}
 
 	agendamento := input.CadastrarAgendamentoInput{

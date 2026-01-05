@@ -37,7 +37,7 @@ func (r *ClientePostgresRepositorio) Salvar(cliente *domain.Cliente) error {
 	if err != nil {
 		// trata erro de email duplicado
 		if pqErr, ok := err.(*pq.Error); ok && pqErr.Code == "23505" {
-			return errors.New("email ja cadastrado")
+			return ErrEmailDuplicado
 		}
 		return err
 	}
@@ -64,7 +64,7 @@ func (r *ClientePostgresRepositorio) BuscarPorId(id string) (*domain.Cliente, er
 
 	if err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return nil, nil
+			return nil, nil // Cliente não encontrado
 		}
 		return nil, err
 	}

@@ -2,21 +2,22 @@ package request_agendamento
 
 import (
 	"fmt"
+	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
 	"time"
 )
 
 type AgendamentoDataRequest struct {
-    Data string `form:"data" binding:"required,datetime=2006-01-02" example:"2025-01-03"`
+	Data string `form:"data" binding:"required,datetime=2006-01-02" example:"2025-01-03"`
 }
 
 func (r *AgendamentoDataRequest) ToAgendamentoDataInput() (*input.AgendamentoDataInput, error) {
-    data, err := time.Parse("2006-01-02", r.Data)
-    if err != nil {
-        return nil, fmt.Errorf("data inválida: %w", err)
-    }
+	data, err := time.Parse("2006-01-02", r.Data)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", http.ErrDataInvalida, err)
+	}
 
-    return &input.AgendamentoDataInput{
-        Data: data,
-    }, nil
+	return &input.AgendamentoDataInput{
+		Data: data,
+	}, nil
 }
