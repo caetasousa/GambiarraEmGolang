@@ -405,3 +405,186 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 
 	return agendamentos, nil
 }
+
+func (r *AgendamentoPostgresRepository) ListarPorPrestadorEPeriodoPaginado(prestadorID string, inicio time.Time, fim time.Time, limit, offset int) ([]*domain.Agendamento, error) {
+	query := `
+	SELECT
+		a.id,
+		a.data_hora_inicio,
+		a.data_hora_fim,
+		a.status,
+		a.notas,
+
+		c.id, c.nome, c.email, c.telefone,
+		p.id, p.nome, p.cpf, p.email, p.telefone,
+		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.categoria
+	FROM agendamentos a
+	JOIN clientes c   ON c.id = a.cliente_id
+	JOIN prestadores p ON p.id = a.prestador_id
+	JOIN catalogos cat ON cat.id = a.catalogo_id
+	WHERE a.prestador_id = $1
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
+	ORDER BY a.data_hora_inicio
+	LIMIT $4 OFFSET $5
+	`
+
+	rows, err := r.db.Query(query, prestadorID, inicio, fim, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+	defer rows.Close()
+
+	var agendamentos []*domain.Agendamento
+
+	for rows.Next() {
+		var a domain.Agendamento
+		var cliente domain.Cliente
+		var prestador domain.Prestador
+		var catalogo domain.Catalogo
+
+		err := rows.Scan(
+			&a.ID,
+			&a.DataHoraInicio,
+			&a.DataHoraFim,
+			&a.Status,
+			&a.Notas,
+
+			&cliente.ID,
+			&cliente.Nome,
+			&cliente.Email,
+			&cliente.Telefone,
+
+			&prestador.ID,
+			&prestador.Nome,
+			&prestador.Cpf,
+			&prestador.Email,
+			&prestador.Telefone,
+
+			&catalogo.ID,
+			&catalogo.Nome,
+			&catalogo.DuracaoPadrao,
+			&catalogo.Preco,
+			&catalogo.Categoria,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+		}
+
+		a.Cliente = &cliente
+		a.Prestador = &prestador
+		a.Catalogo = &catalogo
+
+		agendamentos = append(agendamentos, &a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
+	return agendamentos, nil
+}
+
+func (r *AgendamentoPostgresRepository) ListarPorClienteEPeriodoPaginado(clienteID string, inicio time.Time, fim time.Time, limit, offset int) ([]*domain.Agendamento, error) {
+	query := `
+	SELECT
+		a.id,
+		a.data_hora_inicio,
+		a.data_hora_fim,
+		a.status,
+		a.notas,
+
+		p.id, p.nome, p.cpf, p.email, p.telefone,
+		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.categoria
+	FROM agendamentos a
+	JOIN prestadores p ON p.id = a.prestador_id
+	JOIN catalogos cat ON cat.id = a.catalogo_id
+	WHERE a.cliente_id = $1
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
+	ORDER BY a.data_hora_inicio
+	LIMIT $4 OFFSET $5
+	`
+
+	rows, err := r.db.Query(query, clienteID, inicio, fim, limit, offset)
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+	defer rows.Close()
+
+	var agendamentos []*domain.Agendamento
+
+	for rows.Next() {
+		var a domain.Agendamento
+		var prestador domain.Prestador
+		var catalogo domain.Catalogo
+
+		err := rows.Scan(
+			&a.ID,
+			&a.DataHoraInicio,
+			&a.DataHoraFim,
+			&a.Status,
+			&a.Notas,
+
+			&prestador.ID,
+			&prestador.Nome,
+			&prestador.Cpf,
+			&prestador.Email,
+			&prestador.Telefone,
+
+			&catalogo.ID,
+			&catalogo.Nome,
+			&catalogo.DuracaoPadrao,
+			&catalogo.Preco,
+			&catalogo.Categoria,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+		}
+
+		a.Prestador = &prestador
+		a.Catalogo = &catalogo
+
+		agendamentos = append(agendamentos, &a)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
+	return agendamentos, nil
+}
+
+func (r *AgendamentoPostgresRepository) ContarPorPrestadorEPeriodo(prestadorID string, inicio time.Time, fim time.Time) (int, error) {
+	query := `
+	SELECT COUNT(*)
+	FROM agendamentos a
+	WHERE a.prestador_id = $1
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
+	`
+
+	var total int
+	err := r.db.QueryRow(query, prestadorID, inicio, fim).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrFalhaAoContar, err)
+	}
+	return total, nil
+}
+
+func (r *AgendamentoPostgresRepository) ContarPorClienteEPeriodo(clienteID string, inicio time.Time, fim time.Time) (int, error) {
+	query := `
+	SELECT COUNT(*)
+	FROM agendamentos a
+	WHERE a.cliente_id = $1
+	  AND a.data_hora_inicio < $3
+	  AND a.data_hora_fim    > $2
+	`
+
+	var total int
+	err := r.db.QueryRow(query, clienteID, inicio, fim).Scan(&total)
+	if err != nil {
+		return 0, fmt.Errorf("%w: %v", ErrFalhaAoContar, err)
+	}
+	return total, nil
+}

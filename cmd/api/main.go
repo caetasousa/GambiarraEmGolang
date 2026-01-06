@@ -80,7 +80,9 @@ func main() {
 
 		apiV1.POST("/agendamentos", agendamentoController.PostAgendamento)
 		apiV1.GET("/agendamentos/cliente/:id", agendamentoController.GetAgendamentoClienteData)
+		apiV1.GET("/agendamentos/cliente/:id/periodo", agendamentoController.GetAgendamentosClientePeriodo)
 		apiV1.GET("/agendamentos/prestador/:id", agendamentoController.GetAgendamentoPrestadorData)
+		apiV1.GET("/agendamentos/prestador/:id/periodo", agendamentoController.GetAgendamentosPrestadorPeriodo)
 	}
 
 	router.GET("/health", func(c *gin.Context) {

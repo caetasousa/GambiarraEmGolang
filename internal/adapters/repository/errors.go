@@ -10,6 +10,7 @@ var (
 	ErrFalhaAoAtualizar   = errors.New("falha ao atualizar registro")
 	ErrFalhaAoDeletar     = errors.New("falha ao deletar registro")
 	ErrFalhaAoListar      = errors.New("falha ao listar registros")
+	ErrFalhaAoContar      = errors.New("falha ao contar registros")
 	ErrFalhaDeTransacao   = errors.New("falha na transação")
 
 	// Erros de constraint/duplicidade

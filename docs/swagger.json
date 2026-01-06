@@ -125,6 +125,84 @@
                 }
             }
         },
+        "/agendamentos/cliente/{id}/periodo": {
+            "get": {
+                "description": "Retorna agendamentos de um cliente em um período específico com suporte a paginação",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendamentos"
+                ],
+                "summary": "Lista agendamentos de um cliente por período com paginação",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do cliente",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-01",
+                        "description": "Data de início do período (formato: YYYY-MM-DD)",
+                        "name": "data_inicio",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-31",
+                        "description": "Data de fim do período (formato: YYYY-MM-DD)",
+                        "name": "data_fim",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Itens por página (padrão: 10, máx: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de agendamentos",
+                        "schema": {
+                            "$ref": "#/definitions/response_agendamento.AgendamentoListPaginadoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou formato de data incorreto",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Cliente não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/agendamentos/prestador/{id}": {
             "get": {
                 "description": "Retorna todos os agendamentos de um prestador a partir da data especificada, ordenados por data/hora de início",
@@ -170,6 +248,84 @@
                     },
                     "404": {
                         "description": "prestador não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/agendamentos/prestador/{id}/periodo": {
+            "get": {
+                "description": "Retorna agendamentos de um prestador em um período específico com suporte a paginação",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Agendamentos"
+                ],
+                "summary": "Lista agendamentos de um prestador por período com paginação",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID do prestador",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-01",
+                        "description": "Data de início do período (formato: YYYY-MM-DD)",
+                        "name": "data_inicio",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "example": "2025-01-31",
+                        "description": "Data de fim do período (formato: YYYY-MM-DD)",
+                        "name": "data_fim",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Número da página (padrão: 1)",
+                        "name": "page",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Itens por página (padrão: 10, máx: 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Lista paginada de agendamentos",
+                        "schema": {
+                            "$ref": "#/definitions/response_agendamento.AgendamentoListPaginadoResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos ou formato de data incorreto",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Prestador não encontrado",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -1349,6 +1505,26 @@
                     "maxLength": 15,
                     "minLength": 8,
                     "example": "62999677481"
+                }
+            }
+        },
+        "response_agendamento.AgendamentoListPaginadoResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/response_agendamento.AgendamentoResponse"
+                    }
+                },
+                "limit": {
+                    "type": "integer"
+                },
+                "page": {
+                    "type": "integer"
+                },
+                "total": {
+                    "type": "integer"
                 }
             }
         },

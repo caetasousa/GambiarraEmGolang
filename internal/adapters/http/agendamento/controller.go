@@ -186,8 +186,8 @@ func (ag *AgendamentoController) GetAgendamentoPrestadorData(c *gin.Context) {
 	agendamentos, err := ag.agendamentoService.ConsultaAgendamentoPrestadorData(*req, id)
 	if err != nil {
 		switch {
-		// 404 — cliente não existe
-		case errors.Is(err, service.ErrClienteNaoEncontrado):
+		// 404 — prestador não existe
+		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
 			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
 
 		// 500 — erro inesperado
@@ -200,5 +200,115 @@ func (ag *AgendamentoController) GetAgendamentoPrestadorData(c *gin.Context) {
 	}
 
 	response := response_agendamento.ToBuscaDataResponse(agendamentos)
+	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Lista agendamentos de um prestador por período com paginação
+// @Description Retorna agendamentos de um prestador em um período específico com suporte a paginação
+// @Tags Agendamentos
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do prestador"
+// @Param data_inicio query string true "Data de início do período (formato: YYYY-MM-DD)" example(2025-01-01)
+// @Param data_fim query string true "Data de fim do período (formato: YYYY-MM-DD)" example(2025-01-31)
+// @Param page query int false "Número da página (padrão: 1)"
+// @Param limit query int false "Itens por página (padrão: 10, máx: 100)"
+// @Success 200 {object} response_agendamento.AgendamentoListPaginadoResponse "Lista paginada de agendamentos"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos ou formato de data incorreto"
+// @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /agendamentos/prestador/{id}/periodo [get]
+func (ag *AgendamentoController) GetAgendamentosPrestadorPeriodo(c *gin.Context) {
+	id := c.Param("id")
+
+	var req request_agendamento.AgendamentoPrestadorPeriodoRequest
+
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "dados inválidos",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	input, err := req.ToInput()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "formato de data inválido",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	agendamentos, total, err := ag.agendamentoService.ListarAgendamentosPrestadorPorPeriodo(id, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrPrestadorNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": service.ErrFalhaInfraestrutura.Error(),
+			})
+		}
+		return
+	}
+
+	response := response_agendamento.ToAgendamentoListPaginadoResponse(agendamentos, input.Page, input.Limit, total)
+	c.JSON(http.StatusOK, response)
+}
+
+// @Summary Lista agendamentos de um cliente por período com paginação
+// @Description Retorna agendamentos de um cliente em um período específico com suporte a paginação
+// @Tags Agendamentos
+// @Accept json
+// @Produce json
+// @Param id path string true "ID do cliente"
+// @Param data_inicio query string true "Data de início do período (formato: YYYY-MM-DD)" example(2025-01-01)
+// @Param data_fim query string true "Data de fim do período (formato: YYYY-MM-DD)" example(2025-01-31)
+// @Param page query int false "Número da página (padrão: 1)"
+// @Param limit query int false "Itens por página (padrão: 10, máx: 100)"
+// @Success 200 {object} response_agendamento.AgendamentoListPaginadoResponse "Lista paginada de agendamentos"
+// @Failure 400 {object} domain.ErrorResponse "Dados inválidos ou formato de data incorreto"
+// @Failure 404 {object} domain.ErrorResponse "Cliente não encontrado"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /agendamentos/cliente/{id}/periodo [get]
+func (ag *AgendamentoController) GetAgendamentosClientePeriodo(c *gin.Context) {
+	id := c.Param("id")
+
+	var req request_agendamento.AgendamentoClientePeriodoRequest
+
+	if err := c.ShouldBindQuery(&req); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "dados inválidos",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	input, err := req.ToInput()
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{
+			"error":  "formato de data inválido",
+			"detail": err.Error(),
+		})
+		return
+	}
+
+	agendamentos, total, err := ag.agendamentoService.ListarAgendamentosClientePorPeriodo(id, input)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrClienteNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{
+				"error": service.ErrFalhaInfraestrutura.Error(),
+			})
+		}
+		return
+	}
+
+	response := response_agendamento.ToAgendamentoListPaginadoResponse(agendamentos, input.Page, input.Limit, total)
 	c.JSON(http.StatusOK, response)
 }

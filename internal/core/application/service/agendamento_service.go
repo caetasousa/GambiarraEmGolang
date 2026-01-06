@@ -177,3 +177,73 @@ func (s *AgendamentoService) ConsultaAgendamentoPrestadorData(request input.Agen
 	out := mapper.BuscaAgendamentoData(agendamentos)
 	return out, nil
 }
+
+func (s *AgendamentoService) ListarAgendamentosPrestadorPorPeriodo(prestadorID string, in *input.ListarAgendamentoPrestadorPeriodoInput) ([]*output.AgendamentoOutput, int, error) {
+	_, err := s.prestadorRepo.BuscarPorId(prestadorID)
+	if err != nil {
+		if errors.Is(err, repository.ErrPrestadorNaoEncontrado) {
+			return nil, 0, ErrPrestadorNaoEncontrado
+		}
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+
+	page := in.Page
+	limit := in.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	agendamentos, err := s.agendamentoRepo.ListarPorPrestadorEPeriodoPaginado(prestadorID, in.DataInicio, in.DataFim, limit, offset)
+	if err != nil {
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+
+	total, err := s.agendamentoRepo.ContarPorPrestadorEPeriodo(prestadorID, in.DataInicio, in.DataFim)
+	if err != nil {
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+
+	out := mapper.BuscaAgendamentoData(agendamentos)
+	return out, total, nil
+}
+
+func (s *AgendamentoService) ListarAgendamentosClientePorPeriodo(clienteID string, in *input.ListarAgendamentoClientePeriodoInput) ([]*output.AgendamentoOutput, int, error) {
+	cliente, err := s.clienteRepo.BuscarPorId(clienteID)
+	if err != nil {
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+	if cliente == nil {
+		return nil, 0, ErrClienteNaoEncontrado
+	}
+
+	page := in.Page
+	limit := in.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 || limit > 100 {
+		limit = 10
+	}
+
+	offset := (page - 1) * limit
+
+	agendamentos, err := s.agendamentoRepo.ListarPorClienteEPeriodoPaginado(clienteID, in.DataInicio, in.DataFim, limit, offset)
+	if err != nil {
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+
+	total, err := s.agendamentoRepo.ContarPorClienteEPeriodo(clienteID, in.DataInicio, in.DataFim)
+	if err != nil {
+		return nil, 0, ErrFalhaInfraestrutura
+	}
+
+	out := mapper.BuscaAgendamentoData(agendamentos)
+	return out, total, nil
+}
