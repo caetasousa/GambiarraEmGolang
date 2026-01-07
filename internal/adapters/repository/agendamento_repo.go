@@ -144,9 +144,11 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 		a.status,
 		a.notas,
 
+		c.id, c.nome, c.email, c.telefone,
 		p.id, p.nome, p.cpf, p.email, p.telefone,
 		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.categoria
 	FROM agendamentos a
+	JOIN clientes c   ON c.id = a.cliente_id
 	JOIN prestadores p ON p.id = a.prestador_id
 	JOIN catalogos cat ON cat.id = a.catalogo_id
 	WHERE a.cliente_id = $1
@@ -165,6 +167,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 
 	for rows.Next() {
 		var a domain.Agendamento
+		var cliente domain.Cliente
 		var prestador domain.Prestador
 		var catalogo domain.Catalogo
 
@@ -174,6 +177,11 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 			&a.DataHoraFim,
 			&a.Status,
 			&a.Notas,
+
+			&cliente.ID,
+			&cliente.Nome,
+			&cliente.Email,
+			&cliente.Telefone,
 
 			&prestador.ID,
 			&prestador.Nome,
@@ -191,6 +199,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
+		a.Cliente = &cliente
 		a.Prestador = &prestador
 		a.Catalogo = &catalogo
 
@@ -494,9 +503,11 @@ func (r *AgendamentoPostgresRepository) ListarPorClienteEPeriodoPaginado(cliente
 		a.status,
 		a.notas,
 
+		c.id, c.nome, c.email, c.telefone,
 		p.id, p.nome, p.cpf, p.email, p.telefone,
 		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.categoria
 	FROM agendamentos a
+	JOIN clientes c   ON c.id = a.cliente_id
 	JOIN prestadores p ON p.id = a.prestador_id
 	JOIN catalogos cat ON cat.id = a.catalogo_id
 	WHERE a.cliente_id = $1
@@ -516,6 +527,7 @@ func (r *AgendamentoPostgresRepository) ListarPorClienteEPeriodoPaginado(cliente
 
 	for rows.Next() {
 		var a domain.Agendamento
+		var cliente domain.Cliente
 		var prestador domain.Prestador
 		var catalogo domain.Catalogo
 
@@ -525,6 +537,11 @@ func (r *AgendamentoPostgresRepository) ListarPorClienteEPeriodoPaginado(cliente
 			&a.DataHoraFim,
 			&a.Status,
 			&a.Notas,
+
+			&cliente.ID,
+			&cliente.Nome,
+			&cliente.Email,
+			&cliente.Telefone,
 
 			&prestador.ID,
 			&prestador.Nome,
@@ -542,6 +559,7 @@ func (r *AgendamentoPostgresRepository) ListarPorClienteEPeriodoPaginado(cliente
 			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
+		a.Cliente = &cliente
 		a.Prestador = &prestador
 		a.Catalogo = &catalogo
 

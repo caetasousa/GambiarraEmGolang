@@ -42,5 +42,9 @@ networks:
 # foi preciso criar a rede local-network com o comando:
 # docker network create local-network
 
+# mkdir -p ~/annygo/data/pgadmin
+# mkdir -p ~/annygo/data/postgres
+
 # tambem foi preciso dar permissao de escrita na pasta data com o comando:
 # sudo chmod -R 777 ./data/pgadmin
+
