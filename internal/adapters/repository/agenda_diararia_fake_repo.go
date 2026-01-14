@@ -27,11 +27,11 @@ func (r *FakeAgendaDiariaRepositorio) Salvar(agenda *domain.AgendaDiaria, presta
 func (r *FakeAgendaDiariaRepositorio) BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error) {
 	// Cria chave única: prestadorID + data
 	chave := fmt.Sprintf("%s:%s", prestadorID, data)
-	
+
 	// Busca agenda
 	agenda, exists := r.storage[chave]
 	if !exists {
-		return nil, sql.ErrNoRows
+		return nil, nil
 	}
 
 	return agenda, nil

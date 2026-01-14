@@ -96,7 +96,7 @@ func TestUpdatePrestador_CatalogoInexistente(t *testing.T) {
 
 	require.Equal(t, http.StatusBadRequest, rr.Code)
 	require.Contains(t, rr.Body.String(), "catálogo")
-	require.Contains(t, rr.Body.String(), "não existe")
+	require.Contains(t, rr.Body.String(), "não encontrado")
 }
 
 func TestUpdatePrestador_AtualizarCatalogos(t *testing.T) {
@@ -271,7 +271,7 @@ func TestUpdatePrestador_CPFNaoMuda_Isolado(t *testing.T) {
 
 	// 5. Buscar via HTTP
 	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)
-	
+
 	var prestadorHTTP response_prestador.PrestadorResponse
 	json.Unmarshal(rrGet.Body.Bytes(), &prestadorHTTP)
 

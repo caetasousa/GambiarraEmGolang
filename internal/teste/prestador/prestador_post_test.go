@@ -41,7 +41,7 @@ func TestPostPrestador_FalhaCatalogoInexistente(t *testing.T) {
 	rr := SetupPostPrestadorRequest(router, prestadorInput)
 
 	require.Equal(t, http.StatusUnprocessableEntity, rr.Code)
-	require.Contains(t, rr.Body.String(), "não existe")
+	require.Contains(t, rr.Body.String(), "catálogo não encontrado")
 }
 
 func TestPostPrestador_CPFDuplicado(t *testing.T) {
@@ -56,10 +56,10 @@ func TestPostPrestador_CPFDuplicado(t *testing.T) {
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
-	
+
 	rrCreate := SetupPostPrestadorRequest(router, prestadorInput)
 	ccCreate := SetupPostPrestadorRequest(router, prestadorInput)
-	
+
 	require.Equal(t, http.StatusCreated, rrCreate.Code)
 	require.Equal(t, http.StatusConflict, ccCreate.Code)
 }

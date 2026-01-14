@@ -65,7 +65,7 @@ func (r *FakePrestadorRepositorio) Atualizar(input *input.AlterarPrestadorInput)
 	// 1️⃣ Verifica se o prestador existe
 	prestador, exists := r.storage[input.Id]
 	if !exists {
-		return sql.ErrNoRows
+		return ErrPrestadorNaoEncontrado
 	}
 
 	// 2️⃣ Valida se os catálogos existem
@@ -133,7 +133,7 @@ func (r *FakePrestadorRepositorio) Contar(ativo bool) (int, error) {
 			count++
 		}
 	}
-	
+
 	return count, nil
 }
 
@@ -151,7 +151,7 @@ func (r *FakePrestadorRepositorio) AtualizarStatus(id string, ativo bool) error 
 
 func (r *FakeAgendaDiariaRepositorio) DeletarAgenda(prestadorID string, data string) error {
 	chave := fmt.Sprintf("%s:%s", prestadorID, data)
-	
+
 	if _, exists := r.storage[chave]; !exists {
 		return sql.ErrNoRows
 	}
@@ -163,13 +163,13 @@ func (r *FakeAgendaDiariaRepositorio) DeletarAgenda(prestadorID string, data str
 func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error) {
 	// Filtra prestadores ativos que têm agenda na data
 	disponiveis := make([]*domain.Prestador, 0)
-	
+
 	for _, p := range r.storage {
 		// Só considera prestadores ativos
 		if !p.Ativo {
 			continue
 		}
-		
+
 		// Verifica se tem agenda na data
 		temAgenda := false
 		for _, agenda := range p.Agenda {
@@ -178,7 +178,7 @@ func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data stri
 				break
 			}
 		}
-		
+
 		if temAgenda {
 			disponiveis = append(disponiveis, p)
 		}
@@ -207,13 +207,13 @@ func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data stri
 // ContarPrestadoresDisponiveisPorData conta quantos prestadores ativos têm agenda na data informada
 func (r *FakePrestadorRepositorio) ContarPrestadoresDisponiveisPorData(data string) (int, error) {
 	count := 0
-	
+
 	for _, p := range r.storage {
 		// Só conta prestadores ativos
 		if !p.Ativo {
 			continue
 		}
-		
+
 		// Verifica se tem agenda na data
 		for _, agenda := range p.Agenda {
 			if agenda.Data == data {
@@ -222,6 +222,6 @@ func (r *FakePrestadorRepositorio) ContarPrestadoresDisponiveisPorData(data stri
 			}
 		}
 	}
-	
+
 	return count, nil
 }
