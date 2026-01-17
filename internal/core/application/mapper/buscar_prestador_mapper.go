@@ -31,7 +31,7 @@ func FromPrestador(p *domain.Prestador) *output.BuscarPrestadorOutput {
 		Nome:      p.Nome,
 		Email:     p.Email,
 		Telefone:  p.Telefone,
-		Cpf:       p.Cpf,
+		Cpf:       p.Cpf.String(),
 		Ativo:     p.Ativo,
 		ImagemUrl: p.ImagemUrl,
 		Catalogo:  CatalogosFromDomain(p.Catalogo),

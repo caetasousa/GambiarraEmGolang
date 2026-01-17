@@ -123,6 +123,7 @@ func (s *AgendamentoService) CadastraAgendamento(input *input.CadastrarAgendamen
 	}
 
 	agendamento, err := domain.NovoAgendamento(
+		input.ID,
 		cliente,
 		prestador,
 		catalogo,
@@ -187,19 +188,7 @@ func (s *AgendamentoService) ListarAgendamentosPrestadorPorPeriodo(prestadorID s
 		return nil, 0, ErrFalhaInfraestrutura
 	}
 
-	page := in.Page
-	limit := in.Limit
-
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 || limit > 100 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
-
-	agendamentos, err := s.agendamentoRepo.ListarPorPrestadorEPeriodoPaginado(prestadorID, in.DataInicio, in.DataFim, limit, offset)
+	agendamentos, err := s.agendamentoRepo.ListarPorPrestadorEPeriodoPaginado(prestadorID, in.DataInicio, in.DataFim, in.Limit, in.Offset)
 	if err != nil {
 		return nil, 0, ErrFalhaInfraestrutura
 	}
@@ -222,19 +211,7 @@ func (s *AgendamentoService) ListarAgendamentosClientePorPeriodo(clienteID strin
 		return nil, 0, ErrClienteNaoEncontrado
 	}
 
-	page := in.Page
-	limit := in.Limit
-
-	if page <= 0 {
-		page = 1
-	}
-	if limit <= 0 || limit > 100 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
-
-	agendamentos, err := s.agendamentoRepo.ListarPorClienteEPeriodoPaginado(clienteID, in.DataInicio, in.DataFim, limit, offset)
+	agendamentos, err := s.agendamentoRepo.ListarPorClienteEPeriodoPaginado(clienteID, in.DataInicio, in.DataFim, in.Limit, in.Offset)
 	if err != nil {
 		return nil, 0, ErrFalhaInfraestrutura
 	}

@@ -22,6 +22,7 @@ import (
 	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
+	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -118,14 +119,14 @@ func SetupGetAgendamentosPrestadorPeriodoRequest(router *gin.Engine, prestadorID
 func SetupNovoCliente(p port.ClienteRepositorio) *domain.Cliente {
 	// Gerar hash da senha para testes
 	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
-	cli := domain.NovoCliente("Eduardo", "caetasousa@gmail.com", "62999697581", string(hash))
+	cli := domain.NovoCliente(xid.New().String(), "Eduardo", "caetasousa@gmail.com", "62999697581", string(hash))
 	p.Salvar(cli)
 	cliente, _ := p.BuscarPorId(cli.ID)
 	return cliente
 }
 
 func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.Catalogo) {
-	cat, _ := domain.NovoCatalogo("Manutenção", 60, 20000, "Beleza", "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif")
+	cat, _ := domain.NovoCatalogo(xid.New().String(), "Manutenção", 60, 20000, "Beleza", "https://tdfuderuzpylkctxbysu.supabase.co/storage/v1/object/public/imagens/b094865b92ed1821.avif")
 	p.Salvar(cat)
 	catalogos := []domain.Catalogo{*cat}
 	return cat, &catalogos
@@ -134,7 +135,10 @@ func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.
 func SetupCriaPrestador(p port.PrestadorRepositorio, catalogo []domain.Catalogo) *domain.Prestador {
 	// Gerar hash da senha para testes
 	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
-	pres := domain.NovoPrestador("Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481", string(hash), "https://exemplo.com/img1.jpg", catalogo)
+	pres, err := domain.NovoPrestador(xid.New().String(), "Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481", string(hash), "https://exemplo.com/img1.jpg", catalogo)
+	if err != nil {
+		panic(err) // Em testes, podemos dar panic se falhar o setup básico
+	}
 	p.Salvar(pres)
 	return pres
 }

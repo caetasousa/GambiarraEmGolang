@@ -3,6 +3,7 @@ package request
 import (
 	"meu-servico-agenda/internal/core/application/input"
 
+	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -21,6 +22,7 @@ func (r *ClienteRequest) ToCadastrarClienteInput() (*input.CadastrarClienteInput
 	}
 
 	return &input.CadastrarClienteInput{
+		ID:       xid.New().String(),
 		Nome:     r.Nome,
 		Email:    r.Email,
 		Telefone: r.Telefone,

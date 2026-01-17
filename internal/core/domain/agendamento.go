@@ -2,8 +2,6 @@ package domain
 
 import (
 	"time"
-
-	"github.com/rs/xid"
 )
 
 type StatusDoAgendamento int
@@ -27,6 +25,7 @@ type Agendamento struct {
 }
 
 func NovoAgendamento(
+	id string,
 	cliente *Cliente,
 	prestador *Prestador,
 	catalogo *Catalogo,
@@ -40,7 +39,7 @@ func NovoAgendamento(
 	}
 
 	return &Agendamento{
-		ID:             xid.New().String(),
+		ID:             id,
 		Cliente:        cliente,
 		Prestador:      prestador,
 		Catalogo:       catalogo,

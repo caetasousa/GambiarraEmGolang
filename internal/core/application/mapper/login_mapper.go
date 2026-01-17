@@ -22,7 +22,7 @@ func PrestadorToLoginData(prestador *domain.Prestador) output.LoginPrestadorData
 		Nome:      prestador.Nome,
 		Email:     prestador.Email,
 		Telefone:  prestador.Telefone,
-		Cpf:       prestador.Cpf,
+		Cpf:       prestador.Cpf.String(),
 		ImagemUrl: prestador.ImagemUrl,
 	}
 }

@@ -15,7 +15,7 @@ func PrestadorFromDomainOutput(p *domain.Prestador) *output.BuscarPrestadorOutpu
 	return &output.BuscarPrestadorOutput{
 		ID:        p.ID,
 		Nome:      p.Nome,
-		Cpf:       p.Cpf,
+		Cpf:       p.Cpf.String(),
 		Email:     p.Email,
 		Telefone:  p.Telefone,
 		Ativo:     p.Ativo,

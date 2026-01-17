@@ -7,4 +7,5 @@ type ListarAgendamentoPrestadorPeriodoInput struct {
 	DataFim    time.Time
 	Page       int
 	Limit      int
+	Offset     int
 }

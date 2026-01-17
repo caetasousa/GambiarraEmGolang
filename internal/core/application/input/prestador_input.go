@@ -1,6 +1,7 @@
 package input
 
 type CadastrarPrestadorInput struct {
+	ID          string
 	Nome        string
 	CPF         string
 	Email       string

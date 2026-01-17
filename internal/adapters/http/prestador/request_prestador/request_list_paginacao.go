@@ -3,25 +3,29 @@ package request_prestador
 import "meu-servico-agenda/internal/core/application/input"
 
 type PrestadorListRequest struct {
-	Page  int  `form:"page" binding:"omitempty,min=1"`
-	Limit int  `form:"limit" binding:"omitempty,min=1,max=100"`
+	Page  int   `form:"page" binding:"omitempty,min=1"`
+	Limit int   `form:"limit" binding:"omitempty,min=1,max=100"`
 	Ativo *bool `form:"ativo" binding:"required"`
 }
 
 func (r *PrestadorListRequest) ToInputPrestador() *input.PrestadorListInput {
-	input := &input.PrestadorListInput{
-		Page:  r.Page,
-		Limit: r.Limit,
-		Ativo: *r.Ativo, // ✅ Sempre vai ter valor
+	page := r.Page
+	limit := r.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
 	}
 
-	// Valores padrão
-	if input.Page <= 0 {
-		input.Page = 1
+	return &input.PrestadorListInput{
+		Page:   page,
+		Limit:  limit,
+		Offset: (page - 1) * limit,
+		Ativo:  *r.Ativo,
 	}
-	if input.Limit <= 0 {
-		input.Limit = 10
-	}
-
-	return input
 }

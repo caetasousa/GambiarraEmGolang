@@ -322,7 +322,8 @@ func (r *AgendamentoPostgresRepository) BuscarAgendamentoPrestadorAPartirDaData(
 
 	for rows.Next() {
 		var agendamentoID, clienteID, clienteNome, clienteEmail, clienteTelefone string
-		var pID, prestadorNome, prestadorCpf, prestadorEmail, prestadorTelefone string
+		var pID, prestadorNome, prestadorEmail, prestadorTelefone string
+		var prestadorCpf domain.CPF
 		var prestadorAtivo bool
 		var prestadorImagemUrl, catalogoImagemUrl sql.NullString
 		var catalogoID, catalogoNome, catalogoCategoria string

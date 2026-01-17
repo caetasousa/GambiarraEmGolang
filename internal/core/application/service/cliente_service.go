@@ -43,6 +43,7 @@ func (s *ServiceCliente) Cadastra(inputData *input.CadastrarClienteInput) (*outp
 
 	// Criar cliente (senha já vem hasheada do request)
 	cliente := domain.NovoCliente(
+		inputData.ID,
 		inputData.Nome,
 		inputData.Email,
 		inputData.Telefone,

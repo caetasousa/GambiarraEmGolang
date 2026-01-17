@@ -1,7 +1,8 @@
 package input
 
 type PrestadorListInput struct {
-	Page  int
-	Limit int
-	Ativo bool
+	Page   int
+	Limit  int
+	Offset int
+	Ativo  bool
 }

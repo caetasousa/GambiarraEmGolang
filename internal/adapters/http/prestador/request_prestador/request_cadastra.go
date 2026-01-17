@@ -1,10 +1,10 @@
 package request_prestador
 
 import (
-	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
+	"meu-servico-agenda/internal/core/domain"
 
-	"github.com/klassmann/cpfcnpj"
+	"github.com/rs/xid"
 	"golang.org/x/crypto/bcrypt"
 )
 
@@ -19,7 +19,7 @@ type PrestadorRequest struct {
 }
 
 func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestadorInput, error) {
-	cpf, err := ValidaCPF(r.Cpf)
+	voCPF, err := domain.NovoCPF(r.Cpf)
 	if err != nil {
 		return nil, err
 	}
@@ -31,8 +31,9 @@ func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestado
 	}
 
 	return &input.CadastrarPrestadorInput{
+		ID:          xid.New().String(),
 		Nome:        r.Nome,
-		CPF:         cpf,
+		CPF:         voCPF.String(),
 		Email:       r.Email,
 		Telefone:    r.Telefone,
 		Senha:       string(hash), // Passa o hash ao invés da senha em texto
@@ -41,9 +42,6 @@ func (r *PrestadorRequest) ToCadastrarPrestadorInput() (*input.CadastrarPrestado
 	}, nil
 }
 
-func ValidaCPF(cpf string) (string, error) {
-	if !cpfcnpj.ValidateCPF(cpf) {
-		return "", http.ErrCPFInvalido
-	}
-	return cpf, nil
+func ValidaCPF(cpf string) (domain.CPF, error) {
+	return domain.NovoCPF(cpf)
 }

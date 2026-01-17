@@ -126,7 +126,8 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 
 	for rows.Next() {
 		var (
-			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl, pPasswordHash, pRole string
+			pID, pNome, pEmail, pTelefone, pImagemUrl, pPasswordHash, pRole string
+			pCpf                                                                   domain.CPF
 			pAtivo                                                                 bool
 
 			catalogoID            sql.NullString
@@ -155,7 +156,6 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 			return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 		}
 
-		if prestador == nil {
 			prestador = &domain.Prestador{
 				ID:           pID,
 				Nome:         pNome,
@@ -167,7 +167,6 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 				PasswordHash: pPasswordHash,
 				Role:         domain.Role(pRole),
 			}
-		}
 
 		if catalogoID.Valid {
 			if _, exists := catalogosMap[catalogoID.String]; !exists {
@@ -425,8 +424,6 @@ func (r *PrestadorPostgresRepository) Atualizar(input *input.AlterarPrestadorInp
 }
 
 func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error) {
-	offset := (input.Page - 1) * input.Limit
-
 	query := `
 	WITH prestadores_paginados AS (
 		SELECT 
@@ -467,7 +464,7 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 		id.hora_inicio NULLS LAST
 	`
 
-	rows, err := r.db.Query(query, input.Limit, offset, input.Ativo)
+	rows, err := r.db.Query(query, input.Limit, input.Offset, input.Ativo)
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
 	}
@@ -481,8 +478,9 @@ func (r *PrestadorPostgresRepository) Listar(input *input.PrestadorListInput) ([
 
 	for rows.Next() {
 		var (
-			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl string
-			pAtivo                                          bool
+			pID, pNome, pEmail, pTelefone, pImagemUrl string
+			pCpf                                      domain.CPF
+			pAtivo                                    bool
 
 			catalogoID            sql.NullString
 			catalogoNome          sql.NullString
@@ -634,9 +632,7 @@ func (r *PrestadorPostgresRepository) AtualizarStatus(id string, ativo bool) err
 	return nil
 }
 
-func (r *PrestadorPostgresRepository) BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error) {
-	offset := (page - 1) * limit
-
+func (r *PrestadorPostgresRepository) BuscarPrestadoresDisponiveisPorData(data string, limit, offset int) ([]*domain.Prestador, error) {
 	query := `
 	WITH prestadores_paginados AS (
 		SELECT DISTINCT
@@ -691,8 +687,9 @@ func (r *PrestadorPostgresRepository) BuscarPrestadoresDisponiveisPorData(data s
 
 	for rows.Next() {
 		var (
-			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl string
-			pAtivo                                          bool
+			pID, pNome, pEmail, pTelefone, pImagemUrl string
+			pCpf                                      domain.CPF
+			pAtivo                                    bool
 
 			catalogoID            sql.NullString
 			catalogoNome          sql.NullString

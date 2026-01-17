@@ -1,9 +1,5 @@
 package domain
 
-import (
-	"github.com/rs/xid"
-)
-
 type Cliente struct {
 	ID           string
 	Nome         string
@@ -13,10 +9,10 @@ type Cliente struct {
 	Role         Role   // Sempre RoleCliente
 }
 
-// NovoCliente cria um novo cliente recebendo o hash da senha já pronto
-func NovoCliente(nome, email, telefone, passwordHash string) *Cliente {
+// NovoCliente cria um novo cliente recebendo o id e o hash da senha já pronto
+func NovoCliente(id, nome, email, telefone, passwordHash string) *Cliente {
 	return &Cliente{
-		ID:           xid.New().String(),
+		ID:           id,
 		Nome:         nome,
 		Email:        email,
 		Telefone:     telefone,

@@ -1,6 +1,10 @@
 package request_catalogo
 
-import "meu-servico-agenda/internal/core/application/input"
+import (
+	"meu-servico-agenda/internal/core/application/input"
+
+	"github.com/rs/xid"
+)
 
 type CatalogoRequest struct {
 	Nome          string `json:"nome" binding:"required,min=3,max=100" example:"Tecnico de Redes" swagger:"desc('Nome do serviço')"`
@@ -12,6 +16,7 @@ type CatalogoRequest struct {
 
 func (cr *CatalogoRequest) ToCatalogoInput() *input.CatalogoInput {
 	return &input.CatalogoInput{
+		ID:            xid.New().String(),
 		Nome:          cr.Nome,
 		DuracaoPadrao: cr.DuracaoPadrao,
 		Preco:         cr.Preco,

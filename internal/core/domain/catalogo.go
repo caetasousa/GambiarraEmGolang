@@ -1,9 +1,5 @@
 package domain
 
-import (
-	"github.com/rs/xid"
-)
-
 type Catalogo struct {
 	ID   string
 	Nome string
@@ -14,7 +10,7 @@ type Catalogo struct {
 	Categoria     string
 }
 
-func NovoCatalogo(nome string, duracao int, preco int, categoria string, image_url string) (*Catalogo, error) {
+func NovoCatalogo(id, nome string, duracao int, preco int, categoria string, image_url string) (*Catalogo, error) {
 
 	if duracao <= 1 {
 		return nil, ErrDuracaoInvalida
@@ -25,7 +21,7 @@ func NovoCatalogo(nome string, duracao int, preco int, categoria string, image_u
 	}
 
 	return &Catalogo{
-		ID:            xid.New().String(),
+		ID:            id,
 		Nome:          nome,
 		DuracaoPadrao: duracao,
 		Preco:         preco,

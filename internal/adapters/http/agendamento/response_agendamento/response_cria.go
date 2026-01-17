@@ -53,7 +53,7 @@ func NovoAgendamentoResponse(a *output.AgendamentoOutput) *AgendamentoResponse {
 		Prestador: PrestadorInfo{
 			ID:       a.Prestador.ID,
 			Nome:     a.Prestador.Nome,
-			CPF:      a.Prestador.Cpf,
+			CPF:      a.Prestador.Cpf.String(),
 			Email:    a.Prestador.Email,
 			Telefone: a.Prestador.Telefone,
 			Ativo:    a.Prestador.Ativo,

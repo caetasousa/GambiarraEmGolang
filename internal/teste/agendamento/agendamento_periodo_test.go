@@ -11,6 +11,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/agendamento/response_agendamento"
 	"meu-servico-agenda/internal/core/domain"
 
+	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -66,7 +67,7 @@ func TestGetAgendamentosClientePeriodo_Paginacao(t *testing.T) {
 
 	// Cria segundo catálogo para permitir múltiplos agendamentos no mesmo dia
 	cat1, listaDeCatalogos1 := SetupNovoCatalogo(catalogoRepo)
-	cat2, _ := domain.NovoCatalogo("Corte", 30, 5000, "Cabelo", "https://exemplo.com/img2.jpg")
+	cat2, _ := domain.NovoCatalogo(xid.New().String(), "Corte", 30, 5000, "Cabelo", "https://exemplo.com/img2.jpg")
 	catalogoRepo.Salvar(cat2)
 
 	prestador := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos1)
@@ -214,7 +215,7 @@ func TestGetAgendamentosPrestadorPeriodo_MultipleClientes(t *testing.T) {
 	// Cria 2 clientes
 	cliente1 := SetupNovoCliente(clienteRepo)
 	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
-	cliente2 := domain.NovoCliente("Maria", "maria@email.com", "62988888888", string(hash))
+	cliente2 := domain.NovoCliente(xid.New().String(), "Maria", "maria@email.com", "62988888888", string(hash))
 	clienteRepo.Salvar(cliente2)
 
 	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)
@@ -257,7 +258,7 @@ func TestGetAgendamentosPrestadorPeriodo_OrdenacaoPorDataHora(t *testing.T) {
 
 	// Cria dois catálogos diferentes para evitar erro de agendamento duplo
 	cat1, listaDeCatalogos1 := SetupNovoCatalogo(catalogoRepo)
-	cat2, _ := domain.NovoCatalogo("Corte", 30, 5000, "Cabelo", "https://exemplo.com/img2.jpg")
+	cat2, _ := domain.NovoCatalogo(xid.New().String(), "Corte", 30, 5000, "Cabelo", "https://exemplo.com/img2.jpg")
 	catalogoRepo.Salvar(cat2)
 
 	prestador := SetupCriaPrestador(prestadorRepo, *listaDeCatalogos1)
@@ -344,7 +345,7 @@ func TestGetAgendamentosPeriodo_ValidaDadosCompletos(t *testing.T) {
 	// Prestador
 	require.Equal(t, prestador.ID, agendamento.Prestador.ID)
 	require.Equal(t, prestador.Nome, agendamento.Prestador.Nome)
-	require.Equal(t, prestador.Cpf, agendamento.Prestador.CPF)
+	require.Equal(t, prestador.Cpf.String(), agendamento.Prestador.CPF)
 
 	// Serviço
 	require.Equal(t, catalogo.ID, agendamento.Servico.ID)

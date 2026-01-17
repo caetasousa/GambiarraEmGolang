@@ -39,7 +39,7 @@ func (r *FakePrestadorRepositorio) BuscarPorId(id string) (*domain.Prestador, er
 func (r *FakePrestadorRepositorio) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
 	cpf = cpfcnpj.Clean(cpf)
 	for _, p := range r.storage {
-		if cpfcnpj.Clean(p.Cpf) == cpf {
+		if cpfcnpj.Clean(p.Cpf.String()) == cpf {
 			return p, nil
 		}
 	}
@@ -119,19 +119,16 @@ func (r *FakePrestadorRepositorio) Listar(input *input.PrestadorListInput) ([]*d
 		return todos[i].ID > todos[j].ID
 	})
 
-	// Calcula offset
-	offset := (input.Page - 1) * input.Limit
-
-	if offset >= len(todos) {
+	if input.Offset >= len(todos) {
 		return []*domain.Prestador{}, nil
 	}
 
-	fim := offset + input.Limit
+	fim := input.Offset + input.Limit
 	if fim > len(todos) {
 		fim = len(todos)
 	}
 
-	return todos[offset:fim], nil
+	return todos[input.Offset:fim], nil
 }
 
 func (r *FakePrestadorRepositorio) Contar(ativo bool) (int, error) {
@@ -169,7 +166,7 @@ func (r *FakeAgendaDiariaRepositorio) DeletarAgenda(prestadorID string, data str
 	return nil
 }
 
-func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error) {
+func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data string, limit, offset int) ([]*domain.Prestador, error) {
 	// Filtra prestadores ativos que têm agenda na data
 	disponiveis := make([]*domain.Prestador, 0)
 
@@ -197,9 +194,6 @@ func (r *FakePrestadorRepositorio) BuscarPrestadoresDisponiveisPorData(data stri
 	sort.Slice(disponiveis, func(i, j int) bool {
 		return disponiveis[i].ID > disponiveis[j].ID
 	})
-
-	// Calcula offset
-	offset := (page - 1) * limit
 
 	if offset >= len(disponiveis) {
 		return []*domain.Prestador{}, nil

@@ -1,6 +1,7 @@
 package input
 
 type ListCatalogoInput struct {
-	Page  int
-	Limit int
+	Page   int
+	Limit  int
+	Offset int
 }

@@ -10,6 +10,7 @@ import (
 	"meu-servico-agenda/internal/adapters/http/agendamento/response_agendamento"
 	"meu-servico-agenda/internal/core/domain"
 
+	"github.com/rs/xid"
 	"github.com/stretchr/testify/require"
 	"golang.org/x/crypto/bcrypt"
 )
@@ -201,7 +202,7 @@ func TestPostAgendamento_PrestadorOcupado(t *testing.T) {
 
 	// cliente 2
 	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
-	cliente2 := domain.NovoCliente("Maria", "maria@email.com", "62999999999", string(hash))
+	cliente2 := domain.NovoCliente(xid.New().String(), "Maria", "maria@email.com", "62999999999", string(hash))
 	clienteRepo.Salvar(cliente2)
 
 	// catálogo
@@ -251,15 +252,17 @@ func TestPostAgendamento_ClienteOcupado(t *testing.T) {
 
 	// prestador 2
 	hash2, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
-	prestador2 := domain.NovoPrestador(
+	prestador2, err := domain.NovoPrestador(
+		xid.New().String(),
 		"Outro Prestador",
-		"12345678900",
+		"11144477735",
 		"outro@email.com",
 		"62988888888",
 		string(hash2),
 		"https://exemplo.com/img1.jpg",
 		*listaDeCatalogos,
 	)
+	require.NoError(t, err)
 	prestadorRepo.Salvar(prestador2)
 	agenda2 := SetupCriaAgendaDiaria(agendaDiariaRepo)
 	prestador2.AdicionarAgenda(agenda2)
@@ -344,6 +347,7 @@ func TestPostAgendamento_CategoriasDiferentesMesmoDia_Permitido(t *testing.T) {
 
 	// cadastro do segundo catálogo (categoria diferente)
 	catalogo2, _ := domain.NovoCatalogo(
+		xid.New().String(),
 		"Corte de Cabelo",
 		30,
 		5000,
@@ -486,7 +490,7 @@ func TestPostAgendamento_ValidaResponse(t *testing.T) {
 	// Valida dados do prestador
 	require.Equal(t, prestador.ID, response.Prestador.ID)
 	require.Equal(t, prestador.Nome, response.Prestador.Nome)
-	require.Equal(t, prestador.Cpf, response.Prestador.CPF)
+	require.Equal(t, prestador.Cpf.String(), response.Prestador.CPF)
 	require.Equal(t, prestador.Email, response.Prestador.Email)
 	require.Equal(t, prestador.Telefone, response.Prestador.Telefone)
 	require.True(t, response.Prestador.Ativo)

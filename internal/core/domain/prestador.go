@@ -1,13 +1,9 @@
 package domain
 
-import (
-	"github.com/rs/xid"
-)
-
 type Prestador struct {
 	ID           string
 	Nome         string
-	Cpf          string
+	Cpf          CPF
 	Email        string
 	Telefone     string
 	Ativo        bool
@@ -18,11 +14,16 @@ type Prestador struct {
 	Agenda       []AgendaDiaria
 }
 
-func NovoPrestador(nome, cpf, email, telefone, passwordHash string, imagem string, catalogos []Catalogo) *Prestador {
+func NovoPrestador(id, nome, cpf, email, telefone, passwordHash string, imagem string, catalogos []Catalogo) (*Prestador, error) {
+	voCPF, err := NovoCPF(cpf)
+	if err != nil {
+		return nil, err
+	}
+
 	return &Prestador{
-		ID:           xid.New().String(),
+		ID:           id,
 		Nome:         nome,
-		Cpf:          cpf,
+		Cpf:          voCPF,
 		Email:        email,
 		Telefone:     telefone,
 		Ativo:        true,
@@ -31,7 +32,7 @@ func NovoPrestador(nome, cpf, email, telefone, passwordHash string, imagem strin
 		Role:         RolePrestador,
 		Catalogo:     catalogos,
 		Agenda:       []AgendaDiaria{},
-	}
+	}, nil
 }
 
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {

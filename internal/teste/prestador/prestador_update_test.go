@@ -252,7 +252,7 @@ func TestUpdatePrestador_CPFNaoMuda_Isolado(t *testing.T) {
 	// 2. Buscar diretamente do repo (sem HTTP)
 	prestadorRepo, err := repo.BuscarPorId(prestadorResp.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "04423258196", prestadorRepo.Cpf)
+	assert.Equal(t, "04423258196", prestadorRepo.Cpf.String())
 
 	// 3. Atualizar via HTTP
 	updateInput := request_prestador.PrestadorUpdateRequest{
@@ -268,7 +268,7 @@ func TestUpdatePrestador_CPFNaoMuda_Isolado(t *testing.T) {
 	// 4. Buscar novamente do repo
 	prestadorRepo2, err := repo.BuscarPorId(prestadorResp.ID)
 	require.NoError(t, err)
-	assert.Equal(t, "04423258196", prestadorRepo2.Cpf, "CPF não deve mudar no repo")
+	assert.Equal(t, "04423258196", prestadorRepo2.Cpf.String(), "CPF não deve mudar no repo")
 
 	// 5. Buscar via HTTP
 	rrGet := SetupGetPrestadorRequest(router, prestadorResp.ID)

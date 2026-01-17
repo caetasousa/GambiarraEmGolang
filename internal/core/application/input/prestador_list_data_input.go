@@ -1,7 +1,8 @@
 package input
 
 type PrestadorListDataInput struct {
-	Data  string
-	Limit int
-	Page  int
+	Data   string
+	Limit  int
+	Page   int
+	Offset int
 }

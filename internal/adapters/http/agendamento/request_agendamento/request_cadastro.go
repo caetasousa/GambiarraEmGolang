@@ -4,6 +4,8 @@ import (
 	"meu-servico-agenda/internal/adapters/http"
 	"meu-servico-agenda/internal/core/application/input"
 	"time"
+
+	"github.com/rs/xid"
 )
 
 type AgendamentoRequest struct {
@@ -22,6 +24,7 @@ func (ag *AgendamentoRequest) ToAgendamento() (*input.CadastrarAgendamentoInput,
 	}
 
 	agendamento := input.CadastrarAgendamentoInput{
+		ID:             xid.New().String(),
 		ClienteID:      ag.ClienteID,
 		PrestadorID:    ag.PrestadorID,
 		CatalogoID:     ag.CatalogoID,

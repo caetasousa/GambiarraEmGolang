@@ -15,6 +15,6 @@ type PrestadorRepositorio interface {
 	Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error)
 	Contar(ativo bool) (int, error)
 	AtualizarStatus(id string, ativo bool) error 
-	BuscarPrestadoresDisponiveisPorData(data string, page, limit int) ([]*domain.Prestador, error)
+	BuscarPrestadoresDisponiveisPorData(data string, limit, offset int) ([]*domain.Prestador, error)
 	ContarPrestadoresDisponiveisPorData(data string) (int, error)
 }

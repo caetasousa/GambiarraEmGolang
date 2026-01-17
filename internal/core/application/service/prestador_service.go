@@ -11,8 +11,6 @@ import (
 	"meu-servico-agenda/internal/core/application/output"
 	"meu-servico-agenda/internal/core/application/port"
 	"meu-servico-agenda/internal/core/domain"
-
-	"github.com/klassmann/cpfcnpj"
 )
 
 type PrestadorService struct {
@@ -34,7 +32,8 @@ func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoReposito
 }
 
 func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output.CriarPrestadorOutput, error) {
-	cpf := cpfcnpj.Clean(cmd.CPF)
+	// CPF já vem validado e limpo do Request Mapper via Value Object (mas aqui usamos a string do input)
+	cpf := cmd.CPF
 
 	// BuscarPorCPF retorna (nil, nil) se não encontrar - isso é esperado para novo cadastro
 	prestadorExistente, err := s.prestadorRepo.BuscarPorCPF(cpf)
@@ -70,7 +69,8 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 	}
 
 	// Criar prestador (senha já vem hasheada do request)
-	prestador := domain.NovoPrestador(
+	prestador, err := domain.NovoPrestador(
+		cmd.ID,
 		cmd.Nome,
 		cpf,
 		cmd.Email,
@@ -79,6 +79,9 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 		cmd.ImagemUrl,
 		catalogos,
 	)
+	if err != nil {
+		return nil, err
+	}
 
 	if err := s.prestadorRepo.Salvar(prestador); err != nil {
 		if errors.Is(err, repository.ErrCPFDuplicado) {
@@ -123,16 +126,6 @@ func (s *PrestadorService) Atualizar(input *input.AlterarPrestadorInput) error {
 }
 
 func (s *PrestadorService) ListarPrestadores(input *input.PrestadorListInput) ([]*output.BuscarPrestadorOutput, int, error) {
-	if input.Page <= 0 {
-		input.Page = 1
-	}
-	if input.Limit <= 0 {
-		input.Limit = 10
-	}
-	if input.Limit > 100 {
-		input.Limit = 100
-	}
-
 	prestadores, err := s.prestadorRepo.Listar(input)
 	if err != nil {
 		return nil, 0, ErrFalhaInfraestrutura
@@ -286,7 +279,7 @@ func (s *PrestadorService) BuscarPrestadoresDisponiveisPorData(input *input.Pres
 		return nil, 0, err
 	}
 
-	prestadores, err := s.prestadorRepo.BuscarPrestadoresDisponiveisPorData(input.Data, input.Page, input.Limit)
+	prestadores, err := s.prestadorRepo.BuscarPrestadoresDisponiveisPorData(input.Data, input.Limit, input.Offset)
 	if err != nil {
 		return nil, 0, ErrAoBuscarPrestadoresDisponiveis
 	}

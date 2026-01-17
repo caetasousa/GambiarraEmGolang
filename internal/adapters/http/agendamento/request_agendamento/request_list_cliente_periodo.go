@@ -24,10 +24,25 @@ func (req *AgendamentoClientePeriodoRequest) ToInput() (*input.ListarAgendamento
 		return nil, http.ErrFormatoDataHoraInvalido
 	}
 
+	// Validações de paginação
+	page := req.Page
+	limit := req.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
+	}
+
 	return &input.ListarAgendamentoClientePeriodoInput{
 		DataInicio: dataInicio,
 		DataFim:    dataFim,
-		Page:       req.Page,
-		Limit:      req.Limit,
+		Page:       page,
+		Limit:      limit,
+		Offset:     (page - 1) * limit,
 	}, nil
 }

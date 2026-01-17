@@ -20,6 +20,7 @@ func NovoCatalogoService(r port.CatalogoRepositorio) *CatalogoService {
 
 func (s *CatalogoService) Cadastra(input *input.CatalogoInput) (*output.CatalogoOutput, error) {
 	catalogo, err := domain.NovoCatalogo(
+		input.ID,
 		input.Nome,
 		input.DuracaoPadrao,
 		input.Preco,
@@ -50,20 +51,7 @@ func (s *CatalogoService) BuscarPorId(id string) (*output.CatalogoOutput, error)
 }
 
 func (s *CatalogoService) Listar(in *input.ListCatalogoInput) ([]*output.CatalogoOutput, int, error) {
-	page := in.Page
-	limit := in.Limit
-
-	if page <= 0 {
-		page = 1
-	}
-
-	if limit <= 0 || limit > 100 {
-		limit = 10
-	}
-
-	offset := (page - 1) * limit
-
-	catalogos, err := s.repo.Listar(limit, offset)
+	catalogos, err := s.repo.Listar(in.Limit, in.Offset)
 	if err != nil {
 		return nil, 0, ErrFalhaInfraestrutura
 	}

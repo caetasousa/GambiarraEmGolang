@@ -9,22 +9,24 @@ type BuscarPrestadoresDataRequest struct {
 }
 
 func (r *BuscarPrestadoresDataRequest) ToInputPrestador() *input.PrestadorListDataInput {
-	input := &input.PrestadorListDataInput{
-		Page:  r.Page,
-		Limit: r.Limit,
-		Data: *&r.Data, // ✅ Sempre vai ter valor
+	// Validações e valores padrão
+	page := r.Page
+	limit := r.Limit
+
+	if page <= 0 {
+		page = 1
+	}
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
 	}
 
-	// Validações de paginação
-	if input.Page <= 0 {
-		input.Page = 1
+	return &input.PrestadorListDataInput{
+		Page:   page,
+		Limit:  limit,
+		Offset: (page - 1) * limit,
+		Data:   r.Data,
 	}
-	if input.Limit <= 0 {
-		input.Limit = 10
-	}
-	if input.Limit > 100 {
-		input.Limit = 100
-	}
-
-	return input
 }

@@ -7,6 +7,8 @@ import (
 	"meu-servico-agenda/internal/core/domain"
 	"meu-servico-agenda/internal/infra/auth"
 
+	adapterhttp "meu-servico-agenda/internal/adapters/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -16,7 +18,7 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 		// 1. Pegar token do header Authorization
 		authHeader := c.GetHeader("Authorization")
 		if authHeader == "" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "token de autenticação não fornecido"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrTokenNaoFornecido.Error()})
 			c.Abort()
 			return
 		}
@@ -24,7 +26,7 @@ func AuthMiddleware(jwtSecret string) gin.HandlerFunc {
 		// 2. Validar formato: "Bearer <token>"
 		parts := strings.Split(authHeader, " ")
 		if len(parts) != 2 || parts[0] != "Bearer" {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "formato de token inválido. Use: Bearer <token>"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrTokenInvalido.Error()})
 			c.Abort()
 			return
 		}
@@ -53,7 +55,7 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userRole, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "usuário não autenticado"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrUsuarioNaoAutenticado.Error()})
 			c.Abort()
 			return
 		}
@@ -67,9 +69,8 @@ func RequireRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 				return
 			}
 		}
-
 		// Se não tem permissão
-		c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado: permissão insuficiente"})
+		c.JSON(http.StatusForbidden, gin.H{"error": adapterhttp.ErrPermissaoInsuficiente.Error()})
 		c.Abort()
 	}
 }
@@ -80,14 +81,14 @@ func RequireOwnerOrAdmin() gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "usuário não autenticado"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrUsuarioNaoAutenticado.Error()})
 			c.Abort()
 			return
 		}
 
 		userRole, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "usuário não autenticado"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrUsuarioNaoAutenticado.Error()})
 			c.Abort()
 			return
 		}
@@ -108,7 +109,7 @@ func RequireOwnerOrAdmin() gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado: você só pode acessar seus próprios dados"})
+		c.JSON(http.StatusForbidden, gin.H{"error": adapterhttp.ErrAcessoSomenteProprio.Error()})
 		c.Abort()
 	}
 }
@@ -119,14 +120,14 @@ func RequireOwnerOrRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 	return func(c *gin.Context) {
 		userID, exists := c.Get("user_id")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "usuário não autenticado"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrUsuarioNaoAutenticado.Error()})
 			c.Abort()
 			return
 		}
 
 		userRole, exists := c.Get("user_role")
 		if !exists {
-			c.JSON(http.StatusUnauthorized, gin.H{"error": "usuário não autenticado"})
+			c.JSON(http.StatusUnauthorized, gin.H{"error": adapterhttp.ErrUsuarioNaoAutenticado.Error()})
 			c.Abort()
 			return
 		}
@@ -149,7 +150,7 @@ func RequireOwnerOrRole(allowedRoles ...domain.Role) gin.HandlerFunc {
 			return
 		}
 
-		c.JSON(http.StatusForbidden, gin.H{"error": "acesso negado: permissão insuficiente"})
+		c.JSON(http.StatusForbidden, gin.H{"error": adapterhttp.ErrPermissaoInsuficiente.Error()})
 		c.Abort()
 	}
 }
