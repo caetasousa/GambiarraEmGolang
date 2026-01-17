@@ -6,12 +6,21 @@ var (
 	// Validação de CPF
 	ErrCPFJaCadastrado = errors.New("cpf já possui um cadastro")
 
+	// Validação de email
+	ErrEmailJaUsadoPorCliente   = errors.New("email já está em uso por um cliente")
+	ErrEmailJaUsadoPorPrestador = errors.New("email já está em uso por um prestador")
+
+
 	// Validação de catálogo
 	ErrCatalogoNaoEncontrado = errors.New("catálogo não encontrado")
 	ErrCatalogoInvalido      = errors.New("catálogo inválido")
 
 	// Erro genérico de infraestrutura
 	ErrFalhaInfraestrutura = errors.New("falha na infraestrutura")
+
+	// Autenticação (camada de aplicação)
+	ErrCredenciaisInvalidas = errors.New("credenciais inválidas")
+	ErrFalhaAoGerarToken    = errors.New("falha ao gerar token de autenticação")
 
 	// Validação de prestador
 	ErrPrestadorNaoEncontrado         = errors.New("prestador não encontrado")

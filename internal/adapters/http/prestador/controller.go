@@ -63,6 +63,9 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 		case errors.Is(err, service.ErrCPFJaCadastrado):
 			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
 
+		case errors.Is(err, service.ErrEmailJaUsadoPorCliente):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+
 		case errors.Is(err, service.ErrCatalogoNaoEncontrado):
 			c.JSON(http.StatusUnprocessableEntity, gin.H{"error": err.Error()})
 
@@ -78,12 +81,14 @@ func (prc *PrestadorController) PostPrestador(c *gin.Context) {
 }
 
 // @Summary Consulta prestador pelo ID
-// @Description Retorna informações do prestador, incluindo catálogo de serviços e agenda diária.
+// @Description Retorna informações do prestador, incluindo catálogo de serviços e agenda diária. Requer autenticação JWT.
 // @Tags Prestadores
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Success 200 {object} response_prestador.PrestadorResponse "Prestador encontrado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno"
 // @Router /prestadores/{id} [get]
@@ -113,14 +118,17 @@ func (prc *PrestadorController) GetPrestador(c *gin.Context) {
 
 // UpdatePrestador godoc
 // @Summary Atualiza um prestador existente
-// @Description Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado.
+// @Description Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado. Requer autenticação JWT (próprio prestador ou Admin).
 // @Tags Prestadores
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Param prestador body request_prestador.PrestadorUpdateRequest true "Dados atualizados do prestador"
 // @Success 204 "Prestador atualizado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos ou catálogo não existe"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - você só pode atualizar seus próprios dados ou ser Admin"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
 // @Router /prestadores/{id} [put]
@@ -160,15 +168,17 @@ func (prc *PrestadorController) UpdatePrestador(c *gin.Context) {
 
 // GetPrestadores godoc
 // @Summary Lista prestadores filtrados por status
-// @Description Retorna lista paginada de prestadores ativos ou inativos
+// @Description Retorna lista paginada de prestadores ativos ou inativos. Requer autenticação JWT.
 // @Tags Prestadores
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param page query int false "Número da página (padrão: 1)"
 // @Param limit query int false "Itens por página (padrão: 10, máximo: 100)"
 // @Param ativo query boolean true "Status do prestador (obrigatório)"
 // @Success 200 {object} response_prestador.PrestadorListResponse
 // @Failure 400 {object} domain.ErrorResponse "Parâmetro 'ativo' é obrigatório"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
 // @Router /prestadores [get]
 func (prc *PrestadorController) GetPrestadores(c *gin.Context) {
 	var req request_prestador.PrestadorListRequest
@@ -201,11 +211,14 @@ func (prc *PrestadorController) GetPrestadores(c *gin.Context) {
 }
 
 // @Summary Inativa um prestador
-// @Description Inativa um prestador, impedindo que ele receba novos agendamentos
+// @Description Inativa um prestador, impedindo que ele receba novos agendamentos. Requer autenticação JWT (APENAS Admin).
 // @Tags Prestadores
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Success 204 "Prestador inativado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Admin pode inativar prestadores"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno"
 // @Router /prestadores/{id}/inativar [put]
@@ -228,11 +241,14 @@ func (prc *PrestadorController) InativarPrestador(c *gin.Context) {
 }
 
 // @Summary Ativa um prestador
-// @Description Ativa um prestador, permitindo que ele receba novos agendamentos
+// @Description Ativa um prestador, permitindo que ele receba novos agendamentos. Requer autenticação JWT (APENAS Admin).
 // @Tags Prestadores
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Success 204 "Prestador ativado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Admin pode ativar prestadores"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno"
 // @Router /prestadores/{id}/ativar [put]
@@ -255,14 +271,17 @@ func (prc *PrestadorController) AtivarPrestador(c *gin.Context) {
 }
 
 // @Summary Cria ou atualiza uma agenda
-// @Description Cria uma nova agenda ou atualiza uma existente para a data especificada
+// @Description Cria uma nova agenda ou atualiza uma existente para a data especificada. Requer autenticação JWT (próprio prestador ou Admin).
 // @Tags Prestadores
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Param agenda body request_prestador.AgendaDiariaRequest true "Dados da agenda"
 // @Success 200 "Agenda criada ou atualizada com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - você só pode gerenciar sua própria agenda ou ser Admin"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 409 {object} domain.ErrorResponse "Prestador inativo"
 // @Router /prestadores/{id}/agenda [put]
@@ -297,7 +316,7 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 		case domain.ErrIntervaloHorarioInvalido,
 			domain.ErrAgendaSemIntervalos,
 			domain.ErrDataEstaNoPassado,
-			domain.ErrIntervalosSesobreporem: 
+			domain.ErrIntervalosSesobreporem:
 			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 			return
 		default:
@@ -313,13 +332,16 @@ func (prc *PrestadorController) PutAgenda(c *gin.Context) {
 
 // DeleteAgenda godoc
 // @Summary Deleta uma agenda
-// @Description Remove uma agenda de um prestador em uma data específica
+// @Description Remove uma agenda de um prestador em uma data específica. Requer autenticação JWT (próprio prestador ou Admin).
 // @Tags Prestadores
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do prestador"
 // @Param data query string true "Data da agenda (formato: 2006-01-02)"
 // @Success 204 "Agenda deletada com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Data inválida"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - você só pode deletar sua própria agenda ou ser Admin"
 // @Failure 404 {object} domain.ErrorResponse "Prestador ou agenda não encontrada"
 // @Failure 409 {object} domain.ErrorResponse "Prestador inativo"
 // @Router /prestadores/{id}/agenda [delete]
@@ -359,15 +381,17 @@ func (prc *PrestadorController) DeleteAgenda(c *gin.Context) {
 
 // GetPrestadoresPorData godoc
 // @Summary Lista prestadores disponíveis em uma data específica
-// @Description Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada
+// @Description Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada. Requer autenticação JWT.
 // @Tags Prestadores
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param data query string true "Data da disponibilidade (formato: YYYY-MM-DD)"
 // @Param page query int false "Número da página (padrão: 1)"
 // @Param limit query int false "Itens por página (padrão: 10, máximo: 100)"
 // @Success 200 {object} response_prestador.PrestadorListResponse "Lista de prestadores disponíveis"
 // @Failure 400 {object} domain.ErrorResponse "Parâmetro 'data' é obrigatório ou formato inválido"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno ao buscar prestadores"
 // @Router /prestadores/disponiveis [get]
 func (prc *PrestadorController) GetPrestadoresPorData(c *gin.Context) {
@@ -409,3 +433,4 @@ func (prc *PrestadorController) GetPrestadoresPorData(c *gin.Context) {
 
 	c.JSON(http.StatusOK, response)
 }
+

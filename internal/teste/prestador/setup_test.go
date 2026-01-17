@@ -30,11 +30,14 @@ func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 	prestadorRepo := repository.NovoFakePrestadorRepositorio(catalogoRepo)
 	agendaRepo := repository.NovoFakeAgendaDiariaRepositorio()
 	cadastroService := service.NovoCatalogoService(catalogoRepo)
+	authService := service.NovoAuthService("test-secret-key", 24, nil, prestadorRepo)
 
 	prestadorService := service.NovaPrestadorService(
 		prestadorRepo,
 		catalogoRepo,
 		agendaRepo,
+		authService,
+		nil, // clienteRepo não necessário para testes simples
 	)
 
 	prestadorController := prestador.NovoPrestadorController(prestadorService)
@@ -57,6 +60,47 @@ func SetupPostPrestador() (*gin.Engine, port.PrestadorRepositorio) {
 	}
 
 	return router, prestadorRepo
+}
+
+// SetupPostPrestadorComCliente configura o ambiente de testes incluindo repositório de clientes
+func SetupPostPrestadorComCliente() (*gin.Engine, port.PrestadorRepositorio, port.ClienteRepositorio) {
+	gin.SetMode(gin.TestMode)
+
+	catalogoRepo := repository.NovoCatalogoFakeRepo()
+	clienteRepo := repository.NewFakeClienteRepositorio()
+	prestadorRepo := repository.NovoFakePrestadorRepositorio(catalogoRepo)
+	agendaRepo := repository.NovoFakeAgendaDiariaRepositorio()
+	cadastroService := service.NovoCatalogoService(catalogoRepo)
+	authService := service.NovoAuthService("test-secret-key", 24, clienteRepo, prestadorRepo)
+
+	prestadorService := service.NovaPrestadorService(
+		prestadorRepo,
+		catalogoRepo,
+		agendaRepo,
+		authService,
+		clienteRepo, // Passa o repositório de clientes para validação de email
+	)
+
+	prestadorController := prestador.NovoPrestadorController(prestadorService)
+	catalogoController := catalogo.NovoCatalogoController(cadastroService)
+
+	router := gin.Default()
+	apiV1 := router.Group("/api/v1")
+	{
+		apiV1.POST("/prestadores", prestadorController.PostPrestador)
+		apiV1.GET("/prestadores", prestadorController.GetPrestadores)
+		apiV1.GET("/prestadores/disponiveis", prestadorController.GetPrestadoresPorData)
+		apiV1.GET("/prestadores/:id", prestadorController.GetPrestador)
+		apiV1.PUT("/prestadores/:id/agenda", prestadorController.PutAgenda)
+		apiV1.PUT("/prestadores/:id", prestadorController.UpdatePrestador)
+		apiV1.PUT("/prestadores/:id/inativar", prestadorController.InativarPrestador) 
+		apiV1.PUT("/prestadores/:id/ativar", prestadorController.AtivarPrestador)
+		apiV1.DELETE("/prestadores/:id/agenda", prestadorController.DeleteAgenda)
+
+		apiV1.POST("/catalogos", catalogoController.PostCatalogo)
+	}
+
+	return router, prestadorRepo, clienteRepo
 }
 
 // SetupPostPrestadorRequest executa request de criação de prestador
@@ -148,6 +192,7 @@ func CriarPrestadorValido(t *testing.T, router *gin.Engine, catalogoID string, c
 		Cpf:         cpf,
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoID},
 	}
@@ -171,6 +216,7 @@ func CriarPrestadorValidoParaTeste(t *testing.T) (*gin.Engine, domain.Prestador,
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}

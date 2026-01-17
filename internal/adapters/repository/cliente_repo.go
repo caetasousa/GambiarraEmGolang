@@ -22,8 +22,8 @@ func NovoClientePostgresRepositorio(db *sql.DB) port.ClienteRepositorio {
 
 func (r *ClientePostgresRepositorio) Salvar(cliente *domain.Cliente) error {
 	query := `
-		INSERT INTO clientes (id, nome, email, telefone)
-		VALUES ($1, $2, $3, $4)
+		INSERT INTO clientes (id, nome, email, telefone, senha_hash, role)
+		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
 	_, err := r.db.Exec(
@@ -32,6 +32,8 @@ func (r *ClientePostgresRepositorio) Salvar(cliente *domain.Cliente) error {
 		cliente.Nome,
 		cliente.Email,
 		cliente.Telefone,
+		cliente.PasswordHash,
+		string(cliente.Role),
 	)
 
 	if err != nil {
@@ -47,7 +49,7 @@ func (r *ClientePostgresRepositorio) Salvar(cliente *domain.Cliente) error {
 
 func (r *ClientePostgresRepositorio) BuscarPorId(id string) (*domain.Cliente, error) {
 	query := `
-		SELECT id, nome, email, telefone
+		SELECT id, nome, email, telefone, senha_hash, role
 		FROM clientes
 		WHERE id = $1
 	`
@@ -55,11 +57,14 @@ func (r *ClientePostgresRepositorio) BuscarPorId(id string) (*domain.Cliente, er
 	row := r.db.QueryRow(query, id)
 
 	var cliente domain.Cliente
+	var role string
 	err := row.Scan(
 		&cliente.ID,
 		&cliente.Nome,
 		&cliente.Email,
 		&cliente.Telefone,
+		&cliente.PasswordHash,
+		&role,
 	)
 
 	if err != nil {
@@ -69,5 +74,37 @@ func (r *ClientePostgresRepositorio) BuscarPorId(id string) (*domain.Cliente, er
 		return nil, err
 	}
 
+	cliente.Role = domain.Role(role)
+	return &cliente, nil
+}
+
+func (r *ClientePostgresRepositorio) BuscarPorEmail(email string) (*domain.Cliente, error) {
+	query := `
+		SELECT id, nome, email, telefone, senha_hash, role
+		FROM clientes
+		WHERE email = $1
+	`
+
+	row := r.db.QueryRow(query, email)
+
+	var cliente domain.Cliente
+	var role string
+	err := row.Scan(
+		&cliente.ID,
+		&cliente.Nome,
+		&cliente.Email,
+		&cliente.Telefone,
+		&cliente.PasswordHash,
+		&role,
+	)
+
+	if err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return nil, nil // Cliente não encontrado
+		}
+		return nil, err
+	}
+
+	cliente.Role = domain.Role(role)
 	return &cliente, nil
 }

@@ -5,33 +5,33 @@ import (
 )
 
 type Prestador struct {
-	ID        string
-	Nome      string
-	Cpf       string
-	Email     string
-	Telefone  string
-	Ativo     bool
-	ImagemUrl string
-	Catalogo  []Catalogo
-	Agenda    []AgendaDiaria
+	ID           string
+	Nome         string
+	Cpf          string
+	Email        string
+	Telefone     string
+	Ativo        bool
+	ImagemUrl    string
+	PasswordHash string // Senha hasheada com bcrypt
+	Role         Role   // Sempre RolePrestador
+	Catalogo     []Catalogo
+	Agenda       []AgendaDiaria
 }
 
-func NovoPrestador(nome, cpf, email, telefone string, imagem string, catalogos []Catalogo) (*Prestador, error) {
-	if len(catalogos) == 0 {
-		return nil, ErrPrestadorDeveTerCatalogo
-	}
-
+func NovoPrestador(nome, cpf, email, telefone, passwordHash string, imagem string, catalogos []Catalogo) *Prestador {
 	return &Prestador{
-		ID:        xid.New().String(),
-		Nome:      nome,
-		Cpf:       cpf,
-		Email:     email,
-		Telefone:  telefone,
-		Ativo:     true,
-		ImagemUrl: imagem,
-		Catalogo:  catalogos,
-		Agenda:    []AgendaDiaria{},
-	}, nil
+		ID:           xid.New().String(),
+		Nome:         nome,
+		Cpf:          cpf,
+		Email:        email,
+		Telefone:     telefone,
+		Ativo:        true,
+		ImagemUrl:    imagem,
+		PasswordHash: passwordHash, // Recebe o hash já pronto
+		Role:         RolePrestador,
+		Catalogo:     catalogos,
+		Agenda:       []AgendaDiaria{},
+	}
 }
 
 func (p *Prestador) AdicionarAgenda(agenda *AgendaDiaria) error {
@@ -70,6 +70,6 @@ func (p *Prestador) RemoverAgenda(data string) error {
 
 	// Remove agenda do slice
 	p.Agenda = append(p.Agenda[:indice], p.Agenda[indice+1:]...)
-	
+
 	return nil
 }

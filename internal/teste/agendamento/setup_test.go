@@ -22,6 +22,7 @@ import (
 	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/gin-gonic/gin"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // SetupRouter inicializa router com controllers necessários para testes
@@ -33,9 +34,9 @@ func SetupRouterAgendamento() (*gin.Engine, port.PrestadorRepositorio, port.Clie
 	clienteRepo := repository.NewFakeClienteRepositorio()
 	agendaDiariaRepo := repository.NovoFakeAgendaDiariaRepositorio()
 	agendamentoRepo := repository.NovoFakeAgendamentoRepositorio()
-
-	cadastroCliente := service.NovoServiceCliente(clienteRepo)
-	cadastroPrestador := service.NovaPrestadorService(prestadorRepo, catalogoRepo, agendaDiariaRepo)
+	authService := service.NovoAuthService("test-secret-key", 24, clienteRepo, prestadorRepo)
+	cadastroCliente := service.NovoServiceCliente(clienteRepo, prestadorRepo)
+	cadastroPrestador := service.NovaPrestadorService(prestadorRepo, catalogoRepo, agendaDiariaRepo, authService, clienteRepo)
 	cadastraCatalogo := service.NovoCatalogoService(catalogoRepo)
 	cadastraAgendamento := service.NovaAgendamentoService(prestadorRepo, agendamentoRepo, catalogoRepo, clienteRepo)
 
@@ -115,7 +116,9 @@ func SetupGetAgendamentosPrestadorPeriodoRequest(router *gin.Engine, prestadorID
 // ============ Domain Setup Helpers ============
 
 func SetupNovoCliente(p port.ClienteRepositorio) *domain.Cliente {
-	cli, _ := domain.NovoCliente("Eduardo", "caetasousa@gmail.com", "62999697581")
+	// Gerar hash da senha para testes
+	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
+	cli := domain.NovoCliente("Eduardo", "caetasousa@gmail.com", "62999697581", string(hash))
 	p.Salvar(cli)
 	cliente, _ := p.BuscarPorId(cli.ID)
 	return cliente
@@ -129,7 +132,9 @@ func SetupNovoCatalogo(p port.CatalogoRepositorio) (*domain.Catalogo, *[]domain.
 }
 
 func SetupCriaPrestador(p port.PrestadorRepositorio, catalogo []domain.Catalogo) *domain.Prestador {
-	pres, _ := domain.NovoPrestador("Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481", "https://exemplo.com/img1.jpg", catalogo)
+	// Gerar hash da senha para testes
+	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
+	pres := domain.NovoPrestador("Eduardo", "04423258196", "caetasousa@gmail.com", "662999687481", string(hash), "https://exemplo.com/img1.jpg", catalogo)
 	p.Salvar(pres)
 	return pres
 }

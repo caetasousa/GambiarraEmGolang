@@ -12,6 +12,7 @@ import (
 	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 // TESTES PARA LISTAGEM PAGINADA DE AGENDAMENTOS DO CLIENTE
@@ -212,7 +213,8 @@ func TestGetAgendamentosPrestadorPeriodo_MultipleClientes(t *testing.T) {
 
 	// Cria 2 clientes
 	cliente1 := SetupNovoCliente(clienteRepo)
-	cliente2, _ := domain.NovoCliente("Maria", "maria@email.com", "62988888888")
+	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
+	cliente2 := domain.NovoCliente("Maria", "maria@email.com", "62988888888", string(hash))
 	clienteRepo.Salvar(cliente2)
 
 	catalogo, listaDeCatalogos := SetupNovoCatalogo(catalogoRepo)

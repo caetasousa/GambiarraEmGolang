@@ -22,6 +22,7 @@ func TestGetPrestador_Sucesso(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img-prestador.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}

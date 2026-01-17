@@ -17,7 +17,12 @@ const docTemplate = `{
     "paths": {
         "/agendamentos": {
             "post": {
-                "description": "Realiza o agendamento de um serviço para um prestador em uma data e horário específicos.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Realiza o agendamento de um serviço para um prestador em uma data e horário específicos. Requer autenticação JWT (Cliente ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -52,6 +57,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Clientes e Admin podem criar agendamentos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Cliente, prestador ou serviço não encontrado",
                         "schema": {
@@ -75,7 +92,12 @@ const docTemplate = `{
         },
         "/agendamentos/cliente/{id}": {
             "get": {
-                "description": "Retorna todos os agendamentos de um cliente a partir da data especificada, ordenados por data/hora de início",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos os agendamentos de um cliente a partir da data especificada, ordenados por data/hora de início. Requer autenticação JWT (próprio cliente ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -116,6 +138,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode ver seus próprios agendamentos ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Cliente não encontrado",
                         "schema": {
@@ -133,7 +167,12 @@ const docTemplate = `{
         },
         "/agendamentos/cliente/{id}/periodo": {
             "get": {
-                "description": "Retorna agendamentos de um cliente em um período específico com suporte a paginação",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna agendamentos de um cliente em um período específico com suporte a paginação. Requer autenticação JWT (próprio cliente ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -194,6 +233,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode ver seus próprios agendamentos ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Cliente não encontrado",
                         "schema": {
@@ -211,7 +262,12 @@ const docTemplate = `{
         },
         "/agendamentos/prestador/{id}": {
             "get": {
-                "description": "Retorna todos os agendamentos de um prestador a partir da data especificada, ordenados por data/hora de início",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna todos os agendamentos de um prestador a partir da data especificada, ordenados por data/hora de início. Requer autenticação JWT (próprio prestador ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -252,6 +308,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode ver seus próprios agendamentos ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "prestador não encontrado",
                         "schema": {
@@ -269,7 +337,12 @@ const docTemplate = `{
         },
         "/agendamentos/prestador/{id}/periodo": {
             "get": {
-                "description": "Retorna agendamentos de um prestador em um período específico com suporte a paginação",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna agendamentos de um prestador em um período específico com suporte a paginação. Requer autenticação JWT (próprio prestador ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -330,6 +403,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode ver seus próprios agendamentos ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -347,7 +432,7 @@ const docTemplate = `{
         },
         "/catalogos": {
             "get": {
-                "description": "Retorna uma lista de catálogos, com page e limit para paginação",
+                "description": "Retorna uma lista de catálogos, com page e limit para paginação.",
                 "consumes": [
                     "application/json"
                 ],
@@ -396,7 +481,12 @@ const docTemplate = `{
                 }
             },
             "post": {
-                "description": "Cadastra um serviço que pode ser oferecido por um prestador",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cadastra um serviço que pode ser oferecido por um prestador. Requer autenticação JWT (APENAS Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -427,6 +517,18 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Dados inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Admin pode criar catálogos",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -502,7 +604,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Atualiza os dados de um catálogo pelo ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza os dados de um catálogo pelo ID. Requer autenticação JWT (APENAS Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -541,6 +648,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Admin pode atualizar catálogos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Catálogo não encontrado",
                         "schema": {
@@ -556,7 +675,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Remove um catálogo pelo ID",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove um catálogo pelo ID. Requer autenticação JWT (APENAS Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -586,6 +710,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Admin pode deletar catálogos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Catálogo não encontrado",
                         "schema": {
@@ -603,7 +739,7 @@ const docTemplate = `{
         },
         "/clientes": {
             "post": {
-                "description": "Recebe dados de nome, email e telefone para registrar um novo cliente.",
+                "description": "Recebe dados de nome, email, telefone e senha para registrar um novo cliente.",
                 "consumes": [
                     "application/json"
                 ],
@@ -629,7 +765,7 @@ const docTemplate = `{
                     "201": {
                         "description": "Cliente criado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/domain.Cliente"
+                            "$ref": "#/definitions/output.BuscarClienteOutput"
                         }
                     },
                     "400": {
@@ -639,7 +775,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Cliente já cadastrado (Email ou Telefone já existe)",
+                        "description": "Cliente já cadastrado (Email já existe)",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -655,7 +791,12 @@ const docTemplate = `{
         },
         "/clientes/{id}": {
             "get": {
-                "description": "Retorna os dados de um cliente específico usando seu ID.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna os dados de um cliente específico usando seu ID. Requer autenticação JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -679,11 +820,17 @@ const docTemplate = `{
                     "200": {
                         "description": "Cliente encontrado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/domain.Cliente"
+                            "$ref": "#/definitions/output.BuscarClienteOutput"
                         }
                     },
-                    "400": {
-                        "description": "ID inválido fornecido (ex: formato incorreto se houver validação de formato de ID)",
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode acessar seus próprios dados",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -703,9 +850,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/login": {
+            "post": {
+                "description": "Recebe email e senha e retorna um token JWT se as credenciais forem válidas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Autenticação"
+                ],
+                "summary": "Faz login de um usuário (cliente, prestador ou admin)",
+                "parameters": [
+                    {
+                        "description": "Credenciais de login",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login bem-sucedido, retorna token e dados do usuário",
+                        "schema": {
+                            "$ref": "#/definitions/output.LoginOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/prestadores": {
             "get": {
-                "description": "Retorna lista paginada de prestadores ativos ou inativos",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna lista paginada de prestadores ativos ou inativos. Requer autenticação JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -746,6 +950,12 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Parâmetro 'ativo' é obrigatório",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -805,7 +1015,12 @@ const docTemplate = `{
         },
         "/prestadores/disponiveis": {
             "get": {
-                "description": "Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna lista paginada de prestadores ativos que possuem agenda configurada para a data informada. Requer autenticação JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -850,6 +1065,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "500": {
                         "description": "Erro interno ao buscar prestadores",
                         "schema": {
@@ -859,9 +1080,66 @@ const docTemplate = `{
                 }
             }
         },
+        "/prestadores/login": {
+            "post": {
+                "description": "Recebe email e senha e retorna um token JWT se as credenciais forem válidas",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "Prestadores"
+                ],
+                "summary": "Faz login de um prestador",
+                "parameters": [
+                    {
+                        "description": "Credenciais de login",
+                        "name": "credentials",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/request.LoginRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login bem-sucedido, retorna token e dados do prestador",
+                        "schema": {
+                            "$ref": "#/definitions/output.LoginPrestadorOutput"
+                        }
+                    },
+                    "400": {
+                        "description": "Dados inválidos",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/prestadores/{id}": {
             "get": {
-                "description": "Retorna informações do prestador, incluindo catálogo de serviços e agenda diária.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Retorna informações do prestador, incluindo catálogo de serviços e agenda diária. Requer autenticação JWT.",
                 "consumes": [
                     "application/json"
                 ],
@@ -888,6 +1166,12 @@ const docTemplate = `{
                             "$ref": "#/definitions/response_prestador.PrestadorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -903,7 +1187,12 @@ const docTemplate = `{
                 }
             },
             "put": {
-                "description": "Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado.",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Atualiza os dados cadastrais de um prestador, incluindo nome, email, telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado. Requer autenticação JWT (próprio prestador ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -942,6 +1231,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode atualizar seus próprios dados ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -959,7 +1260,12 @@ const docTemplate = `{
         },
         "/prestadores/{id}/agenda": {
             "put": {
-                "description": "Cria uma nova agenda ou atualiza uma existente para a data especificada",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Cria uma nova agenda ou atualiza uma existente para a data especificada. Requer autenticação JWT (próprio prestador ou Admin).",
                 "consumes": [
                     "application/json"
                 ],
@@ -998,6 +1304,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode gerenciar sua própria agenda ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -1013,7 +1331,12 @@ const docTemplate = `{
                 }
             },
             "delete": {
-                "description": "Remove uma agenda de um prestador em uma data específica",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Remove uma agenda de um prestador em uma data específica. Requer autenticação JWT (próprio prestador ou Admin).",
                 "produces": [
                     "application/json"
                 ],
@@ -1047,6 +1370,18 @@ const docTemplate = `{
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - você só pode deletar sua própria agenda ou ser Admin",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador ou agenda não encontrada",
                         "schema": {
@@ -1064,7 +1399,12 @@ const docTemplate = `{
         },
         "/prestadores/{id}/ativar": {
             "put": {
-                "description": "Ativa um prestador, permitindo que ele receba novos agendamentos",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Ativa um prestador, permitindo que ele receba novos agendamentos. Requer autenticação JWT (APENAS Admin).",
                 "produces": [
                     "application/json"
                 ],
@@ -1085,6 +1425,18 @@ const docTemplate = `{
                     "204": {
                         "description": "Prestador ativado com sucesso"
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Admin pode ativar prestadores",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -1102,7 +1454,12 @@ const docTemplate = `{
         },
         "/prestadores/{id}/inativar": {
             "put": {
-                "description": "Inativa um prestador, impedindo que ele receba novos agendamentos",
+                "security": [
+                    {
+                        "BearerAuth": []
+                    }
+                ],
+                "description": "Inativa um prestador, impedindo que ele receba novos agendamentos. Requer autenticação JWT (APENAS Admin).",
                 "produces": [
                     "application/json"
                 ],
@@ -1123,6 +1480,18 @@ const docTemplate = `{
                     "204": {
                         "description": "Prestador inativado com sucesso"
                     },
+                    "401": {
+                        "description": "Token não fornecido ou inválido",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Acesso negado - apenas Admin pode inativar prestadores",
+                        "schema": {
+                            "$ref": "#/definitions/domain.ErrorResponse"
+                        }
+                    },
                     "404": {
                         "description": "Prestador não encontrado",
                         "schema": {
@@ -1140,23 +1509,6 @@ const docTemplate = `{
         }
     },
     "definitions": {
-        "domain.Cliente": {
-            "type": "object",
-            "properties": {
-                "email": {
-                    "type": "string"
-                },
-                "id": {
-                    "type": "string"
-                },
-                "nome": {
-                    "type": "string"
-                },
-                "telefone": {
-                    "type": "string"
-                }
-            }
-        },
         "domain.ErrorResponse": {
             "type": "object",
             "properties": {
@@ -1194,6 +1546,26 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/output.IntervaloDiarioOutput"
                     }
+                }
+            }
+        },
+        "output.BuscarClienteOutput": {
+            "type": "object",
+            "properties": {
+                "email": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "nome": {
+                    "type": "string"
+                },
+                "role": {
+                    "type": "string"
+                },
+                "telefone": {
+                    "type": "string"
                 }
             }
         },
@@ -1272,11 +1644,34 @@ const docTemplate = `{
                 }
             }
         },
+        "output.LoginOutput": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/output.BuscarClienteOutput"
+                }
+            }
+        },
+        "output.LoginPrestadorOutput": {
+            "type": "object",
+            "properties": {
+                "token": {
+                    "type": "string"
+                },
+                "user": {
+                    "$ref": "#/definitions/output.BuscarPrestadorOutput"
+                }
+            }
+        },
         "request.ClienteRequest": {
             "type": "object",
             "required": [
                 "email",
                 "nome",
+                "senha",
                 "telefone"
             ],
             "properties": {
@@ -1290,11 +1685,33 @@ const docTemplate = `{
                     "minLength": 3,
                     "example": "João da Silva"
                 },
+                "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "senha123"
+                },
                 "telefone": {
                     "type": "string",
                     "maxLength": 15,
                     "minLength": 8,
                     "example": "62999677481"
+                }
+            }
+        },
+        "request.LoginRequest": {
+            "type": "object",
+            "required": [
+                "email",
+                "senha"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string",
+                    "example": "admin@admin.com"
+                },
+                "senha": {
+                    "type": "string",
+                    "example": "admin123"
                 }
             }
         },
@@ -1441,6 +1858,7 @@ const docTemplate = `{
                 "cpf",
                 "image_url",
                 "nome",
+                "senha",
                 "telefone"
             ],
             "properties": {
@@ -1468,6 +1886,11 @@ const docTemplate = `{
                     "maxLength": 100,
                     "minLength": 3,
                     "example": "joao"
+                },
+                "senha": {
+                    "type": "string",
+                    "minLength": 8,
+                    "example": "senha123"
                 },
                 "telefone": {
                     "type": "string",
@@ -1795,6 +2218,14 @@ const docTemplate = `{
                 }
             }
         }
+    },
+    "securityDefinitions": {
+        "BearerAuth": {
+            "description": "Digite \"Bearer \" seguido do token JWT recebido no login",
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
     }
 }`
 
@@ -1805,7 +2236,7 @@ var SwaggerInfo = &swag.Spec{
 	BasePath:         "/api/v1",
 	Schemes:          []string{},
 	Title:            "API de Agendamentos",
-	Description:      "API para gestão de clientes e serviços.",
+	Description:      "API para gestão de clientes e serviços com autenticação JWT.\n\nCredenciais do Administrador (para testes):\nEmail: admin@admin.com\nSenha: admin123",
 	InfoInstanceName: "swagger",
 	SwaggerTemplate:  docTemplate,
 	LeftDelim:        "{{",

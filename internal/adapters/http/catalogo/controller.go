@@ -20,13 +20,16 @@ func NovoCatalogoController(criarCatalogoService *service.CatalogoService) *Cata
 }
 
 // @Summary Cria um novo catálogo de serviços
-// @Description Cadastra um serviço que pode ser oferecido por um prestador
+// @Description Cadastra um serviço que pode ser oferecido por um prestador. Requer autenticação JWT (APENAS Admin).
 // @Tags Catalogos
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param catalogo body request_catalogo.CatalogoRequest true "Dados do Catálogo"
 // @Success 201 {object} response_catalogo.CatalogoResponse "Catálogo criado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Admin pode criar catálogos"
 // @Failure 404 {object} domain.ErrorResponse "Prestador não encontrado"
 // @Failure 409 {object} domain.ErrorResponse "Catálogo já existente"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno"
@@ -95,7 +98,7 @@ func (ctl *CatalogoController) GetCatalogoPorID(c *gin.Context) {
 
 // GetCatalogos godoc
 // @Summary Lista todos os catálogos com paginação
-// @Description Retorna uma lista de catálogos, com page e limit para paginação
+// @Description Retorna uma lista de catálogos, com page e limit para paginação.
 // @Tags Catalogos
 // @Accept json
 // @Produce json
@@ -132,14 +135,17 @@ func (ctl *CatalogoController) GetCatalogos(c *gin.Context) {
 
 // AtualizarCatalogo godoc
 // @Summary Atualiza um catálogo existente
-// @Description Atualiza os dados de um catálogo pelo ID
+// @Description Atualiza os dados de um catálogo pelo ID. Requer autenticação JWT (APENAS Admin).
 // @Tags Catalogos
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do Catálogo"
 // @Param catalogo body request_catalogo.CatalogoUpdateRequest true "Dados atualizados do Catálogo"
 // @Success 204 "Catálogo atualizado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Admin pode atualizar catálogos"
 // @Failure 404 {object} domain.ErrorResponse "Catálogo não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
 // @Router /catalogos/{id} [put]
@@ -178,13 +184,16 @@ func (ctl *CatalogoController) Atualizar(c *gin.Context) {
 
 // DeletarCatalogo godoc
 // @Summary Deleta um catálogo existente
-// @Description Remove um catálogo pelo ID
+// @Description Remove um catálogo pelo ID. Requer autenticação JWT (APENAS Admin).
 // @Tags Catalogos
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do Catálogo"
 // @Success 204 "Catálogo deletado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "ID inválido"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Admin pode deletar catálogos"
 // @Failure 404 {object} domain.ErrorResponse "Catálogo não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
 // @Router /catalogos/{id} [delete]

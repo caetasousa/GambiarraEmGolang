@@ -7,13 +7,14 @@ import (
 
 func FromDomainToCriarOutput(p *domain.Prestador) *output.CriarPrestadorOutput {
 	return &output.CriarPrestadorOutput{
-		ID:       p.ID,
-		Nome:     p.Nome,
-		Email:    p.Email,
-		Telefone: p.Telefone,
-		Ativo:    p.Ativo,
+		ID:        p.ID,
+		Nome:      p.Nome,
+		Email:     p.Email,
+		Telefone:  p.Telefone,
+		Cpf:       p.Cpf,
+		Ativo:     p.Ativo,
 		ImagemUrl: p.ImagemUrl,
-		Catalogo: CatalogosFromDomain(p.Catalogo),
+		Catalogo:  CatalogosFromDomain(p.Catalogo),
 	}
 }
 

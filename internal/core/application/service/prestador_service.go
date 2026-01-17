@@ -19,13 +19,17 @@ type PrestadorService struct {
 	prestadorRepo    port.PrestadorRepositorio
 	catalogoRepo     port.CatalogoRepositorio
 	agendaDiariaRepo port.AgendaDiariaRepositorio
+	authService      *AuthService
+	clienteRepo      port.ClienteRepositorio
 }
 
-func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoRepositorio, ad port.AgendaDiariaRepositorio) *PrestadorService {
+func NovaPrestadorService(pr port.PrestadorRepositorio, cr port.CatalogoRepositorio, ad port.AgendaDiariaRepositorio, authService *AuthService, clienteRepo port.ClienteRepositorio) *PrestadorService {
 	return &PrestadorService{
 		prestadorRepo:    pr,
 		catalogoRepo:     cr,
 		agendaDiariaRepo: ad,
+		authService:      authService,
+		clienteRepo:      clienteRepo,
 	}
 }
 
@@ -42,6 +46,17 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 		return nil, ErrCPFJaCadastrado
 	}
 
+	// Validar se o email já está sendo usado por um cliente
+	if s.clienteRepo != nil {
+		clienteExistente, err := s.clienteRepo.BuscarPorEmail(cmd.Email)
+		if err != nil {
+			return nil, ErrFalhaInfraestrutura
+		}
+		if clienteExistente != nil {
+			return nil, ErrEmailJaUsadoPorCliente
+		}
+	}
+
 	catalogos := []domain.Catalogo{}
 	for _, id := range cmd.CatalogoIDs {
 		c, err := s.catalogoRepo.BuscarPorId(id)
@@ -54,17 +69,16 @@ func (s *PrestadorService) Cadastra(cmd *input.CadastrarPrestadorInput) (*output
 		catalogos = append(catalogos, *c)
 	}
 
-	prestador, err := domain.NovoPrestador(
+	// Criar prestador (senha já vem hasheada do request)
+	prestador := domain.NovoPrestador(
 		cmd.Nome,
 		cpf,
 		cmd.Email,
 		cmd.Telefone,
+		cmd.Senha, // Senha já é o hash
 		cmd.ImagemUrl,
 		catalogos,
 	)
-	if err != nil {
-		return nil, err
-	}
 
 	if err := s.prestadorRepo.Salvar(prestador); err != nil {
 		if errors.Is(err, repository.ErrCPFDuplicado) {

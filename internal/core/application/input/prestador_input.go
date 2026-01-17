@@ -5,6 +5,7 @@ type CadastrarPrestadorInput struct {
 	CPF         string
 	Email       string
 	Telefone    string
+	Senha       string
 	ImagemUrl   string
 	CatalogoIDs []string
 }

@@ -34,3 +34,14 @@ func (r *FakeClienteRepositorio) BuscarPorId(id string) (*domain.Cliente, error)
 	}
 	return cliente, nil
 }
+
+// BuscarPorEmail simula a busca por email.
+func (r *FakeClienteRepositorio) BuscarPorEmail(email string) (*domain.Cliente, error) {
+	// Iterar sobre todos os clientes para encontrar por email
+	for _, cliente := range r.Clientes {
+		if cliente.Email == email {
+			return cliente, nil
+		}
+	}
+	return nil, nil
+}

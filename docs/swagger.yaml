@@ -1,16 +1,5 @@
 basePath: /api/v1
 definitions:
-  domain.Cliente:
-    properties:
-      email:
-        type: string
-      id:
-        type: string
-      nome:
-        type: string
-      telefone:
-        type: string
-    type: object
   domain.ErrorResponse:
     properties:
       error:
@@ -38,6 +27,19 @@ definitions:
         items:
           $ref: '#/definitions/output.IntervaloDiarioOutput'
         type: array
+    type: object
+  output.BuscarClienteOutput:
+    properties:
+      email:
+        type: string
+      id:
+        type: string
+      nome:
+        type: string
+      role:
+        type: string
+      telefone:
+        type: string
     type: object
   output.BuscarPrestadorOutput:
     properties:
@@ -88,6 +90,20 @@ definitions:
       id:
         type: string
     type: object
+  output.LoginOutput:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/output.BuscarClienteOutput'
+    type: object
+  output.LoginPrestadorOutput:
+    properties:
+      token:
+        type: string
+      user:
+        $ref: '#/definitions/output.BuscarPrestadorOutput'
+    type: object
   request.ClienteRequest:
     properties:
       email:
@@ -98,6 +114,10 @@ definitions:
         maxLength: 100
         minLength: 3
         type: string
+      senha:
+        example: senha123
+        minLength: 8
+        type: string
       telefone:
         example: "62999677481"
         maxLength: 15
@@ -106,7 +126,20 @@ definitions:
     required:
     - email
     - nome
+    - senha
     - telefone
+    type: object
+  request.LoginRequest:
+    properties:
+      email:
+        example: admin@admin.com
+        type: string
+      senha:
+        example: admin123
+        type: string
+    required:
+    - email
+    - senha
     type: object
   request_agendamento.AgendamentoRequest:
     properties:
@@ -230,6 +263,10 @@ definitions:
         maxLength: 100
         minLength: 3
         type: string
+      senha:
+        example: senha123
+        minLength: 8
+        type: string
       telefone:
         example: "62999677481"
         maxLength: 15
@@ -240,6 +277,7 @@ definitions:
     - cpf
     - image_url
     - nome
+    - senha
     - telefone
     type: object
   request_prestador.PrestadorUpdateRequest:
@@ -456,7 +494,12 @@ definitions:
 host: localhost:8080
 info:
   contact: {}
-  description: API para gestão de clientes e serviços.
+  description: |-
+    API para gestão de clientes e serviços com autenticação JWT.
+
+    Credenciais do Administrador (para testes):
+    Email: admin@admin.com
+    Senha: admin123
   title: API de Agendamentos
   version: "1.0"
 paths:
@@ -465,7 +508,7 @@ paths:
       consumes:
       - application/json
       description: Realiza o agendamento de um serviço para um prestador em uma data
-        e horário específicos.
+        e horário específicos. Requer autenticação JWT (Cliente ou Admin).
       parameters:
       - description: Dados do agendamento
         in: body
@@ -484,6 +527,14 @@ paths:
           description: Dados inválidos ou formato de data incorreto
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Clientes e Admin podem criar agendamentos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Cliente, prestador ou serviço não encontrado
           schema:
@@ -496,6 +547,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Cria um novo agendamento
       tags:
       - Agendamentos
@@ -504,7 +557,8 @@ paths:
       consumes:
       - application/json
       description: Retorna todos os agendamentos de um cliente a partir da data especificada,
-        ordenados por data/hora de início
+        ordenados por data/hora de início. Requer autenticação JWT (próprio cliente
+        ou Admin).
       parameters:
       - description: ID do cliente
         in: path
@@ -528,6 +582,15 @@ paths:
           description: Dados inválidos ou formato de data incorreto
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode ver seus próprios agendamentos
+            ou ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Cliente não encontrado
           schema:
@@ -536,6 +599,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Busca agendamentos de um cliente a partir de uma data
       tags:
       - Agendamentos
@@ -544,7 +609,7 @@ paths:
       consumes:
       - application/json
       description: Retorna agendamentos de um cliente em um período específico com
-        suporte a paginação
+        suporte a paginação. Requer autenticação JWT (próprio cliente ou Admin).
       parameters:
       - description: ID do cliente
         in: path
@@ -582,6 +647,15 @@ paths:
           description: Dados inválidos ou formato de data incorreto
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode ver seus próprios agendamentos
+            ou ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Cliente não encontrado
           schema:
@@ -590,6 +664,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Lista agendamentos de um cliente por período com paginação
       tags:
       - Agendamentos
@@ -598,7 +674,8 @@ paths:
       consumes:
       - application/json
       description: Retorna todos os agendamentos de um prestador a partir da data
-        especificada, ordenados por data/hora de início
+        especificada, ordenados por data/hora de início. Requer autenticação JWT (próprio
+        prestador ou Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -620,6 +697,15 @@ paths:
             $ref: '#/definitions/response_agendamento.BuscaDataResponse'
         "400":
           description: Dados inválidos ou formato de data incorreto
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode ver seus próprios agendamentos
+            ou ser Admin
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
         "404":
@@ -630,6 +716,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Busca agendamentos de um prestador a partir de uma data
       tags:
       - Agendamentos
@@ -638,7 +726,7 @@ paths:
       consumes:
       - application/json
       description: Retorna agendamentos de um prestador em um período específico com
-        suporte a paginação
+        suporte a paginação. Requer autenticação JWT (próprio prestador ou Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -676,6 +764,15 @@ paths:
           description: Dados inválidos ou formato de data incorreto
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode ver seus próprios agendamentos
+            ou ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -684,6 +781,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Lista agendamentos de um prestador por período com paginação
       tags:
       - Agendamentos
@@ -691,7 +790,7 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna uma lista de catálogos, com page e limit para paginação
+      description: Retorna uma lista de catálogos, com page e limit para paginação.
       parameters:
       - default: 1
         description: Número da página
@@ -724,7 +823,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Cadastra um serviço que pode ser oferecido por um prestador
+      description: Cadastra um serviço que pode ser oferecido por um prestador. Requer
+        autenticação JWT (APENAS Admin).
       parameters:
       - description: Dados do Catálogo
         in: body
@@ -743,6 +843,14 @@ paths:
           description: Dados inválidos
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Admin pode criar catálogos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -755,6 +863,8 @@ paths:
           description: Erro interno
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Cria um novo catálogo de serviços
       tags:
       - Catalogos
@@ -762,7 +872,7 @@ paths:
     delete:
       consumes:
       - application/json
-      description: Remove um catálogo pelo ID
+      description: Remove um catálogo pelo ID. Requer autenticação JWT (APENAS Admin).
       parameters:
       - description: ID do Catálogo
         in: path
@@ -778,6 +888,14 @@ paths:
           description: ID inválido
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Admin pode deletar catálogos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Catálogo não encontrado
           schema:
@@ -786,6 +904,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Deleta um catálogo existente
       tags:
       - Catalogos
@@ -824,7 +944,8 @@ paths:
     put:
       consumes:
       - application/json
-      description: Atualiza os dados de um catálogo pelo ID
+      description: Atualiza os dados de um catálogo pelo ID. Requer autenticação JWT
+        (APENAS Admin).
       parameters:
       - description: ID do Catálogo
         in: path
@@ -846,6 +967,14 @@ paths:
           description: Dados inválidos
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Admin pode atualizar catálogos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Catálogo não encontrado
           schema:
@@ -854,6 +983,8 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Atualiza um catálogo existente
       tags:
       - Catalogos
@@ -861,7 +992,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Recebe dados de nome, email e telefone para registrar um novo cliente.
+      description: Recebe dados de nome, email, telefone e senha para registrar um
+        novo cliente.
       parameters:
       - description: Dados do Cliente
         in: body
@@ -875,13 +1007,13 @@ paths:
         "201":
           description: Cliente criado com sucesso
           schema:
-            $ref: '#/definitions/domain.Cliente'
+            $ref: '#/definitions/output.BuscarClienteOutput'
         "400":
           description: Dados inválidos (erro de validação do binding)
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
         "409":
-          description: Cliente já cadastrado (Email ou Telefone já existe)
+          description: Cliente já cadastrado (Email já existe)
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
         "500":
@@ -895,7 +1027,8 @@ paths:
     get:
       consumes:
       - application/json
-      description: Retorna os dados de um cliente específico usando seu ID.
+      description: Retorna os dados de um cliente específico usando seu ID. Requer
+        autenticação JWT.
       parameters:
       - description: ID do Cliente
         in: path
@@ -908,10 +1041,13 @@ paths:
         "200":
           description: Cliente encontrado com sucesso
           schema:
-            $ref: '#/definitions/domain.Cliente'
-        "400":
-          description: 'ID inválido fornecido (ex: formato incorreto se houver validação
-            de formato de ID)'
+            $ref: '#/definitions/output.BuscarClienteOutput'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode acessar seus próprios dados
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
         "404":
@@ -922,14 +1058,52 @@ paths:
           description: Erro interno do servidor ou falha de infraestrutura
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Busca um cliente pelo ID
       tags:
       - Clientes
+  /login:
+    post:
+      consumes:
+      - application/json
+      description: Recebe email e senha e retorna um token JWT se as credenciais forem
+        válidas
+      parameters:
+      - description: Credenciais de login
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/request.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login bem-sucedido, retorna token e dados do usuário
+          schema:
+            $ref: '#/definitions/output.LoginOutput'
+        "400":
+          description: Dados inválidos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Credenciais inválidas
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Faz login de um usuário (cliente, prestador ou admin)
+      tags:
+      - Autenticação
   /prestadores:
     get:
       consumes:
       - application/json
-      description: Retorna lista paginada de prestadores ativos ou inativos
+      description: Retorna lista paginada de prestadores ativos ou inativos. Requer
+        autenticação JWT.
       parameters:
       - description: 'Número da página (padrão: 1)'
         in: query
@@ -955,6 +1129,12 @@ paths:
           description: Parâmetro 'ativo' é obrigatório
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Lista prestadores filtrados por status
       tags:
       - Prestadores
@@ -996,7 +1176,7 @@ paths:
       consumes:
       - application/json
       description: Retorna informações do prestador, incluindo catálogo de serviços
-        e agenda diária.
+        e agenda diária. Requer autenticação JWT.
       parameters:
       - description: ID do prestador
         in: path
@@ -1010,6 +1190,10 @@ paths:
           description: Prestador encontrado com sucesso
           schema:
             $ref: '#/definitions/response_prestador.PrestadorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -1018,6 +1202,8 @@ paths:
           description: Erro interno
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Consulta prestador pelo ID
       tags:
       - Prestadores
@@ -1026,6 +1212,7 @@ paths:
       - application/json
       description: Atualiza os dados cadastrais de um prestador, incluindo nome, email,
         telefone, imagem e catálogos de serviços associados. O CPF não pode ser alterado.
+        Requer autenticação JWT (próprio prestador ou Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -1047,6 +1234,15 @@ paths:
           description: Dados inválidos ou catálogo não existe
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode atualizar seus próprios dados
+            ou ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -1055,12 +1251,15 @@ paths:
           description: Erro interno do servidor
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Atualiza um prestador existente
       tags:
       - Prestadores
   /prestadores/{id}/agenda:
     delete:
-      description: Remove uma agenda de um prestador em uma data específica
+      description: Remove uma agenda de um prestador em uma data específica. Requer
+        autenticação JWT (próprio prestador ou Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -1081,6 +1280,15 @@ paths:
           description: Data inválida
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode deletar sua própria agenda ou
+            ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador ou agenda não encontrada
           schema:
@@ -1089,13 +1297,16 @@ paths:
           description: Prestador inativo
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Deleta uma agenda
       tags:
       - Prestadores
     put:
       consumes:
       - application/json
-      description: Cria uma nova agenda ou atualiza uma existente para a data especificada
+      description: Cria uma nova agenda ou atualiza uma existente para a data especificada.
+        Requer autenticação JWT (próprio prestador ou Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -1117,6 +1328,15 @@ paths:
           description: Dados inválidos
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - você só pode gerenciar sua própria agenda ou
+            ser Admin
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -1125,12 +1345,15 @@ paths:
           description: Prestador inativo
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Cria ou atualiza uma agenda
       tags:
       - Prestadores
   /prestadores/{id}/ativar:
     put:
-      description: Ativa um prestador, permitindo que ele receba novos agendamentos
+      description: Ativa um prestador, permitindo que ele receba novos agendamentos.
+        Requer autenticação JWT (APENAS Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -1142,6 +1365,14 @@ paths:
       responses:
         "204":
           description: Prestador ativado com sucesso
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Admin pode ativar prestadores
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -1150,12 +1381,15 @@ paths:
           description: Erro interno
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Ativa um prestador
       tags:
       - Prestadores
   /prestadores/{id}/inativar:
     put:
-      description: Inativa um prestador, impedindo que ele receba novos agendamentos
+      description: Inativa um prestador, impedindo que ele receba novos agendamentos.
+        Requer autenticação JWT (APENAS Admin).
       parameters:
       - description: ID do prestador
         in: path
@@ -1167,6 +1401,14 @@ paths:
       responses:
         "204":
           description: Prestador inativado com sucesso
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "403":
+          description: Acesso negado - apenas Admin pode inativar prestadores
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "404":
           description: Prestador não encontrado
           schema:
@@ -1175,6 +1417,8 @@ paths:
           description: Erro interno
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Inativa um prestador
       tags:
       - Prestadores
@@ -1183,7 +1427,7 @@ paths:
       consumes:
       - application/json
       description: Retorna lista paginada de prestadores ativos que possuem agenda
-        configurada para a data informada
+        configurada para a data informada. Requer autenticação JWT.
       parameters:
       - description: 'Data da disponibilidade (formato: YYYY-MM-DD)'
         in: query
@@ -1209,11 +1453,58 @@ paths:
           description: Parâmetro 'data' é obrigatório ou formato inválido
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Token não fornecido ou inválido
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
         "500":
           description: Erro interno ao buscar prestadores
           schema:
             $ref: '#/definitions/domain.ErrorResponse'
+      security:
+      - BearerAuth: []
       summary: Lista prestadores disponíveis em uma data específica
       tags:
       - Prestadores
+  /prestadores/login:
+    post:
+      consumes:
+      - application/json
+      description: Recebe email e senha e retorna um token JWT se as credenciais forem
+        válidas
+      parameters:
+      - description: Credenciais de login
+        in: body
+        name: credentials
+        required: true
+        schema:
+          $ref: '#/definitions/request.LoginRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Login bem-sucedido, retorna token e dados do prestador
+          schema:
+            $ref: '#/definitions/output.LoginPrestadorOutput'
+        "400":
+          description: Dados inválidos
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "401":
+          description: Credenciais inválidas
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/domain.ErrorResponse'
+      summary: Faz login de um prestador
+      tags:
+      - Prestadores
+securityDefinitions:
+  BearerAuth:
+    description: Digite "Bearer " seguido do token JWT recebido no login
+    in: header
+    name: Authorization
+    type: apiKey
 swagger: "2.0"

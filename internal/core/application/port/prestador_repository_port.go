@@ -9,6 +9,7 @@ type PrestadorRepositorio interface {
 	Salvar(prestador *domain.Prestador) error
 	BuscarPorId(id string) (*domain.Prestador, error)
 	BuscarPorCPF(cpf string) (*domain.Prestador, error)
+	BuscarPorEmail(email string) (*domain.Prestador, error)
 	BuscarAgendaDoDia(prestadorID string, data string) (*domain.AgendaDiaria, error)
 	Atualizar(prestador *input.AlterarPrestadorInput) error
 	Listar(input *input.PrestadorListInput) ([]*domain.Prestador, error)

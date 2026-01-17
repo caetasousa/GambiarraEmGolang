@@ -30,8 +30,8 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 	defer tx.Rollback()
 
 	_, err = tx.Exec(`
-		INSERT INTO prestadores (id, nome, cpf, email, telefone, ativo, imagem_url, created_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, NOW())
+		INSERT INTO prestadores (id, nome, cpf, email, telefone, ativo, imagem_url, senha_hash, role, created_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, NOW())
 	`,
 		prestador.ID,
 		prestador.Nome,
@@ -40,6 +40,8 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 		prestador.Telefone,
 		prestador.Ativo,
 		prestador.ImagemUrl,
+		prestador.PasswordHash,
+		prestador.Role,
 	)
 	if err != nil {
 		log.Printf("erro ao inserir prestador: %+v", err)
@@ -78,7 +80,7 @@ func (r *PrestadorPostgresRepository) Salvar(prestador *domain.Prestador) error 
 
 func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador, error) {
 	query := `
-	SELECT 
+	SELECT
 		p.id,
 		p.nome,
 		p.cpf,
@@ -86,6 +88,8 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 		p.telefone,
 		p.ativo,
 		p.imagem_url AS prestador_imagem_url,
+		p.senha_hash,
+		p.role,
 		c.id AS catalogo_id,
 		c.nome AS catalogo_nome,
 		c.duracao_padrao AS catalogo_duracao_padrao,
@@ -122,8 +126,8 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 
 	for rows.Next() {
 		var (
-			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl string
-			pAtivo                                          bool
+			pID, pNome, pCpf, pEmail, pTelefone, pImagemUrl, pPasswordHash, pRole string
+			pAtivo                                                                 bool
 
 			catalogoID            sql.NullString
 			catalogoNome          sql.NullString
@@ -141,7 +145,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 		)
 
 		err := rows.Scan(
-			&pID, &pNome, &pCpf, &pEmail, &pTelefone, &pAtivo, &pImagemUrl,
+			&pID, &pNome, &pCpf, &pEmail, &pTelefone, &pAtivo, &pImagemUrl, &pPasswordHash, &pRole,
 			&catalogoID, &catalogoNome, &catalogoDuracaoPadrao, &catalogoPreco,
 			&catalogoImagemUrl, &catalogoCategoria,
 			&agendaID, &agendaData,
@@ -153,13 +157,15 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 
 		if prestador == nil {
 			prestador = &domain.Prestador{
-				ID:        pID,
-				Nome:      pNome,
-				Cpf:       pCpf,
-				Email:     pEmail,
-				Telefone:  pTelefone,
-				Ativo:     pAtivo,
-				ImagemUrl: pImagemUrl,
+				ID:           pID,
+				Nome:         pNome,
+				Cpf:          pCpf,
+				Email:        pEmail,
+				Telefone:     pTelefone,
+				Ativo:        pAtivo,
+				ImagemUrl:    pImagemUrl,
+				PasswordHash: pPasswordHash,
+				Role:         domain.Role(pRole),
 			}
 		}
 
@@ -232,7 +238,7 @@ func (r *PrestadorPostgresRepository) BuscarPorId(id string) (*domain.Prestador,
 func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestador, error) {
 	var p domain.Prestador
 	err := r.db.QueryRow(`
-        SELECT id, nome, cpf, email, telefone, ativo, imagem_url
+        SELECT id, nome, cpf, email, telefone, ativo, imagem_url, senha_hash, role
         FROM prestadores
         WHERE cpf = $1
     `, cpf).Scan(
@@ -243,10 +249,40 @@ func (r *PrestadorPostgresRepository) BuscarPorCPF(cpf string) (*domain.Prestado
 		&p.Telefone,
 		&p.Ativo,
 		&p.ImagemUrl,
+		&p.PasswordHash,
+		&p.Role,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil, nil // CPF não existe → permitido para novo cadastro
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)
+	}
+
+	return &p, nil
+}
+
+func (r *PrestadorPostgresRepository) BuscarPorEmail(email string) (*domain.Prestador, error) {
+	var p domain.Prestador
+	err := r.db.QueryRow(`
+        SELECT id, nome, cpf, email, telefone, ativo, imagem_url, senha_hash, role
+        FROM prestadores
+        WHERE email = $1
+    `, email).Scan(
+		&p.ID,
+		&p.Nome,
+		&p.Cpf,
+		&p.Email,
+		&p.Telefone,
+		&p.Ativo,
+		&p.ImagemUrl,
+		&p.PasswordHash,
+		&p.Role,
+	)
+
+	if errors.Is(err, sql.ErrNoRows) {
+		return nil, nil // Email não existe
 	}
 	if err != nil {
 		return nil, fmt.Errorf("%w: %v", ErrFalhaAoListar, err)

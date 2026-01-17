@@ -17,37 +17,47 @@ func NovoClienteController(novoCliente *service.ServiceCliente) *ClienteControll
 	return &ClienteController{novoCliente: novoCliente}
 }
 
-// PostCliente é o handler para a rota POST /cliente
+// PostCliente é o handler para a rota POST /clientes
 // @Summary Cadastra um novo cliente
-// @Description Recebe dados de nome, email e telefone para registrar um novo cliente.
+// @Description Recebe dados de nome, email, telefone e senha para registrar um novo cliente.
 // @Tags Clientes
 // @Accept json
 // @Produce json
 // @Param cliente body request.ClienteRequest true "Dados do Cliente"
-// @Success 201 {object} domain.Cliente "Cliente criado com sucesso"
+// @Success 201 {object} output.BuscarClienteOutput "Cliente criado com sucesso"
 // @Failure 400 {object} domain.ErrorResponse "Dados inválidos (erro de validação do binding)"
-// @Failure 409 {object} domain.ErrorResponse "Cliente já cadastrado (Email ou Telefone já existe)"
+// @Failure 409 {object} domain.ErrorResponse "Cliente já cadastrado (Email já existe)"
 // @Failure 500 {object} domain.ErrorResponse "Falha na persistência de dados ou erro interno"
 // @Router /clientes [post]
 func (ctrl *ClienteController) PostCliente(c *gin.Context) {
-	var input request.ClienteRequest
+	var req request.ClienteRequest
 
-	if err := c.ShouldBindJSON(&input); err != nil {
+	if err := c.ShouldBindJSON(&req); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Dados inválidos: " + err.Error()})
 		return
 	}
 
-	// Cria domínio e valida regras de negócio
-	clienteDomain, err := input.ToCliente()
+	// Converter para input
+	inputData, err := req.ToCadastrarClienteInput()
 	if err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao processar senha"})
 		return
 	}
 
-	// Persiste usando service
-	cliente, err := ctrl.novoCliente.Cadastra(clienteDomain)
+	// Cadastrar usando service
+	cliente, err := ctrl.novoCliente.Cadastra(inputData)
 	if err != nil {
-		c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		// Tratamento específico de erros
+		switch err.Error() {
+		case "email já cadastrado":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		case "email já está em uso por um prestador":
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		case "senha deve ter no mínimo 8 caracteres":
+			c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro ao cadastrar cliente"})
+		}
 		return
 	}
 
@@ -55,13 +65,15 @@ func (ctrl *ClienteController) PostCliente(c *gin.Context) {
 }
 
 // @Summary Busca um cliente pelo ID
-// @Description Retorna os dados de um cliente específico usando seu ID.
+// @Description Retorna os dados de um cliente específico usando seu ID. Requer autenticação JWT.
 // @Tags Clientes
 // @Accept json
 // @Produce json
+// @Security BearerAuth
 // @Param id path string true "ID do Cliente"
-// @Success 200 {object} domain.Cliente "Cliente encontrado com sucesso"
-// @Failure 400 {object} domain.ErrorResponse "ID inválido fornecido (ex: formato incorreto se houver validação de formato de ID)"
+// @Success 200 {object} output.BuscarClienteOutput "Cliente encontrado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - você só pode acessar seus próprios dados"
 // @Failure 404 {object} domain.ErrorResponse "Cliente não encontrado"
 // @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor ou falha de infraestrutura"
 // @Router /clientes/{id} [get]
@@ -73,20 +85,14 @@ func (ctrl *ClienteController) GetCliente(c *gin.Context) {
 	if err != nil {
 		errorMessage := err.Error()
 
-		// 1. TRATAMENTO DO 404: Se o erro for a mensagem específica de "não encontrado"
+		// TRATAMENTO DO 404
 		if errorMessage == "cliente não encontrado" {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Cliente não encontrado"})
 			return
 		}
 
-		// 2. TRATAMENTO DO 500: Qualquer outro erro é tratado como falha de infraestrutura
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao buscar cliente: " + errorMessage})
-		return
-	}
-
-	// Se o serviço não retorna erro, mas retorna nil (caso o serviço seja simplificado)
-	if cliente == nil {
-		c.JSON(http.StatusNotFound, gin.H{"error": "Cliente não encontrado"})
+		// TRATAMENTO DO 500
+		c.JSON(http.StatusInternalServerError, gin.H{"error": "Erro interno ao buscar cliente"})
 		return
 	}
 

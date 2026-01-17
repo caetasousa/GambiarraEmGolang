@@ -25,6 +25,7 @@ func TestGetPrestadores_Sucesso(t *testing.T) {
 			Cpf:         gerarCPFValido(i),
 			Email:       fmt.Sprintf("prestador%d@email.com", i+1),
 			Telefone:    fmt.Sprintf("6299967748%d", i+1),
+			Senha:       "senha123",
 			ImagemUrl:   fmt.Sprintf("https://exemplo.com/img%d.jpg", i+1),
 			CatalogoIDs: []string{catalogoResp.ID},
 		}
@@ -63,6 +64,7 @@ func TestGetPrestadores_ComPaginacao(t *testing.T) {
 			Cpf:         cpfsValidos[i],
 			Email:       fmt.Sprintf("prestador%d@email.com", i+1),
 			Telefone:    fmt.Sprintf("62999%06d", i+1),
+			Senha:       "senha123",
 			ImagemUrl:   fmt.Sprintf("https://exemplo.com/img%d.jpg", i+1),
 			CatalogoIDs: []string{catalogoResp.ID},
 		}
@@ -217,6 +219,7 @@ func TestGetPrestadores_LimiteMaximo(t *testing.T) {
 			Cpf:         cpfsValidos[i],
 			Email:       fmt.Sprintf("prestador%d@email.com", i+1),
 			Telefone:    fmt.Sprintf("62999%06d", i+1),
+			Senha:       "senha123",
 			ImagemUrl:   fmt.Sprintf("https://exemplo.com/img%d.jpg", i+1),
 			CatalogoIDs: []string{catalogoResp.ID},
 		}
@@ -258,6 +261,7 @@ func TestGetPrestadores_ComAgendasECatalogos(t *testing.T) {
 		Cpf:         "91663575002",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}

@@ -25,6 +25,7 @@ func TestUpdatePrestador_Sucesso(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "maria@email.com",
 		Telefone:    "62999677482",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img-original.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}

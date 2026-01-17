@@ -1,11 +1,12 @@
 package output
 
 type CriarPrestadorOutput struct {
-	ID        string
-	Nome      string
-	Email     string
-	Telefone  string
-	ImagemUrl string
-	Ativo     bool
-	Catalogo  []CatalogoOutput
+	ID        string           `json:"id"`
+	Nome      string           `json:"nome"`
+	Email     string           `json:"email"`
+	Telefone  string           `json:"telefone"`
+	Cpf       string           `json:"cpf"`
+	ImagemUrl string           `json:"imagem_url"`
+	Ativo     bool             `json:"ativo"`
+	Catalogo  []CatalogoOutput `json:"catalogo"`
 }

@@ -11,6 +11,7 @@ import (
 	"meu-servico-agenda/internal/core/domain"
 
 	"github.com/stretchr/testify/require"
+	"golang.org/x/crypto/bcrypt"
 )
 
 func TestPostAgendamento_Sucesso(t *testing.T) {
@@ -199,7 +200,8 @@ func TestPostAgendamento_PrestadorOcupado(t *testing.T) {
 	cliente1 := SetupNovoCliente(clienteRepo)
 
 	// cliente 2
-	cliente2, _ := domain.NovoCliente("Maria", "maria@email.com", "62999999999")
+	hash, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
+	cliente2 := domain.NovoCliente("Maria", "maria@email.com", "62999999999", string(hash))
 	clienteRepo.Salvar(cliente2)
 
 	// catálogo
@@ -248,11 +250,13 @@ func TestPostAgendamento_ClienteOcupado(t *testing.T) {
 	prestador1.AdicionarAgenda(agenda1)
 
 	// prestador 2
-	prestador2, _ := domain.NovoPrestador(
+	hash2, _ := bcrypt.GenerateFromPassword([]byte("senha123"), bcrypt.DefaultCost)
+	prestador2 := domain.NovoPrestador(
 		"Outro Prestador",
 		"12345678900",
 		"outro@email.com",
 		"62988888888",
+		string(hash2),
 		"https://exemplo.com/img1.jpg",
 		*listaDeCatalogos,
 	)

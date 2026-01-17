@@ -83,6 +83,7 @@ func TestConcorrencia_CriacaoSimultanea(t *testing.T) {
 		Cpf:         "04423258196",
 		Email:       "joao@email.com",
 		Telefone:    "62999677481",
+		Senha:       "senha123",
 		ImagemUrl:   "https://exemplo.com/img1.jpg",
 		CatalogoIDs: []string{catalogoResp.ID},
 	}
