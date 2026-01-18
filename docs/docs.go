@@ -876,9 +876,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Login bem-sucedido, retorna token e dados do usuário",
+                        "description": "Login bem-sucedido, retorna token, role e dados do usuário",
                         "schema": {
-                            "$ref": "#/definitions/output.LoginOutput"
+                            "$ref": "#/definitions/response.LoginResponse"
                         }
                     },
                     "400": {
@@ -1073,58 +1073,6 @@ const docTemplate = `{
                     },
                     "500": {
                         "description": "Erro interno ao buscar prestadores",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/prestadores/login": {
-            "post": {
-                "description": "Recebe email e senha e retorna um token JWT se as credenciais forem válidas",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "Prestadores"
-                ],
-                "summary": "Faz login de um prestador",
-                "parameters": [
-                    {
-                        "description": "Credenciais de login",
-                        "name": "credentials",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/request.LoginRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Login bem-sucedido, retorna token e dados do prestador",
-                        "schema": {
-                            "$ref": "#/definitions/output.LoginPrestadorOutput"
-                        }
-                    },
-                    "400": {
-                        "description": "Dados inválidos",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Credenciais inválidas",
-                        "schema": {
-                            "$ref": "#/definitions/domain.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Erro interno do servidor",
                         "schema": {
                             "$ref": "#/definitions/domain.ErrorResponse"
                         }
@@ -1644,28 +1592,6 @@ const docTemplate = `{
                 }
             }
         },
-        "output.LoginOutput": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/output.BuscarClienteOutput"
-                }
-            }
-        },
-        "output.LoginPrestadorOutput": {
-            "type": "object",
-            "properties": {
-                "token": {
-                    "type": "string"
-                },
-                "user": {
-                    "$ref": "#/definitions/output.BuscarPrestadorOutput"
-                }
-            }
-        },
         "request.ClienteRequest": {
             "type": "object",
             "required": [
@@ -1707,11 +1633,11 @@ const docTemplate = `{
             "properties": {
                 "email": {
                     "type": "string",
-                    "example": "admin@admin.com"
+                    "example": "joao@email.com"
                 },
                 "senha": {
                     "type": "string",
-                    "example": "admin123"
+                    "example": "senha123"
                 }
             }
         },
@@ -1935,6 +1861,18 @@ const docTemplate = `{
                     "minLength": 8,
                     "example": "62999677481"
                 }
+            }
+        },
+        "response.LoginResponse": {
+            "type": "object",
+            "properties": {
+                "role": {
+                    "type": "string"
+                },
+                "token": {
+                    "type": "string"
+                },
+                "user": {}
             }
         },
         "response_agendamento.AgendamentoListPaginadoResponse": {

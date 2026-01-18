@@ -90,8 +90,6 @@ func main() {
 		// Cadastro de prestadores (qualquer um pode se cadastrar)
 		public.POST("/prestadores", prestadorController.PostPrestador)
 
-		// Login de prestadores
-		public.POST("/prestadores/login", authController.LoginPrestador)
 
 		// Catálogos - Visualização pública
 		public.GET("/catalogos", catalogoController.GetCatalogos)

@@ -27,18 +27,20 @@ func PrestadorToLoginData(prestador *domain.Prestador) output.LoginPrestadorData
 	}
 }
 
-// ClienteToLoginOutput converte um Cliente de domínio para LoginClienteOutput completo (com token)
-func ClienteToLoginOutput(cliente *domain.Cliente, token string) *output.LoginClienteOutput {
-	return &output.LoginClienteOutput{
+// ClienteToLoginOutput converte um Cliente de domínio para LoginOutput completo (com token)
+func ClienteToLoginOutput(cliente *domain.Cliente, token string) *output.LoginOutput {
+	return &output.LoginOutput{
 		Token: token,
+		Role:  cliente.Role.String(),
 		User:  ClienteToLoginData(cliente),
 	}
 }
 
-// PrestadorToLoginOutput converte um Prestador de domínio para LoginPrestadorOutput completo (com token)
-func PrestadorToLoginOutput(prestador *domain.Prestador, token string) *output.LoginPrestadorOutput {
-	return &output.LoginPrestadorOutput{
+// PrestadorToLoginOutput converte um Prestador de domínio para LoginOutput completo (com token)
+func PrestadorToLoginOutput(prestador *domain.Prestador, token string) *output.LoginOutput {
+	return &output.LoginOutput{
 		Token: token,
+		Role:  prestador.Role.String(),
 		User:  PrestadorToLoginData(prestador),
 	}
 }

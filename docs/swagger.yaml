@@ -90,20 +90,6 @@ definitions:
       id:
         type: string
     type: object
-  output.LoginOutput:
-    properties:
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/output.BuscarClienteOutput'
-    type: object
-  output.LoginPrestadorOutput:
-    properties:
-      token:
-        type: string
-      user:
-        $ref: '#/definitions/output.BuscarPrestadorOutput'
-    type: object
   request.ClienteRequest:
     properties:
       email:
@@ -132,10 +118,10 @@ definitions:
   request.LoginRequest:
     properties:
       email:
-        example: admin@admin.com
+        example: joao@email.com
         type: string
       senha:
-        example: admin123
+        example: senha123
         type: string
     required:
     - email
@@ -307,6 +293,14 @@ definitions:
     - image_url
     - nome
     - telefone
+    type: object
+  response.LoginResponse:
+    properties:
+      role:
+        type: string
+      token:
+        type: string
+      user: {}
     type: object
   response_agendamento.AgendamentoListPaginadoResponse:
     properties:
@@ -1080,9 +1074,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Login bem-sucedido, retorna token e dados do usuário
+          description: Login bem-sucedido, retorna token, role e dados do usuário
           schema:
-            $ref: '#/definitions/output.LoginOutput'
+            $ref: '#/definitions/response.LoginResponse'
         "400":
           description: Dados inválidos
           schema:
@@ -1464,41 +1458,6 @@ paths:
       security:
       - BearerAuth: []
       summary: Lista prestadores disponíveis em uma data específica
-      tags:
-      - Prestadores
-  /prestadores/login:
-    post:
-      consumes:
-      - application/json
-      description: Recebe email e senha e retorna um token JWT se as credenciais forem
-        válidas
-      parameters:
-      - description: Credenciais de login
-        in: body
-        name: credentials
-        required: true
-        schema:
-          $ref: '#/definitions/request.LoginRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Login bem-sucedido, retorna token e dados do prestador
-          schema:
-            $ref: '#/definitions/output.LoginPrestadorOutput'
-        "400":
-          description: Dados inválidos
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "401":
-          description: Credenciais inválidas
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-        "500":
-          description: Erro interno do servidor
-          schema:
-            $ref: '#/definitions/domain.ErrorResponse'
-      summary: Faz login de um prestador
       tags:
       - Prestadores
 securityDefinitions:

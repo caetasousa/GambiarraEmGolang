@@ -57,11 +57,16 @@ func (c *CPF) Scan(value interface{}) error {
 		c.valor = ""
 		return nil
 	}
-	s, ok := value.(string)
-	if !ok {
+
+	switch v := value.(type) {
+	case string:
+		c.valor = v
+	case []byte:
+		c.valor = string(v)
+	default:
 		return fmt.Errorf("tipo inválido para CPF: %T", value)
 	}
-	c.valor = s
+
 	return nil
 }
 

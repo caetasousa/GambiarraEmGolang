@@ -7,8 +7,8 @@ import (
 )
 
 type LoginRequest struct {
-	Email string `json:"email" binding:"required,email" example:"admin@admin.com"`
-	Senha string `json:"senha" binding:"required" example:"admin123"`
+	Email string `json:"email" binding:"required,email" example:"joao@email.com"`
+	Senha string `json:"senha" binding:"required" example:"senha123"`
 }
 
 func (r *LoginRequest) ToLoginInput() *input.LoginInput {

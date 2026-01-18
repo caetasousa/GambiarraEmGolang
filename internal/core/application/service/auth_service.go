@@ -1,6 +1,7 @@
 package service
 
 import (
+	"log"
 	"meu-servico-agenda/internal/adapters/http/auth/request"
 	"meu-servico-agenda/internal/core/application/input"
 	"meu-servico-agenda/internal/core/application/mapper"
@@ -46,38 +47,35 @@ func (s *AuthService) ValidateToken(tokenString string) (*auth.JWTClaims, error)
 	return claims, nil
 }
 
-// LoginCliente autentica especificamente um cliente
-func (s *AuthService) LoginCliente(inputData *input.LoginInput) (*output.LoginClienteOutput, error) {
-	// Buscar cliente por email
+// Login tenta autenticar o usuário em qualquer repositório (cliente ou prestador)
+func (s *AuthService) Login(inputData *input.LoginInput) (*output.LoginOutput, error) {
+	// 1. Tenta como cliente primeiro
 	cliente, err := s.clienteRepo.BuscarPorEmail(inputData.Email)
 	if err != nil {
+		log.Printf("[LOGIN DEBUG] Erro ao buscar cliente: %v", err)
 		return nil, ErrFalhaInfraestrutura
 	}
 
-	if cliente == nil {
-		return nil, ErrCredenciaisInvalidas
+	if cliente != nil {
+		// Validar senha
+		if err := request.ValidarSenha(cliente.PasswordHash, inputData.Senha); err != nil {
+			return nil, ErrCredenciaisInvalidas
+		}
+
+		// Gerar JWT token
+		token, err := s.GenerateToken(cliente.ID, cliente.Email, cliente.Role)
+		if err != nil {
+			return nil, ErrFalhaAoGerarToken
+		}
+
+		// Retornar token e dados do cliente
+		return mapper.ClienteToLoginOutput(cliente, token), nil
 	}
 
-	// Validar senha
-	if err := request.ValidarSenha(cliente.PasswordHash, inputData.Senha); err != nil {
-		return nil, ErrCredenciaisInvalidas
-	}
-
-	// Gerar JWT token
-	token, err := s.GenerateToken(cliente.ID, cliente.Email, cliente.Role)
-	if err != nil {
-		return nil, ErrFalhaAoGerarToken
-	}
-
-	// Retornar token e dados do cliente
-	return mapper.ClienteToLoginOutput(cliente, token), nil
-}
-
-// LoginPrestador autentica especificamente um prestador
-func (s *AuthService) LoginPrestador(inputData *input.LoginInput) (*output.LoginPrestadorOutput, error) {
-	// Buscar prestador por email
+	// 2. Como não encontrou cliente, tenta como prestador
 	prestador, err := s.prestadorRepo.BuscarPorEmail(inputData.Email)
 	if err != nil {
+		log.Printf("[LOGIN DEBUG] Erro ao buscar prestador: %v", err)
 		return nil, ErrFalhaInfraestrutura
 	}
 

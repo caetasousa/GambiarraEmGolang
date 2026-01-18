@@ -26,14 +26,11 @@ type LoginPrestadorData struct {
 // Estruturas de Resposta de Login
 // ============================================================================
 
-// LoginClienteOutput representa a resposta após login bem-sucedido de um cliente
-type LoginClienteOutput struct {
-	Token string           `json:"token"`
-	User  LoginClienteData `json:"user"`
+// LoginOutput representa a resposta unificada após login bem-sucedido
+type LoginOutput struct {
+	Token string      `json:"token"`
+	Role  string      `json:"role"`
+	User  interface{} `json:"user"`
 }
 
-// LoginPrestadorOutput representa a resposta após login bem-sucedido (prestador)
-type LoginPrestadorOutput struct {
-	Token string             `json:"token"`
-	User  LoginPrestadorData `json:"user"`
-}
+

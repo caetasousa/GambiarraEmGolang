@@ -6,8 +6,14 @@ CREATE TABLE prestadores (
     telefone VARCHAR(15) NOT NULL CHECK (char_length(telefone) BETWEEN 8 AND 15),
     ativo BOOLEAN NOT NULL DEFAULT TRUE,
     imagem_url VARCHAR(200),
-    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW()
+    senha_hash VARCHAR(255) NOT NULL DEFAULT '',
+    role       VARCHAR(20)  NOT NULL DEFAULT 'prestador',
+    created_at TIMESTAMP WITHOUT TIME ZONE NOT NULL DEFAULT NOW(),
+    CONSTRAINT chk_prestador_admin_role CHECK (role IN ('prestador', 'admin'))
 );
+
+COMMENT ON COLUMN prestadores.senha_hash IS 'Senha hasheada com bcrypt';
+COMMENT ON COLUMN prestadores.role IS 'Role do usuário - prestador ou admin';
 
 CREATE UNIQUE INDEX uq_prestadores_cpf
 ON prestadores (cpf);
