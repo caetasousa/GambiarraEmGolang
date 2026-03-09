@@ -196,6 +196,18 @@ func main() {
 			middleware.RequireOwnerOrRole(domain.RoleAdmin),
 			agendamentoController.GetAgendamentosPrestadorPeriodo,
 		)
+
+		// PUT /agendamentos/:id/confirmar - Prestador OU Admin
+		protected.PUT("/agendamentos/:id/confirmar",
+			middleware.RequireRole(domain.RolePrestador, domain.RoleAdmin),
+			agendamentoController.ConfirmarAgendamento,
+		)
+
+		// PUT /agendamentos/:id/cancelar - Prestador, Cliente OU Admin
+		protected.PUT("/agendamentos/:id/cancelar",
+			middleware.RequireRole(domain.RolePrestador, domain.RoleCliente, domain.RoleAdmin),
+			agendamentoController.CancelarAgendamento,
+		)
 	}
 
 	router.GET("/health", func(c *gin.Context) {

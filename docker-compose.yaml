@@ -29,8 +29,8 @@ services:
       - annygo-postgres
     command: migrate
     volumes:
-      - ./flyway/sql:/flyway/sql
-      - ./flyway/conf:/flyway/conf
+      - ./backend/flyway/sql:/flyway/sql
+      - ./backend/flyway/conf:/flyway/conf
     networks:
       - default
 
@@ -48,3 +48,26 @@ networks:
 # tambem foi preciso dar permissao de escrita na pasta data com o comando:
 # sudo chmod -R 777 ./data/pgadmin
 
+# pgAdmin
+# Acesse: http://localhost:8081
+
+# Campo	Valor
+# Email	admin@localhost.com
+# Senha	admin
+# Para conectar ao banco, adicione um servidor com:
+
+# Host: annygo-postgres
+# Port: 5432
+# User: postgres
+# Password: postgres
+# Backend (Go + Swagger)
+
+# cd /home/caetasousa/annygo/backend
+# go run cmd/api/main.go
+# Swagger UI: http://localhost:8080/swagger/index.html
+
+# Frontend (SvelteKit)
+
+# cd /home/caetasousa/annygo/frontend
+# npm run dev
+# Frontend: http://localhost:5173

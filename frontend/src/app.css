@@ -1,0 +1,171 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* BellaSalon Variables */
+@layer base {
+  :root {
+    /* Fontes */
+    --font-sans: 'Manrope', 'Inter', sans-serif;
+    --font-serif: 'Playfair Display', serif;
+
+    /* Light theme colors (HSL format) */
+    --bs-background: 0 0% 100%;
+    --bs-foreground: 240 10% 3.9%;
+    --bs-card: 0 0% 100%;
+    --bs-card-foreground: 240 10% 3.9%;
+    --bs-primary: 28 90% 55%;
+    --bs-primary-foreground: 0 0% 98%;
+    --bs-secondary: 240 4.8% 95.9%;
+    --bs-secondary-foreground: 240 5.9% 10%;
+    --bs-muted: 240 4.8% 95.9%;
+    --bs-muted-foreground: 240 3.8% 46.1%;
+    --bs-accent: 240 4.8% 95.9%;
+    --bs-accent-foreground: 240 5.9% 10%;
+    --bs-destructive: 0 84.2% 60.2%;
+    --bs-destructive-foreground: 0 0% 98%;
+    --bs-border: 240 5.9% 90%;
+    --bs-input: 240 5.9% 90%;
+    --bs-ring: 28 90% 55%;
+  }
+
+  .dark {
+    /* Dark theme colors */
+    --bs-background: 240 10% 4%;
+    --bs-foreground: 0 0% 98%;
+    --bs-card: 240 10% 4%;
+    --bs-card-foreground: 0 0% 98%;
+    --bs-primary: 28 90% 55%;
+    --bs-primary-foreground: 240 5.9% 10%;
+    --bs-secondary: 240 3.7% 15.9%;
+    --bs-secondary-foreground: 0 0% 98%;
+    --bs-muted: 240 3.7% 15.9%;
+    --bs-muted-foreground: 240 5% 64.9%;
+    --bs-accent: 240 3.7% 15.9%;
+    --bs-accent-foreground: 0 0% 98%;
+    --bs-destructive: 0 62.8% 30.6%;
+    --bs-destructive-foreground: 0 0% 98%;
+    --bs-border: 240 3.7% 15.9%;
+    --bs-input: 240 3.7% 15.9%;
+    --bs-ring: 28 90% 55%;
+  }
+}
+
+/* BellaSalon Animations */
+@keyframes fadeInUp {
+  from {
+    opacity: 0;
+    transform: translateY(30px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes fadeInScale {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+@keyframes pulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.5;
+  }
+}
+
+@keyframes slideDown {
+  from {
+    opacity: 0;
+    transform: translateY(-20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* BellaSalon Utility Classes */
+@layer utilities {
+  .fade-in-up {
+    animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .fade-in-scale {
+    animation: fadeInScale 1s ease-out forwards;
+  }
+
+  .animate-pulse-slow {
+    animation: pulse 2s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  }
+
+  .animate-slide-down {
+    animation: slideDown 0.3s ease-out;
+  }
+
+  .glass-card {
+    background-color: hsla(var(--bs-card), 0.5);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid hsla(var(--bs-foreground), 0.05);
+    transition: border-color 0.3s;
+  }
+
+  .glass-card:hover {
+    border-color: hsla(var(--bs-primary), 0.5);
+  }
+
+  .text-gradient-primary {
+    background: linear-gradient(to right, hsl(var(--bs-primary)), hsl(28, 90%, 60%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .font-sans-bs {
+    font-family: var(--font-sans);
+  }
+
+  .font-serif-bs {
+    font-family: var(--font-serif);
+  }
+}
+
+/* Custom scrollbar */
+::-webkit-scrollbar {
+  width: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: hsl(var(--bs-background));
+}
+
+::-webkit-scrollbar-thumb {
+  background: hsl(var(--bs-muted-foreground));
+  border-radius: 5px;
+}
+
+
+/* Autofill fix for dark mode */
+.dark input:-webkit-autofill,
+.dark input:-webkit-autofill:hover,
+.dark input:-webkit-autofill:focus,
+.dark input:-webkit-autofill:active {
+  -webkit-box-shadow: 0 0 0 30px hsla(240, 3.7%, 15.9%, 0.2) inset !important;
+  -webkit-text-fill-color: white !important;
+  transition: background-color 5000s ease-in-out 0s;
+}
+
+/* Ensure background color transition works if box-shadow fails or for other browsers */
+.dark input:-webkit-autofill {
+    caret-color: white;
+}

@@ -15,4 +15,6 @@ type AgendamentoRepositorio interface {
 	ListarPorClienteEPeriodoPaginado(clienteID string, inicio time.Time, fim time.Time, limit, offset int) ([]*domain.Agendamento, error)
 	ContarPorPrestadorEPeriodo(prestadorID string, inicio time.Time, fim time.Time) (int, error)
 	ContarPorClienteEPeriodo(clienteID string, inicio time.Time, fim time.Time) (int, error)
+	BuscarPorID(id string) (*domain.Agendamento, error)
+	AtualizarStatus(id string, status domain.StatusDoAgendamento) error
 }

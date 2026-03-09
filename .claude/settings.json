@@ -2,7 +2,40 @@
   "permissions": {
     "allow": [
       "Bash(go get:*)",
-      "Bash(psql:*)"
+      "Bash(psql:*)",
+      "Bash(go build:*)",
+      "Bash(go test:*)",
+      "Bash(go mod tidy:*)",
+      "Bash(go run:*)",
+      "Bash(swag init:*)",
+      "Bash(npm run:*)"
+    ],
+    "deny": [
+      "Edit(.env)",
+      "Write(.env)"
+    ]
+  },
+  "hooks": {
+    "PostToolUse": [
+      {
+        "matcher": "Edit|Write",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "file=$(echo $CLAUDE_TOOL_INPUT | python3 -c \"import sys,json; d=json.load(sys.stdin); print(d.get('file_path',''))\" 2>/dev/null); if [[ \"$file\" == *.go ]]; then gofmt -w \"$file\" 2>/dev/null; fi"
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "notify-send 'Claude Code' 'Aguardando sua resposta...' 2>/dev/null || true"
+          }
+        ]
+      }
     ]
   }
 }

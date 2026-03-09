@@ -58,6 +58,8 @@ func SetupRouterAgendamento() (*gin.Engine, port.PrestadorRepositorio, port.Clie
 		apiV1.GET("/agendamentos/cliente/:id/periodo", agendamentoController.GetAgendamentosClientePeriodo)
 		apiV1.GET("/agendamentos/prestador/:id", agendamentoController.GetAgendamentoPrestadorData)
 		apiV1.GET("/agendamentos/prestador/:id/periodo", agendamentoController.GetAgendamentosPrestadorPeriodo)
+		apiV1.PUT("/agendamentos/:id/confirmar", agendamentoController.ConfirmarAgendamento)
+		apiV1.PUT("/agendamentos/:id/cancelar", agendamentoController.CancelarAgendamento)
 	}
 
 	return router, prestadorRepo, clienteRepo, catalogoRepo, agendaDiariaRepo
@@ -106,6 +108,30 @@ func SetupGetAgendamentosPrestadorPeriodoRequest(router *gin.Engine, prestadorID
 	url := fmt.Sprintf("/api/v1/agendamentos/prestador/%s/periodo?data_inicio=%s&data_fim=%s&page=%d&limit=%d",
 		prestadorID, dataInicio, dataFim, page, limit)
 	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+// ============ PUT Helpers ============
+
+func SetupConfirmarAgendamentoRequest(router *gin.Engine, agendamentoID string) *httptest.ResponseRecorder {
+	url := fmt.Sprintf("/api/v1/agendamentos/%s/confirmar", agendamentoID)
+	req, _ := http.NewRequest(http.MethodPut, url, nil)
+	req.Header.Set("Content-Type", "application/json")
+
+	rr := httptest.NewRecorder()
+	router.ServeHTTP(rr, req)
+
+	return rr
+}
+
+func SetupCancelarAgendamentoRequest(router *gin.Engine, agendamentoID string) *httptest.ResponseRecorder {
+	url := fmt.Sprintf("/api/v1/agendamentos/%s/cancelar", agendamentoID)
+	req, _ := http.NewRequest(http.MethodPut, url, nil)
 	req.Header.Set("Content-Type", "application/json")
 
 	rr := httptest.NewRecorder()

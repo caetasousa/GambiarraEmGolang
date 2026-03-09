@@ -202,6 +202,56 @@ func (s *AgendamentoService) ListarAgendamentosPrestadorPorPeriodo(prestadorID s
 	return out, total, nil
 }
 
+func (s *AgendamentoService) ConfirmarAgendamento(id string) (*output.AgendamentoOutput, error) {
+	agendamento, err := s.agendamentoRepo.BuscarPorID(id)
+	if err != nil {
+		if errors.Is(err, repository.ErrAgendamentoNaoEncontrado) {
+			return nil, ErrAgendamentoNaoEncontrado
+		}
+		return nil, ErrFalhaInfraestrutura
+	}
+
+	if agendamento.Status == domain.Cancelado {
+		return nil, ErrAgendamentoJaCancelado
+	}
+	if agendamento.Status == domain.Concluido {
+		return nil, ErrAgendamentoJaConcluido
+	}
+
+	if err := s.agendamentoRepo.AtualizarStatus(id, domain.Confirmado); err != nil {
+		return nil, ErrFalhaInfraestrutura
+	}
+
+	agendamento.Status = domain.Confirmado
+	out := mapper.NovoAgendamentoOutput(agendamento)
+	return out, nil
+}
+
+func (s *AgendamentoService) CancelarAgendamento(id string) (*output.AgendamentoOutput, error) {
+	agendamento, err := s.agendamentoRepo.BuscarPorID(id)
+	if err != nil {
+		if errors.Is(err, repository.ErrAgendamentoNaoEncontrado) {
+			return nil, ErrAgendamentoNaoEncontrado
+		}
+		return nil, ErrFalhaInfraestrutura
+	}
+
+	if agendamento.Status == domain.Cancelado {
+		return nil, ErrAgendamentoJaCancelado
+	}
+	if agendamento.Status == domain.Concluido {
+		return nil, ErrAgendamentoJaConcluido
+	}
+
+	if err := s.agendamentoRepo.AtualizarStatus(id, domain.Cancelado); err != nil {
+		return nil, ErrFalhaInfraestrutura
+	}
+
+	agendamento.Status = domain.Cancelado
+	out := mapper.NovoAgendamentoOutput(agendamento)
+	return out, nil
+}
+
 func (s *AgendamentoService) ListarAgendamentosClientePorPeriodo(clienteID string, in *input.ListarAgendamentoClientePeriodoInput) ([]*output.AgendamentoOutput, int, error) {
 	cliente, err := s.clienteRepo.BuscarPorId(clienteID)
 	if err != nil {

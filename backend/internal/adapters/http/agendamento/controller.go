@@ -270,6 +270,76 @@ func (ag *AgendamentoController) GetAgendamentosPrestadorPeriodo(c *gin.Context)
 	c.JSON(http.StatusOK, response)
 }
 
+// @Summary Confirma um agendamento
+// @Description Atualiza o status de um agendamento para Confirmado. Requer autenticação JWT (Prestador ou Admin).
+// @Tags Agendamentos
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID do agendamento"
+// @Success 200 {object} response_agendamento.AgendamentoResponse "Agendamento confirmado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Prestador e Admin podem confirmar agendamentos"
+// @Failure 404 {object} domain.ErrorResponse "Agendamento não encontrado"
+// @Failure 409 {object} domain.ErrorResponse "Agendamento já foi cancelado ou concluído"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /agendamentos/{id}/confirmar [put]
+func (ag *AgendamentoController) ConfirmarAgendamento(c *gin.Context) {
+	id := c.Param("id")
+
+	agendamento, err := ag.agendamentoService.ConfirmarAgendamento(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrAgendamentoNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, service.ErrAgendamentoJaCancelado),
+			errors.Is(err, service.ErrAgendamentoJaConcluido):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": service.ErrFalhaInfraestrutura.Error()})
+		}
+		return
+	}
+
+	resp := response_agendamento.NovoAgendamentoResponse(agendamento)
+	c.JSON(http.StatusOK, resp)
+}
+
+// @Summary Cancela um agendamento
+// @Description Atualiza o status de um agendamento para Cancelado. Requer autenticação JWT (Prestador, Cliente ou Admin).
+// @Tags Agendamentos
+// @Accept json
+// @Produce json
+// @Security BearerAuth
+// @Param id path string true "ID do agendamento"
+// @Success 200 {object} response_agendamento.AgendamentoResponse "Agendamento cancelado com sucesso"
+// @Failure 401 {object} domain.ErrorResponse "Token não fornecido ou inválido"
+// @Failure 403 {object} domain.ErrorResponse "Acesso negado - apenas Prestador, Cliente e Admin podem cancelar agendamentos"
+// @Failure 404 {object} domain.ErrorResponse "Agendamento não encontrado"
+// @Failure 409 {object} domain.ErrorResponse "Agendamento já foi cancelado ou concluído"
+// @Failure 500 {object} domain.ErrorResponse "Erro interno do servidor"
+// @Router /agendamentos/{id}/cancelar [put]
+func (ag *AgendamentoController) CancelarAgendamento(c *gin.Context) {
+	id := c.Param("id")
+
+	agendamento, err := ag.agendamentoService.CancelarAgendamento(id)
+	if err != nil {
+		switch {
+		case errors.Is(err, service.ErrAgendamentoNaoEncontrado):
+			c.JSON(http.StatusNotFound, gin.H{"error": err.Error()})
+		case errors.Is(err, service.ErrAgendamentoJaCancelado),
+			errors.Is(err, service.ErrAgendamentoJaConcluido):
+			c.JSON(http.StatusConflict, gin.H{"error": err.Error()})
+		default:
+			c.JSON(http.StatusInternalServerError, gin.H{"error": service.ErrFalhaInfraestrutura.Error()})
+		}
+		return
+	}
+
+	resp := response_agendamento.NovoAgendamentoResponse(agendamento)
+	c.JSON(http.StatusOK, resp)
+}
+
 // @Summary Lista agendamentos de um cliente por período com paginação
 // @Description Retorna agendamentos de um cliente em um período específico com suporte a paginação. Requer autenticação JWT (próprio cliente ou Admin).
 // @Tags Agendamentos

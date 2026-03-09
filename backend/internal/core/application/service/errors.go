@@ -37,9 +37,12 @@ var (
 	ErrClienteOcupado       = errors.New("cliente já possui agendamento neste horário")
 
 	// Validação de agendamento
-	ErrDataHoraInvalida    = errors.New("data/hora de agendamento inválida")
-	ErrHorarioIndisponivel = errors.New("horário indisponível")
-	ErrDiaIndisponivel     = errors.New("dia indisponível para agendamentos")
-	ErrAgendaNaoEncontrada = errors.New("agenda não encontrada")
-	ErrAgendamentoDuplo    = errors.New("já existe um agendamento para essa categoria neste dia")
+	ErrDataHoraInvalida          = errors.New("data/hora de agendamento inválida")
+	ErrHorarioIndisponivel       = errors.New("horário indisponível")
+	ErrDiaIndisponivel           = errors.New("dia indisponível para agendamentos")
+	ErrAgendaNaoEncontrada       = errors.New("agenda não encontrada")
+	ErrAgendamentoDuplo          = errors.New("já existe um agendamento para essa categoria neste dia")
+	ErrAgendamentoNaoEncontrado  = errors.New("agendamento não encontrado")
+	ErrAgendamentoJaCancelado    = errors.New("agendamento já foi cancelado")
+	ErrAgendamentoJaConcluido    = errors.New("agendamento já foi concluído")
 )

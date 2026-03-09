@@ -76,6 +76,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorPrestadorEPeriodo(prestadorID s
 	WHERE a.prestador_id = $1
 	  AND a.data_hora_inicio < $3
 	  AND a.data_hora_fim    > $2
+	  AND a.status != 3
 	ORDER BY a.data_hora_inicio
 	`
 
@@ -154,6 +155,7 @@ func (r *AgendamentoPostgresRepository) BuscarPorClienteEPeriodo(clienteID strin
 	WHERE a.cliente_id = $1
 	  AND a.data_hora_inicio < $3
 	  AND a.data_hora_fim    > $2
+	  AND a.status != 3
 	ORDER BY a.data_hora_inicio
 	`
 
@@ -606,4 +608,114 @@ func (r *AgendamentoPostgresRepository) ContarPorClienteEPeriodo(clienteID strin
 		return 0, fmt.Errorf("%w: %v", ErrFalhaAoContar, err)
 	}
 	return total, nil
+}
+
+func (r *AgendamentoPostgresRepository) BuscarPorID(id string) (*domain.Agendamento, error) {
+	query := `
+	SELECT
+		a.id,
+		a.data_hora_inicio,
+		a.data_hora_fim,
+		a.status,
+		a.notas,
+
+		c.id, c.nome, c.email, c.telefone,
+		p.id, p.nome, p.cpf, p.email, p.telefone, p.ativo, p.imagem_url,
+		cat.id, cat.nome, cat.duracao_padrao, cat.preco, cat.imagem_url, cat.categoria
+	FROM agendamentos a
+	JOIN clientes c   ON c.id = a.cliente_id
+	JOIN prestadores p ON p.id = a.prestador_id
+	JOIN catalogos cat ON cat.id = a.catalogo_id
+	WHERE a.id = $1
+	`
+
+	var agendamentoID, clienteID, clienteNome, clienteEmail, clienteTelefone string
+	var pID, prestadorNome, prestadorEmail, prestadorTelefone string
+	var prestadorCpf domain.CPF
+	var prestadorAtivo bool
+	var prestadorImagemUrl, catalogoImagemUrl sql.NullString
+	var catalogoID, catalogoNome, catalogoCategoria string
+	var catalogoDuracao, catalogoPreco int
+	var dataHoraInicio, dataHoraFim time.Time
+	var status int
+	var notas sql.NullString
+
+	err := r.db.QueryRow(query, id).Scan(
+		&agendamentoID,
+		&dataHoraInicio,
+		&dataHoraFim,
+		&status,
+		&notas,
+
+		&clienteID,
+		&clienteNome,
+		&clienteEmail,
+		&clienteTelefone,
+
+		&pID,
+		&prestadorNome,
+		&prestadorCpf,
+		&prestadorEmail,
+		&prestadorTelefone,
+		&prestadorAtivo,
+		&prestadorImagemUrl,
+
+		&catalogoID,
+		&catalogoNome,
+		&catalogoDuracao,
+		&catalogoPreco,
+		&catalogoImagemUrl,
+		&catalogoCategoria,
+	)
+	if err == sql.ErrNoRows {
+		return nil, ErrAgendamentoNaoEncontrado
+	}
+	if err != nil {
+		return nil, fmt.Errorf("%w: %v", ErrNaoEncontrado, err)
+	}
+
+	notasStr := ""
+	if notas.Valid {
+		notasStr = notas.String
+	}
+
+	return &domain.Agendamento{
+		ID: agendamentoID,
+		Cliente: &domain.Cliente{
+			ID:       clienteID,
+			Nome:     clienteNome,
+			Email:    clienteEmail,
+			Telefone: clienteTelefone,
+		},
+		Prestador: &domain.Prestador{
+			ID:        pID,
+			Nome:      prestadorNome,
+			Cpf:       prestadorCpf,
+			Email:     prestadorEmail,
+			Telefone:  prestadorTelefone,
+			Ativo:     prestadorAtivo,
+			ImagemUrl: prestadorImagemUrl.String,
+			Agenda:    []domain.AgendaDiaria{},
+		},
+		Catalogo: &domain.Catalogo{
+			ID:            catalogoID,
+			Nome:          catalogoNome,
+			DuracaoPadrao: catalogoDuracao,
+			Preco:         catalogoPreco,
+			ImagemUrl:     catalogoImagemUrl.String,
+			Categoria:     catalogoCategoria,
+		},
+		DataHoraInicio: dataHoraInicio,
+		DataHoraFim:    dataHoraFim,
+		Status:         domain.StatusDoAgendamento(status),
+		Notas:          notasStr,
+	}, nil
+}
+
+func (r *AgendamentoPostgresRepository) AtualizarStatus(id string, status domain.StatusDoAgendamento) error {
+	_, err := r.db.Exec(`UPDATE agendamentos SET status = $1 WHERE id = $2`, status, id)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrFalhaAoAtualizar, err)
+	}
+	return nil
 }

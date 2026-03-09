@@ -38,3 +38,19 @@ docker-compose.override.*.yml
 
 # MacOS
 .DS_Store
+Thumbs.db
+
+# Frontend (SvelteKit)
+frontend/node_modules
+frontend/.svelte-kit
+frontend/.output
+frontend/.vercel
+frontend/.netlify
+frontend/.wrangler
+frontend/build
+frontend/.env
+frontend/.env.*
+!frontend/.env.example
+!frontend/.env.test
+frontend/vite.config.js.timestamp-*
+frontend/vite.config.ts.timestamp-*

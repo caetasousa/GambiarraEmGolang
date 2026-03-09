@@ -27,7 +27,8 @@ func (r *FakeAgendamentoRepositorio) BuscarPorPrestadorEPeriodo(prestadorID stri
 	for _, agendamento := range r.storage {
 		if agendamento.Prestador.ID == prestadorID &&
 			inicio.Before(agendamento.DataHoraFim) &&
-			fim.After(agendamento.DataHoraInicio) {
+			fim.After(agendamento.DataHoraInicio) &&
+			agendamento.Status != domain.Cancelado {
 
 			resultados = append(resultados, agendamento)
 		}
@@ -43,7 +44,8 @@ func (r *FakeAgendamentoRepositorio) BuscarPorClienteEPeriodo(clienteID string, 
 	for _, agendamento := range r.storage {
 		if agendamento.Cliente.ID == clienteID &&
 			inicio.Before(agendamento.DataHoraFim) &&
-			fim.After(agendamento.DataHoraInicio) {
+			fim.After(agendamento.DataHoraInicio) &&
+			agendamento.Status != domain.Cancelado {
 
 			resultados = append(resultados, agendamento)
 		}
@@ -175,4 +177,21 @@ func (r *FakeAgendamentoRepositorio) ContarPorClienteEPeriodo(clienteID string, 
 	}
 
 	return count, nil
+}
+
+func (r *FakeAgendamentoRepositorio) BuscarPorID(id string) (*domain.Agendamento, error) {
+	agendamento, ok := r.storage[id]
+	if !ok {
+		return nil, ErrAgendamentoNaoEncontrado
+	}
+	return agendamento, nil
+}
+
+func (r *FakeAgendamentoRepositorio) AtualizarStatus(id string, status domain.StatusDoAgendamento) error {
+	agendamento, ok := r.storage[id]
+	if !ok {
+		return ErrAgendamentoNaoEncontrado
+	}
+	agendamento.Status = status
+	return nil
 }
