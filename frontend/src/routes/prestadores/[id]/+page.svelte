@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from "svelte";
     import Sidebar from "$lib/components/Sidebar.svelte";
-    import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+    import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
     import { page } from "$app/stores";
     import { fetchApi } from "$lib/utils/api";
 
@@ -110,24 +110,7 @@
     <Sidebar />
 
     <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        <header
-            class="h-16 bg-[hsl(var(--bs-card))] border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 z-10"
-        >
-            <div class="flex items-center">
-                <a
-                    href="/prestadores"
-                    class="flex items-center text-gray-500 hover:text-brand-orange transition-colors"
-                >
-                    <span class="material-symbols-outlined mr-2"
-                        >arrow_back</span
-                    >
-                    <span class="hidden sm:inline">Voltar para a lista</span>
-                </a>
-            </div>
-            <div class="flex items-center space-x-4">
-                <ThemeToggle />
-            </div>
-        </header>
+        <DashboardNavbar title="Perfil do Profissional" />
 
         <div class="flex-1 overflow-y-auto p-6 md:p-8">
             <div class="max-w-4xl mx-auto space-y-6">

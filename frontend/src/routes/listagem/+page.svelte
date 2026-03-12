@@ -1,7 +1,24 @@
 <script lang="ts">
     import { onMount } from "svelte";
-    import Sidebar from "$lib/components/Sidebar.svelte";
-    import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
+    import Footer from "$lib/components/Footer.svelte";
+    import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+    import { landingConfig } from "$lib/config/landingConfig";
+    import { isAuthenticated, user, logout } from "$lib/stores/auth";
+    import { goto } from "$app/navigation";
+
+    function getPanelRoute(role: string | undefined): string {
+        switch (role) {
+            case 'admin': return '/prestadores/editar';
+            case 'prestador': return '/prestadores/agenda';
+            case 'cliente': return '/clientes/meus-agendamentos';
+            default: return '/login';
+        }
+    }
+
+    function handleLogout() {
+        logout();
+        goto('/login');
+    }
 
     interface Service {
         ID: string;
@@ -157,13 +174,38 @@
 </script>
 
 <div
-    class="bg-[hsl(var(--bs-background))] text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-200"
+    class="bg-[hsl(var(--bs-background))] text-gray-800 dark:text-gray-200 font-sans antialiased transition-colors duration-200 min-h-screen flex flex-col"
 >
-    <div class="flex h-screen overflow-hidden">
-        <Sidebar />
-        <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-            <DashboardNavbar title="Catálogo de Serviços" />
-            <div class="flex-1 overflow-y-auto p-6 md:p-8">
+    <!-- Header estilo dashboard com logo e auth -->
+    <header class="h-16 bg-[hsl(var(--bs-card))] border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-10">
+        <a href="/" class="flex items-center gap-2 group">
+            <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">B</div>
+            <span class="font-bold text-base text-gray-900 dark:text-white">Bella<span class="text-orange-500">Vita</span></span>
+        </a>
+        <div class="flex items-center gap-2">
+            <ThemeToggle />
+            {#if $isAuthenticated}
+                <a
+                    href={getPanelRoute($user?.role)}
+                    class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                >
+                    Meu Painel
+                </a>
+                <button
+                    on:click={handleLogout}
+                    class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                >
+                    <span class="material-icons text-[18px]">logout</span>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
+            {:else}
+                <a href="/login" class="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-500 transition-colors">Entrar</a>
+                <a href="/clientes/cadastro" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors">Cadastre-se</a>
+            {/if}
+        </div>
+    </header>
+    <main class="flex-1 flex flex-col">
+        <div class="flex-1 p-6 md:p-8">
                 <div
                     class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-orange-500 to-amber-600 dark:from-orange-600 dark:to-amber-800 shadow-lg mb-10 text-white"
                 >
@@ -499,18 +541,7 @@
                     {/if}
                 </div>
 
-                <!-- Footer -->
-                <div
-                    class="mt-12 border-t border-border-light dark:border-border-dark pt-8 pb-4 text-center text-sm text-gray-500"
-                >
-                    <p>© 2023 BellaVita. Todos os direitos reservados.</p>
-                    <div class="flex justify-center gap-4 mt-2">
-                        <a class="hover:text-primary" href="/">Termos</a>
-                        <a class="hover:text-primary" href="/">Privacidade</a>
-                        <a class="hover:text-primary" href="/">Ajuda</a>
-                    </div>
-                </div>
             </div>
         </main>
-    </div>
+    <Footer data={landingConfig.footer} />
 </div>

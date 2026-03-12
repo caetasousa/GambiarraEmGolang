@@ -45,7 +45,7 @@
 
             const redirectMap: Record<UserRole, string> = {
                 admin: "/prestadores/editar",
-                cliente: "/clientes/agendamento",
+                cliente: "/clientes/meus-agendamentos",
                 prestador: "/perfil",
             };
             goto(redirectMap[userData.role] ?? "/");

@@ -1,8 +1,25 @@
 <script lang="ts">
-    import Sidebar from "$lib/components/Sidebar.svelte";
-    import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
+    import Footer from "$lib/components/Footer.svelte";
+    import ThemeToggle from "$lib/components/ThemeToggle.svelte";
+    import { landingConfig } from "$lib/config/landingConfig";
     import { page } from "$app/stores";
     import { onMount } from "svelte";
+    import { isAuthenticated, user, logout } from "$lib/stores/auth";
+    import { goto } from "$app/navigation";
+
+    function getPanelRoute(role: string | undefined): string {
+        switch (role) {
+            case 'admin': return '/prestadores/editar';
+            case 'prestador': return '/prestadores/agenda';
+            case 'cliente': return '/clientes/meus-agendamentos';
+            default: return '/login';
+        }
+    }
+
+    function handleLogout() {
+        logout();
+        goto('/login');
+    }
 
     interface Service {
         id: string;
@@ -81,14 +98,43 @@
 </script>
 
 <div
-    class="font-body bg-[hsl(var(--bs-background))] text-text-light dark:text-text-dark antialiased h-screen flex overflow-hidden transition-colors duration-200"
+    class="font-body bg-[hsl(var(--bs-background))] text-text-light dark:text-text-dark antialiased min-h-screen flex flex-col transition-colors duration-200"
 >
-    <Sidebar />
+    <!-- Header estilo dashboard com logo e auth -->
+    <header class="h-16 bg-[hsl(var(--bs-card))] border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 flex-shrink-0 sticky top-0 z-10">
+        <a href="/" class="flex items-center gap-2">
+            <div class="w-8 h-8 bg-orange-500 rounded-lg flex items-center justify-center text-white font-bold shadow-md">B</div>
+            <span class="font-bold text-base text-gray-900 dark:text-white">Bella<span class="text-orange-500">Vita</span></span>
+        </a>
+        <div class="flex items-center gap-2">
+            <a href="/listagem" class="text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-500 transition-colors flex items-center gap-1">
+                <span class="material-symbols-outlined text-[18px]">arrow_back</span>
+                Catálogo
+            </a>
+            <ThemeToggle />
+            {#if $isAuthenticated}
+                <a
+                    href={getPanelRoute($user?.role)}
+                    class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
+                >
+                    Meu Painel
+                </a>
+                <button
+                    on:click={handleLogout}
+                    class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
+                >
+                    <span class="material-icons text-[18px]">logout</span>
+                    <span class="hidden sm:inline">Sair</span>
+                </button>
+            {:else}
+                <a href="/login" class="px-4 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-orange-500 transition-colors">Entrar</a>
+                <a href="/clientes/cadastro" class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors">Cadastre-se</a>
+            {/if}
+        </div>
+    </header>
 
-    <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-        <DashboardNavbar />
-
-        <div class="flex-1 overflow-y-auto p-6 md:p-8">
+    <main class="flex-1 flex flex-col">
+        <div class="flex-1 p-6 md:p-8">
             {#if loading}
                 <div class="flex justify-center items-center h-full">
                     <span
@@ -116,7 +162,7 @@
                         >
                         <span class="mx-2">/</span>
                         <a
-                            href="/catalogo/listagem"
+                            href="/listagem"
                             class="hover:text-primary transition-colors"
                             >Catálogo</a
                         >
@@ -376,4 +422,5 @@
             {/if}
         </div>
     </main>
+    <Footer data={landingConfig.footer} />
 </div>
