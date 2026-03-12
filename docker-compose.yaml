@@ -44,6 +44,41 @@ services:
     networks:
       - default
 
+  annygo-backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    container_name: annygo-backend
+    restart: always
+    depends_on:
+      annygo-postgres:
+        condition: service_healthy
+    environment:
+      DB_HOST: annygo-postgres
+      DB_PORT: 5432
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_NAME: annygo
+    ports:
+      - 8080:8080
+    networks:
+      - default
+
+  annygo-frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: annygo-frontend
+    restart: always
+    depends_on:
+      - annygo-backend
+    environment:
+      VITE_API_URL: http://annygo-backend:8080
+    ports:
+      - 5173:5173
+    networks:
+      - default
+
 networks:
   default:
     name: local-network
@@ -98,14 +133,20 @@ networks:
 # BACKEND (Go + Swagger)
 # =============================================================================
 
-# cd ~/annygo/backend
-# go run cmd/api/main.go
-# Swagger UI: http://localhost:8080/swagger/index.html
+# Via Docker (recomendado):
+#   docker compose up annygo-backend
+#   Swagger UI: http://localhost:8080/swagger/index.html
+
+# Via terminal (dev):
+#   cd ~/annygo/backend && go run cmd/api/main.go
 
 # =============================================================================
 # FRONTEND (SvelteKit)
 # =============================================================================
 
-# cd ~/annygo/frontend
-# npm run dev
-# Frontend: http://localhost:5173
+# Via Docker (recomendado):
+#   docker compose up annygo-frontend
+#   Frontend: http://localhost:5173
+
+# Via terminal (dev):
+#   cd ~/annygo/frontend && npm run dev
