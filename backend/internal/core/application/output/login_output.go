@@ -19,7 +19,7 @@ type LoginPrestadorData struct {
 	Email     string `json:"email"`
 	Telefone  string `json:"telefone"`
 	Cpf       string `json:"cpf"`
-	ImagemUrl string `json:"imagem_url"`
+	ImagemUrl string `json:"image_url"`
 }
 
 // ============================================================================
