@@ -122,6 +122,11 @@ Sempre que qualquer arquivo em `backend/internal/`, `backend/cmd/` for modificad
    - Resultado dos testes (quantos passaram, quantos falharam, quais falharam e por quê)
    - Se algum teste falhou, investigar e corrigir antes de encerrar
 
+## Git e GitHub
+- **Nunca executar `git push` sem pedir permissão explícita ao usuário antes**
+- Commits locais podem ser criados normalmente quando solicitado
+- Sempre confirmar com o usuário antes de enviar qualquer coisa ao repositório remoto
+
 ## Variáveis de ambiente (`.env`)
 - Nunca editar ou commitar o `.env` diretamente
 - Variáveis usadas: DB connection string, JWT secret
