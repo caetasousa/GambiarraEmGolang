@@ -4,6 +4,9 @@
 /dist/
 /data
 
+# Air (hot reload)
+backend/tmp/
+
 # Go build cache
 *.exe
 *.exe~
