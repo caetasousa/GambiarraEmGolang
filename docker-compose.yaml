@@ -6,15 +6,23 @@ services:
     environment:
       POSTGRES_PASSWORD: postgres
       POSTGRES_USER: postgres
+      POSTGRES_DB: annygo
     ports:
       - 5432:5432
     volumes:
       - ./data/postgres:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d annygo"]
+      interval: 5s
+      timeout: 5s
+      retries: 10
+
   annygo-pgadmin:
     image: dpage/pgadmin4:latest
     restart: always
     depends_on:
-      - annygo-postgres
+      annygo-postgres:
+        condition: service_healthy
     environment:
       PGADMIN_DEFAULT_EMAIL: admin@localhost.com
       PGADMIN_DEFAULT_PASSWORD: admin
@@ -22,11 +30,13 @@ services:
       - 8081:80
     volumes:
       - ./data/pgadmin:/var/lib/pgadmin
+
   flyway:
     image: flyway/flyway:latest
     container_name: annygo-flyway
     depends_on:
-      - annygo-postgres
+      annygo-postgres:
+        condition: service_healthy
     command: migrate
     volumes:
       - ./backend/flyway/sql:/flyway/sql
@@ -39,35 +49,63 @@ networks:
     name: local-network
     external: true
 
-# foi preciso criar a rede local-network com o comando:
-# docker network create local-network
+# =============================================================================
+# PRE-REQUISITOS (executar uma única vez antes do primeiro docker compose up)
+# =============================================================================
 
-# mkdir -p ~/annygo/data/pgadmin
-# mkdir -p ~/annygo/data/postgres
+# 1. Criar a rede Docker compartilhada:
+#    docker network create local-network
 
-# tambem foi preciso dar permissao de escrita na pasta data com o comando:
-# sudo chmod -R 777 ./data/pgadmin
+# 2. Criar as pastas de dados:
+#    mkdir -p ~/annygo/data/pgadmin
+#    mkdir -p ~/annygo/data/postgres
 
-# pgAdmin
+# 3. Dar permissão de escrita para o pgAdmin (UID 5050):
+#    sudo chmod -R 777 ~/annygo/data/pgadmin
+
+# =============================================================================
+# SUBIR OS SERVIÇOS
+# =============================================================================
+
+# Subir tudo (postgres + pgadmin + flyway migrations):
+#   docker compose up
+
+# Subir em background:
+#   docker compose up -d
+
+# Remover containers órfãos (ex: annygo-zitadel):
+#   docker compose up --remove-orphans
+
+# =============================================================================
+# PGADMIN
+# =============================================================================
+
 # Acesse: http://localhost:8081
+# Email:  admin@localhost.com
+# Senha:  admin
 
-# Campo	Valor
-# Email	admin@localhost.com
-# Senha	admin
-# Para conectar ao banco, adicione um servidor com:
+# Para registrar o servidor do banco:
+#   1. Botão direito em "Servers" > Register > Server...
+#   2. Aba General  → Nome: annygo
+#   3. Aba Connection:
+#      Host:     annygo-postgres
+#      Port:     5432
+#      Database: annygo
+#      Username: postgres
+#      Password: postgres
 
-# Host: annygo-postgres
-# Port: 5432
-# User: postgres
-# Password: postgres
-# Backend (Go + Swagger)
+# =============================================================================
+# BACKEND (Go + Swagger)
+# =============================================================================
 
-# cd /home/caetasousa/annygo/backend
+# cd ~/annygo/backend
 # go run cmd/api/main.go
 # Swagger UI: http://localhost:8080/swagger/index.html
 
-# Frontend (SvelteKit)
+# =============================================================================
+# FRONTEND (SvelteKit)
+# =============================================================================
 
-# cd /home/caetasousa/annygo/frontend
+# cd ~/annygo/frontend
 # npm run dev
 # Frontend: http://localhost:5173
