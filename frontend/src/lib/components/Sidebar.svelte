@@ -1,7 +1,7 @@
 <script lang="ts">
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
-    import { user, logout } from "$lib/stores/auth";
+    import { user, logout, isAuthenticated } from "$lib/stores/auth";
 
     interface NavItem {
         label: string;
@@ -95,15 +95,16 @@
               : "Cliente";
 </script>
 
+{#if $isAuthenticated}
 <aside
     class="w-64 bg-[hsl(var(--bs-card))] flex-col hidden md:flex h-full flex-shrink-0"
 >
-    <div class="h-16 flex items-center px-6">
+    <a href="/" class="h-16 flex items-center px-6">
         <span class="material-icons text-brand-orange text-3xl mr-2">spa</span>
         <span class="font-bold text-xl tracking-tight text-brand-orange"
             >BellaVita</span
         >
-    </div>
+    </a>
 
     <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
         {#each items as item}
@@ -220,3 +221,4 @@
         </div>
     </div>
 </aside>
+{/if}

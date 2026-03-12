@@ -162,7 +162,7 @@
     <div class="flex h-screen overflow-hidden">
         <Sidebar />
         <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-            <DashboardNavbar />
+            <DashboardNavbar title="Catálogo de Serviços" />
             <div class="flex-1 overflow-y-auto p-6 md:p-8">
                 <div
                     class="relative rounded-2xl overflow-hidden bg-gradient-to-r from-orange-500 to-amber-600 dark:from-orange-600 dark:to-amber-800 shadow-lg mb-10 text-white"

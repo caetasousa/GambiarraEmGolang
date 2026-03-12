@@ -135,9 +135,9 @@
             <!-- Status Ativo: prestador e admin -->
             {#if isPrestadorOrAdmin}
                 <div class="col-span-1 md:col-span-2">
-                    <label
+                    <p
                         class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-                    >Status</label>
+                    >Status</p>
                     <span
                         class="inline-flex items-center gap-1.5 px-3 py-1 rounded-full text-sm font-medium {profile.ativo
                             ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400'
