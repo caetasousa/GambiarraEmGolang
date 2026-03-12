@@ -161,9 +161,27 @@ export const landingConfig = {
       rating: 5
     },
     {
-      text: "As unhas feitas pela Bia duram semanas. O cuidado com a biossegurança me impressionou.",
+      text: "As unhas feitas pela Bia duram semanas. O cuidado com a biosseguranca me impressionou.",
       author: "Juliana Costa",
       role: "Cliente Verificada",
+      rating: 5
+    },
+    {
+      text: "Fiz uma hidratacao profunda e meu cabelo nunca esteve tao saudavel. Recomendo demais!",
+      author: "Fernanda Almeida",
+      role: "Cliente Verificada",
+      rating: 5
+    },
+    {
+      text: "Ambiente acolhedor e equipe super atenciosa. Ja virei cliente fiel, nao troco por nada.",
+      author: "Camila Rocha",
+      role: "Cliente Verificada",
+      rating: 5
+    },
+    {
+      text: "Minha esposa me trouxe aqui e agora eu que marco os horarios. Servico de primeira qualidade!",
+      author: "Pedro Henrique",
+      role: "Cliente Verificado",
       rating: 5
     }
   ] as TestimonialData[],
@@ -200,12 +218,9 @@ export const landingConfig = {
       address: "Rua das Flores, 123",
       city: "São Paulo, SP",
       phone: "(11) 99999-9999",
-      email: "contato@bellasalon.com"
+      email: "contato@bellavita.com"
     },
-    bottomLinks: [
-      { label: "Privacidade", href: "#" },
-      { label: "Termos", href: "#" }
-    ],
-    copyright: "2024 BellaSalon. Crafted with Excellence."
+    bottomLinks: [],
+    copyright: "2024 BellaVita. Crafted with Excellence."
   } as FooterData
 };

@@ -55,7 +55,7 @@
         <!-- Buttons -->
         <div class="flex flex-col sm:flex-row gap-4 pt-4">
           <a
-            href="/#"
+            href="/listagem"
             class="inline-flex items-center justify-center gap-2 px-7 py-3.5 text-sm font-semibold rounded-full bg-orange-500 text-white shadow-md hover:scale-105 transition-all duration-300 hover:shadow-lg"
           >
             {data.primaryButtonText}

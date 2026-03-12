@@ -35,7 +35,7 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-12 max-w-6xl mx-auto">
       {#each specialists as specialist}
         <div
-          class="p-12 rounded-[3rem] bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 flex flex-col items-center text-center transition-all duration-300 hover:border-orange-500/30 hover:-translate-y-2 cursor-pointer relative overflow-hidden group shadow-lg dark:shadow-none"
+          class="p-12 rounded-[3rem] bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 flex flex-col items-center text-center relative overflow-hidden group shadow-lg dark:shadow-none"
         >
           <!-- Image wrapper -->
           <div class="relative mb-8">

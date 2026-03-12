@@ -14,7 +14,7 @@
             B
           </div>
           <span class="text-2xl font-black text-white uppercase italic tracking-tight font-serif-bs">
-            BellaSalon
+            BellaVita
           </span>
         </a>
         <p class="text-gray-400 text-lg leading-relaxed">

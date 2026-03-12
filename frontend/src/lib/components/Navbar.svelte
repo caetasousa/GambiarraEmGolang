@@ -2,10 +2,12 @@
   import { onMount } from "svelte";
   import Menu from 'lucide-svelte/icons/menu';
   import X from 'lucide-svelte/icons/x';
-  import Search from 'lucide-svelte/icons/search';
   import Sun from 'lucide-svelte/icons/sun';
   import Moon from 'lucide-svelte/icons/moon';
+  import LogOut from 'lucide-svelte/icons/log-out';
   import { theme } from '$lib/stores/theme';
+  import { isAuthenticated, user, logout } from '$lib/stores/auth';
+  import { goto } from '$app/navigation';
 
   let isMobileMenuOpen = false;
   let scrolled = false;
@@ -16,6 +18,20 @@
 
   function toggleTheme() {
     theme.update(t => t === 'dark' ? 'light' : 'dark');
+  }
+
+  function getPanelRoute(role: string | undefined): string {
+    switch (role) {
+      case 'admin': return '/prestadores/editar';
+      case 'prestador': return '/prestadores/agenda';
+      case 'cliente': return '/clientes/meus-agendamentos';
+      default: return '/login';
+    }
+  }
+
+  function handleLogout() {
+    logout();
+    goto('/login');
   }
 
   onMount(() => {
@@ -39,7 +55,7 @@
           B
         </div>
         <span class="text-base font-bold text-gray-900 dark:text-white font-sans-bs">
-          Bella<span class="text-orange-500">Salon</span>
+          Bella<span class="text-orange-500">Vita</span>
         </span>
       </a>
 
@@ -49,13 +65,13 @@
           href="#home"
           class="relative px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-orange-500 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300"
         >
-          Início
+          Inicio
         </a>
         <a
           href="#services"
           class="relative px-3 py-1.5 text-sm font-medium text-gray-600 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300 after:absolute after:bottom-0 after:left-0 after:right-0 after:h-0.5 after:bg-orange-500 after:scale-x-0 hover:after:scale-x-100 after:transition-transform after:duration-300"
         >
-          Serviços
+          Servicos
         </a>
         <a
           href="#specialists"
@@ -84,15 +100,38 @@
             <Moon class="w-4 h-4" />
           {/if}
         </button>
-        <button
-          class="w-9 h-9 rounded-full bg-gray-100/50 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200/50 dark:hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
-          aria-label="Search"
-        >
-          <Search class="w-4 h-4" />
-        </button>
-        <button class="px-5 py-2 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md hover:scale-105 hover:bg-orange-600 transition-all duration-300 hover:shadow-lg">
-          Agendar Agora
-        </button>
+
+        {#if $isAuthenticated}
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {$user?.nome}
+          </span>
+          <a
+            href={getPanelRoute($user?.role)}
+            class="px-5 py-2 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md hover:scale-105 hover:bg-orange-600 transition-all duration-300 hover:shadow-lg"
+          >
+            Meu Painel
+          </a>
+          <button
+            on:click={handleLogout}
+            class="w-9 h-9 rounded-full bg-gray-100/50 dark:bg-white/5 text-gray-600 dark:text-gray-400 hover:text-red-500 hover:bg-gray-200/50 dark:hover:bg-white/10 transition-all duration-300 flex items-center justify-center"
+            aria-label="Sair"
+          >
+            <LogOut class="w-4 h-4" />
+          </button>
+        {:else}
+          <a
+            href="/login"
+            class="px-4 py-2 rounded-full text-sm font-medium text-gray-700 dark:text-gray-300 hover:text-gray-900 dark:hover:text-white transition-colors duration-300"
+          >
+            Entrar
+          </a>
+          <a
+            href="/clientes/cadastro"
+            class="px-5 py-2 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md hover:scale-105 hover:bg-orange-600 transition-all duration-300 hover:shadow-lg"
+          >
+            Cadastre-se
+          </a>
+        {/if}
       </div>
 
       <!-- Mobile Actions -->
@@ -133,14 +172,14 @@
         on:click={() => isMobileMenuOpen = false}
         class="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-orange-500 py-2 border-b border-gray-200 dark:border-white/5 transition-colors duration-300"
       >
-        Início
+        Inicio
       </a>
       <a
         href="#services"
         on:click={() => isMobileMenuOpen = false}
         class="text-base font-medium text-gray-700 dark:text-gray-300 hover:text-orange-500 py-2 border-b border-gray-200 dark:border-white/5 transition-colors duration-300"
       >
-        Serviços
+        Servicos
       </a>
       <a
         href="#specialists"
@@ -156,9 +195,42 @@
       >
         Depoimentos
       </a>
-      <button class="w-full mt-4 px-6 py-2.5 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md">
-        Agendar Agora
-      </button>
+
+      {#if $isAuthenticated}
+        <div class="flex items-center gap-2 py-2 border-b border-gray-200 dark:border-white/5">
+          <span class="text-sm font-medium text-gray-700 dark:text-gray-300">
+            {$user?.nome}
+          </span>
+        </div>
+        <a
+          href={getPanelRoute($user?.role)}
+          on:click={() => isMobileMenuOpen = false}
+          class="w-full mt-2 px-6 py-2.5 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md text-center"
+        >
+          Meu Painel
+        </a>
+        <button
+          on:click={() => { isMobileMenuOpen = false; handleLogout(); }}
+          class="w-full px-6 py-2.5 rounded-full border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-semibold hover:text-red-500 transition-colors duration-300"
+        >
+          Sair
+        </button>
+      {:else}
+        <a
+          href="/login"
+          on:click={() => isMobileMenuOpen = false}
+          class="w-full mt-2 px-6 py-2.5 rounded-full border border-gray-300 dark:border-white/10 text-gray-700 dark:text-gray-300 text-sm font-semibold text-center"
+        >
+          Entrar
+        </a>
+        <a
+          href="/clientes/cadastro"
+          on:click={() => isMobileMenuOpen = false}
+          class="w-full px-6 py-2.5 rounded-full bg-orange-500 text-white text-sm font-semibold shadow-md text-center"
+        >
+          Cadastre-se
+        </a>
+      {/if}
     </div>
   {/if}
 </nav>

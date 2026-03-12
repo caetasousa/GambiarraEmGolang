@@ -4,6 +4,23 @@
   import type { TestimonialData } from '$lib/config/landingConfig';
 
   export let testimonials: TestimonialData[];
+
+  let currentPage = 0;
+  const itemsPerPage = 3;
+
+  $: totalPages = Math.ceil(testimonials.length / itemsPerPage);
+  $: visibleTestimonials = testimonials.slice(
+    currentPage * itemsPerPage,
+    (currentPage + 1) * itemsPerPage
+  );
+
+  function prevPage() {
+    currentPage = (currentPage - 1 + totalPages) % totalPages;
+  }
+
+  function nextPage() {
+    currentPage = (currentPage + 1) % totalPages;
+  }
 </script>
 
 <section id="testimonials" class="py-32 bg-gray-50 dark:bg-black">
@@ -21,18 +38,23 @@
           </span>
         </h2>
         <p class="text-gray-600 dark:text-gray-400 mt-8 text-xl leading-relaxed max-w-md">
-          A satisfação de quem confia em nossa arte é o nosso maior prêmio. Descubra por que somos referência em São Paulo.
+          A satisfacao de quem confia em nossa arte e o nosso maior premio. Descubra por que somos referencia em Sao Paulo.
         </p>
 
         <!-- Navigation buttons -->
-        <div class="flex gap-4 mt-12">
+        <div class="flex items-center gap-4 mt-12">
           <button
+            on:click={prevPage}
             class="p-4 rounded-full border border-gray-300 dark:border-white/10 bg-transparent text-gray-900 dark:text-white hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-300 active:scale-90"
             aria-label="Previous"
           >
             <ArrowRight class="w-5 h-5 rotate-180" />
           </button>
+          <span class="text-sm text-gray-500 dark:text-gray-400">
+            {currentPage + 1} / {totalPages}
+          </span>
           <button
+            on:click={nextPage}
             class="p-4 rounded-full border border-gray-300 dark:border-white/10 bg-transparent text-gray-900 dark:text-white hover:bg-orange-500 hover:text-white hover:border-orange-500 transition-all duration-300 active:scale-90"
             aria-label="Next"
           >
@@ -43,7 +65,7 @@
 
       <!-- Testimonials list -->
       <div class="flex flex-col gap-8">
-        {#each testimonials as testimonial}
+        {#each visibleTestimonials as testimonial}
           <div
             class="bg-white dark:bg-zinc-900/50 border border-gray-200 dark:border-zinc-800/50 p-12 rounded-[3rem] relative transition-all duration-300 hover:border-orange-500/30 group shadow-lg dark:shadow-none"
           >

@@ -28,7 +28,7 @@
 </script>
 
 <svelte:head>
-  <title>BellaSalon - Realce sua Beleza Natural</title>
+  <title>BellaVita - Realce sua Beleza Natural</title>
   <meta name="description" content="Descubra uma experiência única de cuidado pessoal. Do design de sobrancelhas a tratamentos capilares exclusivos com excelência e sofisticação." />
 </svelte:head>
 

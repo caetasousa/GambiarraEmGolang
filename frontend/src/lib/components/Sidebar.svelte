@@ -99,11 +99,13 @@
 <aside
     class="w-64 bg-[hsl(var(--bs-card))] flex-col hidden md:flex h-full flex-shrink-0"
 >
-    <a href="/" class="h-16 flex items-center px-6">
-        <span class="material-icons text-brand-orange text-3xl mr-2">spa</span>
-        <span class="font-bold text-xl tracking-tight text-brand-orange"
-            >BellaVita</span
-        >
+    <a href="/" class="h-16 flex items-center px-6 gap-2 group">
+        <div class="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-lg shadow-orange-500/25 transition-transform duration-300 group-hover:scale-105">
+            B
+        </div>
+        <span class="text-base font-bold text-gray-900 dark:text-white">
+            Bella<span class="text-orange-500">Vita</span>
+        </span>
     </a>
 
     <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
@@ -201,11 +203,11 @@
                 />
             {:else}
                 <div
-                    class="h-8 w-8 rounded-full bg-brand-orange/20 flex items-center justify-center"
+                    class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0"
                 >
-                    <span class="material-icons text-brand-orange text-sm"
-                        >person</span
-                    >
+                    <span class="text-white text-xs font-bold">
+                        {($user?.nome ?? "U").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                    </span>
                 </div>
             {/if}
             <div class="ml-3 min-w-0">
