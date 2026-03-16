@@ -2,6 +2,7 @@
     import { page } from "$app/stores";
     import { goto } from "$app/navigation";
     import { user, logout, isAuthenticated } from "$lib/stores/auth";
+    import { sidebarOpen, closeSidebar } from "$lib/stores/sidebar";
 
     interface NavItem {
         label: string;
@@ -87,6 +88,10 @@
         goto("/login");
     }
 
+    function closeMenu() {
+        closeSidebar();
+    }
+
     $: roleLabel =
         role === "admin"
             ? "Admin"
@@ -96,131 +101,148 @@
 </script>
 
 {#if $isAuthenticated}
-<aside
-    class="w-64 bg-[hsl(var(--bs-card))] flex-col hidden md:flex h-full flex-shrink-0"
->
-    <a href="/" class="h-16 flex items-center px-6 gap-2 group">
-        <div class="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-lg shadow-orange-500/25 transition-transform duration-300 group-hover:scale-105">
-            B
-        </div>
-        <span class="text-base font-bold text-gray-900 dark:text-white">
-            Bella<span class="text-orange-500">Vita</span>
-        </span>
-    </a>
+    <!-- Overlay mobile -->
+    {#if $sidebarOpen}
+        <div
+            class="fixed inset-0 bg-black/50 z-40 md:hidden"
+            on:click={closeMenu}
+            role="button"
+            tabindex="-1"
+            on:keydown={(e) => e.key === 'Escape' && closeMenu()}
+        ></div>
+    {/if}
 
-    <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
-        {#each items as item}
-            {#if item.category}
-                <div
-                    class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+    <!-- Sidebar -->
+    <aside
+        class="w-64 bg-[hsl(var(--bs-card))] flex-col h-full flex-shrink-0
+               md:flex
+               {$sidebarOpen ? 'flex fixed inset-y-0 left-0 z-50' : 'hidden'}"
+    >
+        <a href="/" class="h-16 flex items-center px-6 gap-2 group" on:click={closeMenu}>
+            <div class="w-9 h-9 bg-orange-500 rounded-xl flex items-center justify-center text-white font-bold text-base shadow-lg shadow-orange-500/25 transition-transform duration-300 group-hover:scale-105">
+                B
+            </div>
+            <span class="text-base font-bold text-gray-900 dark:text-white">
+                Bella<span class="text-orange-500">Vita</span>
+            </span>
+        </a>
+
+        <nav class="flex-1 overflow-y-auto py-4 px-3 space-y-1">
+            {#each items as item}
+                {#if item.category}
+                    <div
+                        class="pt-4 pb-2 px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider"
+                    >
+                        {item.category}
+                    </div>
+                {/if}
+                <a
+                    class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 {isActive(
+                        item.href,
+                    )
+                        ? 'bg-brand-orange/10 text-brand-orange'
+                        : 'text-gray-700 dark:text-gray-300 hover:bg-brand-orange/10 hover:text-brand-orange'}"
+                    href={item.href}
+                    on:click={closeMenu}
                 >
-                    {item.category}
-                </div>
-            {/if}
+                    <span
+                        class="material-symbols-outlined mr-3 {isActive(item.href)
+                            ? 'text-brand-orange'
+                            : 'text-gray-400 group-hover:text-brand-orange transition-colors'}"
+                    >
+                        {item.icon}
+                    </span>
+                    {item.label}
+                </a>
+            {/each}
+        </nav>
+
+        <div
+            class="border-t border-border-light dark:border-border-dark p-4 space-y-1"
+        >
+            <h3
+                class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
+            >
+                Conta
+            </h3>
             <a
                 class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 {isActive(
-                    item.href,
+                    '/perfil/meus-dados',
                 )
                     ? 'bg-brand-orange/10 text-brand-orange'
                     : 'text-gray-700 dark:text-gray-300 hover:bg-brand-orange/10 hover:text-brand-orange'}"
-                href={item.href}
+                href="/perfil/meus-dados"
+                on:click={closeMenu}
             >
                 <span
-                    class="material-symbols-outlined mr-3 {isActive(item.href)
+                    class="material-symbols-outlined mr-3 {isActive(
+                        '/perfil/meus-dados',
+                    )
                         ? 'text-brand-orange'
                         : 'text-gray-400 group-hover:text-brand-orange transition-colors'}"
+                    >person</span
                 >
-                    {item.icon}
-                </span>
-                {item.label}
+                Meus Dados
             </a>
-        {/each}
-    </nav>
-
-    <div
-        class="border-t border-border-light dark:border-border-dark p-4 space-y-1"
-    >
-        <h3
-            class="px-3 text-xs font-semibold text-gray-500 uppercase tracking-wider mb-2"
-        >
-            Conta
-        </h3>
-        <a
-            class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 {isActive(
-                '/perfil/meus-dados',
-            )
-                ? 'bg-brand-orange/10 text-brand-orange'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-brand-orange/10 hover:text-brand-orange'}"
-            href="/perfil/meus-dados"
-        >
-            <span
-                class="material-symbols-outlined mr-3 {isActive(
-                    '/perfil/meus-dados',
+            {#if role !== 'cliente'}
+            <a
+                class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 {isActive(
+                    '/perfil',
                 )
-                    ? 'text-brand-orange'
-                    : 'text-gray-400 group-hover:text-brand-orange transition-colors'}"
-                >person</span
+                    ? 'bg-brand-orange/10 text-brand-orange'
+                    : 'text-gray-700 dark:text-gray-300 hover:bg-brand-orange/10 hover:text-brand-orange'}"
+                href="/perfil"
+                on:click={closeMenu}
             >
-            Meus Dados
-        </a>
-        {#if role !== 'cliente'}
-        <a
-            class="group flex items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 {isActive(
-                '/perfil',
-            )
-                ? 'bg-brand-orange/10 text-brand-orange'
-                : 'text-gray-700 dark:text-gray-300 hover:bg-brand-orange/10 hover:text-brand-orange'}"
-            href="/perfil"
-        >
-            <span
-                class="material-symbols-outlined mr-3 {isActive('/perfil')
-                    ? 'text-brand-orange'
-                    : 'text-gray-400 group-hover:text-brand-orange transition-colors'}"
-                >edit_calendar</span
-            >
-            Agenda Diária
-        </a>
-        {/if}
-        <button
-            on:click={handleLogout}
-            class="group flex w-full items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
-        >
-            <span
-                class="material-symbols-outlined mr-3 text-gray-400 group-hover:text-red-500 transition-colors"
-                >logout</span
-            >
-            Sair
-        </button>
-    </div>
-
-    <div class="border-t border-border-light dark:border-border-dark p-4">
-        <div class="flex items-center">
-            {#if $user?.image_url}
-                <img
-                    alt="User avatar"
-                    class="h-8 w-8 rounded-full object-cover"
-                    src={$user.image_url}
-                />
-            {:else}
-                <div
-                    class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0"
+                <span
+                    class="material-symbols-outlined mr-3 {isActive('/perfil')
+                        ? 'text-brand-orange'
+                        : 'text-gray-400 group-hover:text-brand-orange transition-colors'}"
+                    >edit_calendar</span
                 >
-                    <span class="text-white text-xs font-bold">
-                        {($user?.nome ?? "U").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
-                    </span>
-                </div>
+                Agenda Diária
+            </a>
             {/if}
-            <div class="ml-3 min-w-0">
-                <p
-                    class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
+            <button
+                on:click={handleLogout}
+                class="group flex w-full items-center px-3 py-2 text-sm font-medium rounded-md transition-all duration-200 text-gray-700 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400"
+            >
+                <span
+                    class="material-symbols-outlined mr-3 text-gray-400 group-hover:text-red-500 transition-colors"
+                    >logout</span
                 >
-                    {$user?.nome ?? "Usuário"}
-                </p>
-                <p class="text-xs text-gray-500 dark:text-gray-400">
-                    {roleLabel}
-                </p>
+                Sair
+            </button>
+        </div>
+
+        <div class="border-t border-border-light dark:border-border-dark p-4">
+            <div class="flex items-center">
+                {#if $user?.image_url}
+                    <img
+                        alt="User avatar"
+                        class="h-8 w-8 rounded-full object-cover"
+                        src={$user.image_url}
+                    />
+                {:else}
+                    <div
+                        class="h-8 w-8 rounded-full bg-orange-500 flex items-center justify-center flex-shrink-0"
+                    >
+                        <span class="text-white text-xs font-bold">
+                            {($user?.nome ?? "U").split(" ").map((n: string) => n[0]).slice(0, 2).join("").toUpperCase()}
+                        </span>
+                    </div>
+                {/if}
+                <div class="ml-3 min-w-0">
+                    <p
+                        class="text-sm font-medium text-gray-700 dark:text-gray-200 truncate"
+                    >
+                        {$user?.nome ?? "Usuário"}
+                    </p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">
+                        {roleLabel}
+                    </p>
+                </div>
             </div>
         </div>
-    </div>
-</aside>
+    </aside>
 {/if}
