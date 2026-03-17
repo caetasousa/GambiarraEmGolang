@@ -2,31 +2,32 @@
 @tailwind components;
 @tailwind utilities;
 
-/* BellaSalon Variables */
+/* BellaVita Design System Variables */
 @layer base {
   :root {
     /* Fontes */
-    --font-sans: 'Manrope', 'Inter', sans-serif;
-    --font-serif: 'Playfair Display', serif;
+    --font-sans: 'Montserrat', 'Manrope', 'Inter', sans-serif;
+    --font-serif: 'Cormorant', 'Playfair Display', serif;
 
     /* Light theme colors (HSL format) */
     --bs-background: 0 0% 100%;
-    --bs-foreground: 240 10% 3.9%;
+    --bs-foreground: 215 28% 17%;       /* #1E293B slate-800 */
     --bs-card: 0 0% 100%;
-    --bs-card-foreground: 240 10% 3.9%;
-    --bs-primary: 28 90% 55%;
+    --bs-card-foreground: 215 28% 17%;
+    --bs-primary: 25 95% 53%;           /* #F97316 orange-500 */
     --bs-primary-foreground: 0 0% 98%;
     --bs-secondary: 240 4.8% 95.9%;
     --bs-secondary-foreground: 240 5.9% 10%;
-    --bs-muted: 240 4.8% 95.9%;
+    --bs-muted: 270 20% 96%;            /* #F1EEF5 lavender muted */
     --bs-muted-foreground: 240 3.8% 46.1%;
-    --bs-accent: 240 4.8% 95.9%;
-    --bs-accent-foreground: 240 5.9% 10%;
+    --bs-accent: 262 83% 58%;           /* #8B5CF6 violet-500 */
+    --bs-accent-foreground: 0 0% 98%;
     --bs-destructive: 0 84.2% 60.2%;
     --bs-destructive-foreground: 0 0% 98%;
-    --bs-border: 240 5.9% 90%;
+    --bs-border: 330 100% 90%;          /* #FBCFE8 pink-200 */
     --bs-input: 240 5.9% 90%;
-    --bs-ring: 28 90% 55%;
+    --bs-ring: 25 95% 53%;
+    --bs-landing-bg: 327 78% 97%;       /* #FDF2F8 soft pink-white */
   }
 
   .dark {
@@ -35,23 +36,33 @@
     --bs-foreground: 0 0% 98%;
     --bs-card: 240 10% 4%;
     --bs-card-foreground: 0 0% 98%;
-    --bs-primary: 28 90% 55%;
+    --bs-primary: 25 95% 53%;
     --bs-primary-foreground: 240 5.9% 10%;
     --bs-secondary: 240 3.7% 15.9%;
     --bs-secondary-foreground: 0 0% 98%;
     --bs-muted: 240 3.7% 15.9%;
     --bs-muted-foreground: 240 5% 64.9%;
-    --bs-accent: 240 3.7% 15.9%;
+    --bs-accent: 262 83% 58%;
     --bs-accent-foreground: 0 0% 98%;
     --bs-destructive: 0 62.8% 30.6%;
     --bs-destructive-foreground: 0 0% 98%;
     --bs-border: 240 3.7% 15.9%;
     --bs-input: 240 3.7% 15.9%;
-    --bs-ring: 28 90% 55%;
+    --bs-ring: 25 95% 53%;
+    --bs-landing-bg: 240 10% 4%;
+  }
+
+  /* Default font setup */
+  html {
+    font-family: 'Montserrat', 'Manrope', 'Inter', sans-serif;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Cormorant', 'Playfair Display', serif;
   }
 }
 
-/* BellaSalon Animations */
+/* BellaVita Animations */
 @keyframes fadeInUp {
   from {
     opacity: 0;
@@ -61,6 +72,28 @@
     opacity: 1;
     transform: translateY(0);
   }
+}
+
+@keyframes fadeInUpFast {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes floatBlob {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  33% { transform: translate(30px, -20px) scale(1.05); }
+  66% { transform: translate(-20px, 15px) scale(0.97); }
+}
+
+@keyframes shimmer {
+  0% { background-position: -200% center; }
+  100% { background-position: 200% center; }
 }
 
 @keyframes fadeInScale {
@@ -94,10 +127,34 @@
   }
 }
 
-/* BellaSalon Utility Classes */
+/* BellaVita Utility Classes */
 @layer utilities {
   .fade-in-up {
     animation: fadeInUp 0.8s ease-out forwards;
+  }
+
+  .animate-fade-in-up {
+    animation: fadeInUpFast 0.6s ease-out forwards;
+  }
+
+  .animate-fade-in-up-1 {
+    animation: fadeInUpFast 0.6s ease-out 0.1s both;
+  }
+
+  .animate-fade-in-up-2 {
+    animation: fadeInUpFast 0.6s ease-out 0.2s both;
+  }
+
+  .animate-fade-in-up-3 {
+    animation: fadeInUpFast 0.6s ease-out 0.3s both;
+  }
+
+  .animate-fade-in-up-4 {
+    animation: fadeInUpFast 0.6s ease-out 0.4s both;
+  }
+
+  .animate-fade-in-up-5 {
+    animation: fadeInUpFast 0.6s ease-out 0.5s both;
   }
 
   .fade-in-scale {
@@ -110,6 +167,10 @@
 
   .animate-slide-down {
     animation: slideDown 0.3s ease-out;
+  }
+
+  .animate-float-blob {
+    animation: floatBlob 8s ease-in-out infinite;
   }
 
   .glass-card {
@@ -125,7 +186,14 @@
   }
 
   .text-gradient-primary {
-    background: linear-gradient(to right, hsl(var(--bs-primary)), hsl(28, 90%, 60%));
+    background: linear-gradient(135deg, hsl(var(--bs-primary)), hsl(340, 82%, 60%));
+    -webkit-background-clip: text;
+    background-clip: text;
+    -webkit-text-fill-color: transparent;
+  }
+
+  .text-gradient-warm {
+    background: linear-gradient(135deg, #F97316, #EC4899);
     -webkit-background-clip: text;
     background-clip: text;
     -webkit-text-fill-color: transparent;
@@ -137,6 +205,26 @@
 
   .font-serif-bs {
     font-family: var(--font-serif);
+  }
+
+  .card-hover-lift {
+    transition: transform 0.25s ease-out, box-shadow 0.25s ease-out;
+  }
+
+  .card-hover-lift:hover {
+    transform: translateY(-6px);
+    box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.15);
+  }
+
+  .btn-gradient-orange {
+    background: linear-gradient(135deg, #F97316, #EA6B0A);
+    transition: transform 0.2s ease-out, box-shadow 0.2s ease-out, filter 0.2s ease-out;
+  }
+
+  .btn-gradient-orange:hover {
+    transform: translateY(-2px) scale(1.02);
+    box-shadow: 0 10px 30px rgba(249, 115, 22, 0.4);
+    filter: brightness(1.05);
   }
 }
 

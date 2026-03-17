@@ -27,7 +27,9 @@ export default {
       fontFamily: {
         display: "Spline Sans",
         sans: ["Poppins", "sans-serif"],
-        body: ["Inter", "sans-serif"]
+        body: ["Inter", "sans-serif"],
+        cormorant: ["Cormorant", "Playfair Display", "serif"],
+        montserrat: ["Montserrat", "Manrope", "sans-serif"]
       },
       borderRadius: {
         DEFAULT: "0.25rem",

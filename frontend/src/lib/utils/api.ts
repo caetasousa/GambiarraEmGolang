@@ -1,4 +1,6 @@
-import { getToken } from '$lib/stores/auth';
+import { getToken } from '$lib/stores/auth.svelte';
+
+export const API_BASE = '/api/v1';
 
 export async function fetchApi(url: string, options: RequestInit = {}): Promise<Response> {
     const token = getToken();
