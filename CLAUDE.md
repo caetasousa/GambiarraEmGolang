@@ -126,6 +126,16 @@ Sempre que qualquer arquivo em `backend/internal/`, `backend/cmd/` for modificad
 - **Nunca executar `git push` sem pedir permissão explícita ao usuário antes**
 - Commits locais podem ser criados normalmente quando solicitado
 - Sempre confirmar com o usuário antes de enviar qualquer coisa ao repositório remoto
+- **Commits granulares**: fazer commits pequenos e frequentes **durante** o desenvolvimento, um para cada mudança lógica (ex: nova feature, fix de bug, refactor). Não acumular múltiplas alterações para commitar tudo de uma vez no final
+
+## Relatório de progresso
+Antes de cada commit, gerar um relatório resumido de tudo que foi feito desde o último `git pull` (ou desde o início do branch). O relatório deve conter:
+1. **Lista de commits** desde o último pull (hash curto, data, mensagem)
+2. **Resumo por área** (backend, frontend, infra, docs) com o que foi adicionado/modificado
+3. **Alterações pendentes** (não commitadas) — arquivos modificados e novos
+4. **Status geral** — visão de alto nível do progresso do projeto
+
+Exibir o relatório ao usuário sempre que solicitado ou antes de commits importantes.
 
 ## Variáveis de ambiente (`.env`)
 - Nunca editar ou commitar o `.env` diretamente
