@@ -5,38 +5,38 @@
     import { onMount } from "svelte";
     import { page } from "$app/stores";
     import { fetchApi } from "$lib/utils/api";
-    import { user } from "$lib/stores/auth";
+    import { auth } from "$lib/stores/auth.svelte";
 
     // --- Configuração ---
-    $: CLIENTE_ID = $user?.id ?? "";
+    let CLIENTE_ID = $derived(auth.user?.id ?? "");
 
     // --- Estado ---
-    let professionals: any[] = [];
-    let services: any[] = [];
-    let selectedProfessional: any = null;
-    let selectedService: any = null; // Serviço principal selecionado (hardcoded first for now if list loaded)
+    let professionals = $state<any[]>([]);
+    let services = $state<any[]>([]);
+    let selectedProfessional = $state<any>(null);
+    let selectedService = $state<any>(null);
 
-    let preSelectedServiceId: string | null = null;
-    let fetchedAppointments: any[] = []; // Store explicitly fetched appointments
-    let fetchedClientAppointments: any[] = []; // Store client's existing appointments
+    let preSelectedServiceId = $state<string | null>(null);
+    let fetchedAppointments = $state<any[]>([]);
+    let fetchedClientAppointments = $state<any[]>([]);
 
     // Estado do Formulário
-    let loading = true;
-    let loadingProfessionals = false;
-    let submitting = false;
-    let error = "";
-    let successMessage = "";
-    let showSuccessModal = false;
+    let loading = $state(true);
+    let loadingProfessionals = $state(false);
+    let submitting = $state(false);
+    let error = $state("");
+    let successMessage = $state("");
+    let showSuccessModal = $state(false);
 
     // Estado do Modal de Erro
-    let showErrorModal = false;
-    let errorTitle = "";
-    let errorMessage = "";
+    let showErrorModal = $state(false);
+    let errorTitle = $state("");
+    let errorMessage = $state("");
 
     // Addons State
-    let selectedAddonIds: string[] = [];
+    let selectedAddonIds = $state<string[]>([]);
 
-    $: availableAddons = (() => {
+    let availableAddons = $derived((() => {
         if (!selectedProfessional || !selectedService) return [];
         const catalog =
             selectedProfessional.Catalogo ||
@@ -45,7 +45,7 @@
         const targetId = selectedService.ID || selectedService.id;
 
         return catalog.filter((s: any) => (s.ID || s.id) !== targetId);
-    })();
+    })());
 
     function toggleAddon(addon: any) {
         const id = addon.ID || addon.id;
@@ -54,6 +54,7 @@
         } else {
             selectedAddonIds = [...selectedAddonIds, id];
         }
+        generateSlots();
     }
 
     // Dynamic Slots
@@ -61,13 +62,45 @@
         time: string;
         disabled: boolean;
     }
-    let morningSlots: Slot[] = [];
-    let afternoonSlots: Slot[] = [];
-    let eveningSlots: Slot[] = [];
-    let selectedSlot = "";
+    let morningSlots = $state<Slot[]>([]);
+    let afternoonSlots = $state<Slot[]>([]);
+    let eveningSlots = $state<Slot[]>([]);
+    let selectedSlot = $state<string | null>(null);
 
-    // --- State for theme ---
-    let isDark = false;
+    // --- Indicador de dias com agendamento no mês ---
+    let monthAppointmentDays = $state<Set<string>>(new Set());
+
+    async function fetchMonthAppointments() {
+        if (!CLIENTE_ID) return;
+        const startDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-01`;
+        const lastDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+        const endDate = `${currentYear}-${String(currentMonth + 1).padStart(2, "0")}-${String(lastDay).padStart(2, "0")}`;
+        try {
+            const res = await fetchApi(
+                `/api/v1/agendamentos/cliente/${CLIENTE_ID}/periodo?data_inicio=${startDate}&data_fim=${endDate}&limit=100`,
+            );
+            if (res.ok) {
+                const json = await res.json();
+                const items: any[] = json.data ?? [];
+                const days = new Set<string>();
+                items.forEach((apt: any) => {
+                    const s = apt.status;
+                    if (s === 3 || s === "cancelado") return;
+                    const dateStr = (apt.data_inicio || "").substring(0, 10);
+                    if (dateStr) days.add(dateStr);
+                });
+                monthAppointmentDays = days;
+            }
+        } catch (e) {
+            console.error("Erro ao buscar agendamentos do mês:", e);
+        }
+    }
+
+    function dayHasAppointment(day: number): boolean {
+        const month = String(currentMonth + 1).padStart(2, "0");
+        const dayStr = String(day).padStart(2, "0");
+        return monthAppointmentDays.has(`${currentYear}-${month}-${dayStr}`);
+    }
 
     // --- Calendar Logic ---
     const monthNames = [
@@ -85,9 +118,9 @@
         "Dezembro",
     ];
     const today = new Date();
-    let currentMonth = today.getMonth();
-    let currentYear = today.getFullYear();
-    let selectedDay: number | null = null;
+    let currentMonth = $state(today.getMonth());
+    let currentYear = $state(today.getFullYear());
+    let selectedDay = $state<number | null>(null);
 
     function getDaysInMonth(month: number, year: number) {
         return new Date(year, month + 1, 0).getDate();
@@ -97,13 +130,13 @@
         return new Date(year, month, 1).getDay();
     }
 
-    $: daysInCurrentMonth = getDaysInMonth(currentMonth, currentYear);
-    $: firstDayOfWeek = getFirstDayOfMonth(currentMonth, currentYear);
+    let daysInCurrentMonth = $derived(getDaysInMonth(currentMonth, currentYear));
+    let firstDayOfWeek = $derived(getFirstDayOfMonth(currentMonth, currentYear));
 
-    $: calendarDays = [
+    let calendarDays = $derived([
         ...Array(firstDayOfWeek).fill(null),
         ...Array.from({ length: daysInCurrentMonth }, (_, i) => i + 1),
-    ];
+    ]);
 
     function changeMonth(step: number) {
         currentMonth += step;
@@ -114,24 +147,43 @@
             currentMonth = 11;
             currentYear--;
         }
+        selectedDay = null;
+        selectedSlot = null;
+        morningSlots = []; afternoonSlots = []; eveningSlots = [];
+        fetchMonthAppointments();
     }
+
+    let dayRequestId = 0;
 
     async function selectDay(day: number) {
         if (!day) return;
         const date = new Date(currentYear, currentMonth, day);
         const now = new Date();
         now.setHours(0, 0, 0, 0);
+        if (date < now) return;
 
-        if (date < now) return; // Prevent selecting past days
+        const thisRequest = ++dayRequestId;
         selectedDay = day;
+        selectedSlot = null;
+        morningSlots = []; afternoonSlots = []; eveningSlots = [];
 
-        // Format date as YYYY-MM-DD
         const month = String(currentMonth + 1).padStart(2, "0");
         const dayStr = String(day).padStart(2, "0");
         const dateIso = `${currentYear}-${month}-${dayStr}`;
 
         await fetchAvailableProfessionals(dateIso);
-        error = ""; // Clear errors when changing day
+        if (thisRequest !== dayRequestId) return;
+
+        if (selectedProfessional) {
+            const profId = selectedProfessional.id || selectedProfessional.ID;
+            await Promise.all([
+                fetchProviderAppointments(profId, dateIso),
+                fetchClientAppointments(dateIso),
+            ]);
+        }
+        if (thisRequest !== dayRequestId) return;
+
+        error = "";
         generateSlots();
     }
 
@@ -147,7 +199,23 @@
         return `${String(hh).padStart(2, "0")}:${String(mm).padStart(2, "0")}`;
     }
 
-    $: totalDuration = (() => {
+    // Extrai minutos do dia de uma string ISO ou datetime sem conversão de timezone
+    // Ex: "2026-03-17T08:00:00Z" → 480, "2026-03-17 14:30:00" → 870
+    function extractMinutesFromDateStr(str: string): number {
+        if (!str) return -1;
+        let timePart = "";
+        if (str.includes("T")) {
+            timePart = str.split("T")[1] || "";
+        } else if (str.includes(" ")) {
+            timePart = str.split(" ")[1] || "";
+        }
+        if (!timePart) return -1;
+        const [hh, mm] = timePart.split(":").map(Number);
+        if (isNaN(hh) || isNaN(mm)) return -1;
+        return hh * 60 + mm;
+    }
+
+    let totalDuration = $derived((() => {
         if (!selectedService) return 60;
         let duration =
             selectedService.DuracaoPadrao ||
@@ -164,16 +232,15 @@
         });
 
         return duration;
-    })();
+    })());
 
     function generateSlots() {
-        // Save current slot to try and keep it if still valid
         const oldSlot = selectedSlot;
 
         morningSlots = [];
         afternoonSlots = [];
         eveningSlots = [];
-        selectedSlot = "";
+        selectedSlot = null;
 
         if (!selectedProfessional || !selectedService || !selectedDay) return;
 
@@ -203,99 +270,47 @@
             let current = start;
             while (current + duracao <= end) {
                 allSlots.push(minutesToTime(current));
-                // We increment by a fixed step (e.g. 15 min) to allow starting at various points
                 current += 15;
             }
         });
 
-        // Filter valid appointments for the current day
+        const getStartStr = (ap: any) =>
+            ap.data_inicio || ap.DataInicio || ap.start_time || ap.StartTime || "";
+
         const dayProviderAppointments = fetchedAppointments.filter(
-            (ap: any) => {
-                const dataInicio =
-                    ap.data_inicio ||
-                    ap.DataInicio ||
-                    ap.start_time ||
-                    ap.StartTime ||
-                    "";
-                return dataInicio.startsWith(dateStr);
-            },
+            (ap: any) => getStartStr(ap).startsWith(dateStr),
         );
-
         const dayClientAppointments = fetchedClientAppointments.filter(
-            (ap: any) => {
-                const dataInicio =
-                    ap.data_inicio ||
-                    ap.DataInicio ||
-                    ap.start_time ||
-                    ap.StartTime ||
-                    "";
-                return dataInicio.startsWith(dateStr);
-            },
+            (ap: any) => getStartStr(ap).startsWith(dateStr),
         );
 
-        // Combine all appointments that effectively block the slot
-        // 1. Appointments of the provider (he is busy)
-        // 2. Appointments of the client (he is busy)
-        // Cancelled appointments (status 3) do not block slots
-        const notCancelled = (ap: any) => (ap.status ?? ap.Status) !== 3;
+        const notCancelled = (ap: any) => {
+            const s = ap.status ?? ap.Status;
+            return s !== 3 && s !== 'cancelado' && s !== 'Cancelado';
+        };
         const allBlockers = [
             ...dayProviderAppointments.filter(notCancelled),
             ...dayClientAppointments.filter(notCancelled),
         ];
 
-        // Distribute slots with overlap check
         allSlots.forEach((slot) => {
             const slotStart = timeToMinutes(slot);
             const slotEnd = slotStart + duracao;
 
-            // Check overlap with existing appointments (provider's OR client's)
             const hasOverlap = allBlockers.some((ap: any) => {
                 let apStartMinutes = -1;
-                let apDuracaoMinutes = 60;
+                let apEndMinutes = -1;
 
-                // 1. Tentar extrair Duração
-                apDuracaoMinutes = Number(
-                    ap.Duracao ||
-                        ap.duracao ||
-                        ap.DuracaoMinutos ||
-                        ap.duracao_minutos ||
-                        ap.servico?.DuracaoPadrao ||
-                        ap.servico?.duracao_padrao ||
-                        ap.Servico?.DuracaoPadrao ||
-                        ap.servico?.duracao ||
-                        ap.Servico?.Duracao ||
-                        60,
-                );
+                const startStr = getStartStr(ap);
+                const endStr =
+                    ap.data_fim || ap.DataFim || ap.end_time || ap.EndTime || "";
 
-                // 2. Parse Start Time
-                const startStr =
-                    ap.data_inicio ||
-                    ap.DataInicio ||
-                    ap.start_time ||
-                    ap.StartTime ||
-                    "";
+                // Extrair HH:MM diretamente da string ISO (sem conversão de timezone)
+                apStartMinutes = extractMinutesFromDateStr(startStr);
+                apEndMinutes = extractMinutesFromDateStr(endStr);
 
-                if (startStr) {
-                    if (startStr.includes("T")) {
-                        // ISO format: YYYY-MM-DDTHH:MM:SS
-                        const timePart = startStr.split("T")[1]; // HH:MM:SS...
-                        if (timePart) {
-                            const [hh, mm] = timePart.split(":").map(Number);
-                            apStartMinutes = hh * 60 + mm;
-                        }
-                    } else if (startStr.includes(" ")) {
-                        // "YYYY-MM-DD HH:MM"
-                        const timePart = startStr.split(" ")[1];
-                        if (timePart) {
-                            const [hh, mm] = timePart.split(":").map(Number);
-                            apStartMinutes = hh * 60 + mm;
-                        }
-                    }
-                }
-
-                // Keep backward compatibility/Fallback if new parsing failed
+                // Fallback: campo isolado de hora
                 if (apStartMinutes === -1) {
-                    // Try old logic
                     const isolatedTime =
                         ap.HoraInicio || ap.hora_inicio || ap.Hora || ap.hora;
                     if (isolatedTime) {
@@ -305,8 +320,23 @@
 
                 if (apStartMinutes === -1) return false;
 
-                const apEnd = apStartMinutes + apDuracaoMinutes;
-                return slotStart < apEnd && slotEnd > apStartMinutes;
+                // Se não temos data_fim, calcular a partir da duração do serviço
+                if (apEndMinutes === -1) {
+                    const apDuracaoMinutes = Number(
+                        ap.servico?.duracao ||
+                            ap.servico?.DuracaoPadrao ||
+                            ap.servico?.duracao_padrao ||
+                            ap.Servico?.Duracao ||
+                            ap.Servico?.DuracaoPadrao ||
+                            ap.Duracao ||
+                            ap.duracao ||
+                            ap.duracao_minutos ||
+                            60,
+                    );
+                    apEndMinutes = apStartMinutes + apDuracaoMinutes;
+                }
+
+                return slotStart < apEndMinutes && slotEnd > apStartMinutes;
             });
 
             const hour = parseInt(slot.split(":")[0]);
@@ -319,7 +349,6 @@
             }
         });
 
-        // If old slot is still available and NOT disabled, restore it
         if (
             oldSlot &&
             [...morningSlots, ...afternoonSlots, ...eveningSlots].some(
@@ -328,7 +357,6 @@
         ) {
             selectedSlot = oldSlot;
         } else {
-            // Auto-select first available
             const allAvailable = [
                 ...morningSlots,
                 ...afternoonSlots,
@@ -345,10 +373,7 @@
         eveningSlots = eveningSlots;
     }
 
-    // Re-generate slots when professional, service or addons change
-    $: if (selectedProfessional || selectedService || selectedAddonIds) {
-        generateSlots();
-    }
+    // generateSlots() é chamado manualmente nos handlers: selectDay, selectProfessional, toggleAddon
 
     function isPastAndNotToday(day: number) {
         if (!day) return false;
@@ -356,6 +381,16 @@
         const now = new Date();
         now.setHours(0, 0, 0, 0);
         return date < now;
+    }
+
+    function dayHasAgenda(day: number): boolean {
+        if (!selectedProfessional) return false;
+        const agenda = selectedProfessional.Agenda || selectedProfessional.agenda;
+        if (!agenda) return false;
+        const month = String(currentMonth + 1).padStart(2, "0");
+        const dayStr = String(day).padStart(2, "0");
+        const dateStr = `${currentYear}-${month}-${dayStr}`;
+        return agenda.some((a: any) => (a.Data || a.data) === dateStr);
     }
 
     async function fetchAvailableProfessionals(dateIso: string) {
@@ -368,19 +403,15 @@
                 const data = await resp.json();
                 let allFromDate = data.data || [];
 
-                // Filter by selected service (client-side filter)
                 if (selectedService) {
                     const targetId = selectedService.id || selectedService.ID;
                     professionals = allFromDate.filter((p: any) => {
                         const catalogo = p.Catalogo || p.catalogo || p.catalog;
-                        // If no catalog info, we might want to show them anyway if they are in 'disponiveis'
-                        // but to be safe with the user's requirements of "listing correctly",
-                        // we should check if the service is indeed there if the info exists.
                         if (!catalogo || !Array.isArray(catalogo)) {
                             console.warn(
                                 `Prestador ${p.id || p.ID} sem catálogo na resposta de disponíveis`,
                             );
-                            return true; // Fallback: show if no catalog info to avoid empty list
+                            return true;
                         }
 
                         return catalogo.some(
@@ -393,27 +424,8 @@
                 }
 
                 if (professionals.length > 0) {
-                    // Try to preserve Agendamentos if we are re-selecting the same professional or if the new object lacks them
-                    const newProf = professionals[0];
-                    if (
-                        selectedProfessional &&
-                        (selectedProfessional.id || selectedProfessional.ID) ===
-                            (newProf.id || newProf.ID)
-                    ) {
-                        const oldAgendamentos =
-                            selectedProfessional.Agendamentos ||
-                            selectedProfessional.agendamentos;
-                        if (oldAgendamentos && oldAgendamentos.length > 0) {
-                            if (
-                                !newProf.Agendamentos &&
-                                !newProf.agendamentos
-                            ) {
-                                newProf.Agendamentos = oldAgendamentos;
-                            }
-                        }
-                    }
-                    selectedProfessional = newProf;
-                    error = ""; // Clear errors when changing context
+                    selectedProfessional = professionals[0];
+                    error = "";
                 } else {
                     selectedProfessional = null;
                 }
@@ -444,7 +456,6 @@
 
     async function fetchClientAppointments(dateStr: string) {
         try {
-            // Fetch using the current CLIENTE_ID
             const res = await fetchApi(
                 `/api/v1/agendamentos/cliente/${CLIENTE_ID}?data=${dateStr}`,
             );
@@ -460,37 +471,14 @@
         }
     }
 
-    // Trigger fetches when dependencies change
-    $: if (selectedDay !== null) {
-        const month = String(currentMonth + 1).padStart(2, "0");
-        const dayStr = String(selectedDay).padStart(2, "0");
-        const dateStr = `${currentYear}-${month}-${dayStr}`;
-
-        // Always fetch client appointments for the selected date
-        fetchClientAppointments(dateStr);
-
-        // If professional is selected, fetch their appointments too
-        if (selectedProfessional) {
-            const profId = selectedProfessional.id || selectedProfessional.ID;
-            fetchProviderAppointments(profId, dateStr);
-        }
-    } else if (selectedProfessional && selectedDay !== null) {
-        // Redundant but keeps the reactivity safe if only professional changes while day is selected
-        const month = String(currentMonth + 1).padStart(2, "0");
-        const dayStr = String(selectedDay).padStart(2, "0");
-        const dateStr = `${currentYear}-${month}-${dayStr}`;
-        const profId = selectedProfessional.id || selectedProfessional.ID;
-        fetchProviderAppointments(profId, dateStr);
-    }
-
-    // Regenerate slots when data is ready
-    $: if (
-        fetchedAppointments ||
-        fetchedClientAppointments ||
-        selectedService ||
-        selectedAddonIds
-    ) {
-        if (selectedProfessional && selectedDay) {
+    async function handleProfessionalChange(prof: any) {
+        selectedProfessional = prof;
+        if (selectedDay) {
+            const month = String(currentMonth + 1).padStart(2, "0");
+            const dayStr = String(selectedDay).padStart(2, "0");
+            const dateIso = `${currentYear}-${month}-${dayStr}`;
+            const profId = prof.id || prof.ID;
+            await fetchProviderAppointments(profId, dateIso);
             generateSlots();
         }
     }
@@ -502,18 +490,16 @@
         try {
             preSelectedServiceId = $page.url.searchParams.get("serviceId");
 
-            // 1. Fetch Serviço (Pre-selected or List)
             if (preSelectedServiceId) {
-                const respService = await fetch(
+                const respService = await fetchApi(
                     `/api/v1/catalogos/${preSelectedServiceId}`,
                 );
                 if (respService.ok) {
                     const data = await respService.json();
                     selectedService = data;
-                    // No need to fetch list of services if we have one selected, unless specific UI requirements
                 }
             } else {
-                const respServicos = await fetch("/api/v1/catalogos?limit=5");
+                const respServicos = await fetchApi("/api/v1/catalogos?limit=5");
                 if (respServicos.ok) {
                     const data = await respServicos.json();
                     services = data.data || [];
@@ -523,20 +509,16 @@
                 }
             }
 
-            // 2. Fetch Prestadores
             const respPrestadores = await fetchApi("/api/v1/prestadores");
             if (respPrestadores.ok) {
                 const data = await respPrestadores.json();
                 let allProfessionals = data.data || [];
 
-                // Filter if service is selected
                 if (selectedService) {
                     const targetId = selectedService.id || selectedService.ID;
                     professionals = allProfessionals.filter((p: any) => {
                         const catalogo = p.Catalogo || p.catalogo || p.catalog;
                         if (!catalogo || !Array.isArray(catalogo)) {
-                            // If no catalog info on main list, we better show them
-                            // or we might end up with an empty list if API doesn't populate it
                             return true;
                         }
                         return catalogo.some(
@@ -566,11 +548,9 @@
         let message = "Não foi possível realizar o agendamento.";
 
         try {
-            // Tenta parsear JSON se for um objeto
             const errorObj = JSON.parse(apiError);
             const errorText = errorObj.error || errorObj.message || apiError;
 
-            // Mensagens amigáveis baseadas no erro da API
             if (
                 errorText.toLowerCase().includes("ja existe um agendamento") ||
                 errorText.toLowerCase().includes("já existe um agendamento")
@@ -594,12 +574,10 @@
                 message =
                     "O profissional selecionado não está disponível neste momento. Por favor, escolha outro profissional.";
             } else {
-                // Erro genérico mas mais amigável
                 message =
                     "Ocorreu um erro ao processar seu agendamento. Por favor, tente novamente ou entre em contato conosco.";
             }
         } catch {
-            // Se não for JSON, trata como string simples
             if (
                 apiError.toLowerCase().includes("ja existe") ||
                 apiError.toLowerCase().includes("já existe")
@@ -639,19 +617,17 @@
         error = "";
         successMessage = "";
 
-        // Construct Date: YYYY-MM-DDTHH:MM:00Z
-        // Note: simplistic construction, ignoring timezone issues for MVP, assume local -> UTC or send local ISO
         const year = currentYear;
         const month = String(currentMonth + 1).padStart(2, "0");
         const day = String(selectedDay).padStart(2, "0");
         const dateTimeString = `${year}-${month}-${day}T${selectedSlot}:00Z`;
 
         const payload = {
-            catalogo_id: selectedService.ID || selectedService.id, // Handle potential case variance
+            catalogo_id: selectedService.ID || selectedService.id,
             cliente_id: CLIENTE_ID,
             data_hora_inicio: dateTimeString,
             notas: "Agendado via Web",
-            prestador_id: selectedProfessional.id || selectedProfessional.ID, // Handle potential case variance
+            prestador_id: selectedProfessional.id || selectedProfessional.ID,
         };
 
         try {
@@ -663,14 +639,14 @@
             if (response.ok) {
                 showSuccessModal = true;
 
-                // Refresh data immediately to update slots
-                const dateOnly = dateTimeString.split("T")[0]; // YYYY-MM-DD
+                const dateOnly = dateTimeString.split("T")[0];
                 await fetchClientAppointments(dateOnly);
                 if (selectedProfessional) {
                     const profId =
                         selectedProfessional.id || selectedProfessional.ID;
                     await fetchProviderAppointments(profId, dateOnly);
                 }
+                fetchMonthAppointments();
             } else {
                 const text = await response.text();
                 console.error("Erro no agendamento:", text);
@@ -686,6 +662,7 @@
 
     onMount(() => {
         fetchData();
+        fetchMonthAppointments();
     });
 </script>
 
@@ -821,7 +798,14 @@
                                                     .replace(".", ",")}</span
                                             >
                                             <button
-                                                class="text-sm text-brand-orange hover:text-brand-orange-hover font-medium transition-colors"
+                                                onclick={() => {
+                                                    selectedService = null;
+                                                    selectedProfessional = null;
+                                                    selectedDay = null;
+                                                    selectedSlot = null;
+                                                    morningSlots = []; afternoonSlots = []; eveningSlots = [];
+                                                }}
+                                                class="text-sm text-brand-orange hover:text-brand-orange-hover font-medium transition-colors cursor-pointer"
                                                 >Alterar Serviço</button
                                             >
                                         </div>
@@ -892,6 +876,7 @@
                                                     bind:group={
                                                         selectedProfessional
                                                     }
+                                                    onchange={() => handleProfessionalChange(prof)}
                                                     class="form-radio h-4 w-4 text-brand-orange border-gray-300 focus:ring-brand"
                                                 />
                                                 <div
@@ -907,7 +892,7 @@
                                                                 prof?.nome ||
                                                                 prof?.Nome}
                                                             class="h-8 w-8 rounded-full object-cover border border-gray-200 dark:border-gray-700"
-                                                            on:error={(e) => {
+                                                            onerror={(e) => {
                                                                 (
                                                                     e.target as HTMLImageElement
                                                                 ).src =
@@ -973,7 +958,7 @@
                                     </h2>
                                     <div class="flex space-x-2">
                                         <button
-                                            on:click={() => changeMonth(-1)}
+                                            onclick={() => changeMonth(-1)}
                                             class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
                                         >
                                             <span class="material-icons"
@@ -981,7 +966,7 @@
                                             >
                                         </button>
                                         <button
-                                            on:click={() => changeMonth(1)}
+                                            onclick={() => changeMonth(1)}
                                             class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 transition-colors"
                                         >
                                             <span class="material-icons"
@@ -1024,7 +1009,7 @@
 
                                             <button
                                                 disabled={isPast || isSunday}
-                                                on:click={() => selectDay(day)}
+                                                onclick={() => selectDay(day)}
                                                 class="aspect-square relative flex items-start justify-end p-2 rounded-lg border transition-all group
                                             {isPast
                                                     ? 'opacity-40 cursor-not-allowed grayscale'
@@ -1059,11 +1044,13 @@
                                                             class="w-1.5 h-1.5 rounded-full bg-orange-400 mb-0.5"
                                                         ></div>
                                                     {:else if !isPast}
-                                                        <div
-                                                            class="w-1.5 h-1.5 rounded-full {isSelected
-                                                                ? 'bg-blue-500'
-                                                                : 'bg-green-400'}"
-                                                        ></div>
+                                                        <div class="flex gap-0.5 items-center">
+                                                            <div
+                                                                class="w-1.5 h-1.5 rounded-full {dayHasAppointment(day)
+                                                                    ? 'bg-violet-500'
+                                                                    : 'bg-emerald-500'}"
+                                                            ></div>
+                                                        </div>
                                                     {/if}
                                                 </div>
                                             </button>
@@ -1114,9 +1101,9 @@
                                                                 ? 'border-brand-orange bg-brand-orange text-white shadow-sm'
                                                                 : 'border-border-light dark:border-border-dark text-gray-700 dark:text-gray-300 hover:border-brand-orange hover:text-brand-orange dark:hover:text-brand-orange'}
                                                             {slot.disabled
-                                                                ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 hover:border-border-light dark:hover:border-border-dark hover:text-gray-400 dark:hover:text-gray-600'
+                                                                ? 'cursor-not-allowed bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 dark:text-red-500 line-through hover:border-red-200 dark:hover:border-red-800 hover:text-red-400 dark:hover:text-red-500'
                                                                 : ''}"
-                                                            on:click={() =>
+                                                            onclick={() =>
                                                                 (selectedSlot =
                                                                     slot.time)}
                                                         >
@@ -1146,9 +1133,9 @@
                                                                 ? 'border-brand-orange bg-brand-orange text-white shadow-sm'
                                                                 : 'border-border-light dark:border-border-dark text-gray-700 dark:text-gray-300 hover:border-brand-orange hover:text-brand-orange dark:hover:text-brand-orange'}
                                                             {slot.disabled
-                                                                ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 hover:border-border-light dark:hover:border-border-dark hover:text-gray-400 dark:hover:text-gray-600'
+                                                                ? 'cursor-not-allowed bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 dark:text-red-500 line-through hover:border-red-200 dark:hover:border-red-800 hover:text-red-400 dark:hover:text-red-500'
                                                                 : ''}"
-                                                            on:click={() =>
+                                                            onclick={() =>
                                                                 (selectedSlot =
                                                                     slot.time)}
                                                         >
@@ -1178,9 +1165,9 @@
                                                                 ? 'border-brand-orange bg-brand-orange text-white shadow-sm'
                                                                 : 'border-border-light dark:border-border-dark text-gray-700 dark:text-gray-300 hover:border-brand-orange hover:text-brand-orange dark:hover:text-brand-orange'}
                                                             {slot.disabled
-                                                                ? 'opacity-50 cursor-not-allowed bg-gray-100 dark:bg-gray-800 text-gray-400 dark:text-gray-600 hover:border-border-light dark:hover:border-border-dark hover:text-gray-400 dark:hover:text-gray-600'
+                                                                ? 'cursor-not-allowed bg-red-50 dark:bg-red-900/20 border-red-200 dark:border-red-800 text-red-400 dark:text-red-500 line-through hover:border-red-200 dark:hover:border-red-800 hover:text-red-400 dark:hover:text-red-500'
                                                                 : ''}"
-                                                            on:click={() =>
+                                                            onclick={() =>
                                                                 (selectedSlot =
                                                                     slot.time)}
                                                         >
@@ -1211,12 +1198,19 @@
                                 class="flex items-center justify-end space-x-4 pt-4 border-t border-border-light dark:border-border-dark"
                             >
                                 <button
-                                    class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors"
+                                    onclick={() => {
+                                        selectedDay = null;
+                                        selectedSlot = null;
+                                        morningSlots = []; afternoonSlots = []; eveningSlots = [];
+                                        selectedProfessional = null;
+                                        error = "";
+                                    }}
+                                    class="px-6 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 font-medium hover:bg-gray-50 dark:hover:bg-gray-800 transition-colors cursor-pointer"
                                 >
                                     Cancelar
                                 </button>
                                 <button
-                                    on:click={handleConfirmAppointment}
+                                    onclick={handleConfirmAppointment}
                                     disabled={submitting}
                                     class="px-8 py-2 bg-brand-orange hover:bg-brand-orange-hover text-white rounded-md font-medium shadow-md transition-all duration-200 flex items-center hover:shadow-lg disabled:opacity-70 disabled:cursor-not-allowed"
                                 >
@@ -1314,13 +1308,13 @@
 
                 <div class="space-y-3">
                     <button
-                        on:click={() => (window.location.href = "/clientes/meus-agendamentos")}
+                        onclick={() => (window.location.href = "/clientes/meus-agendamentos")}
                         class="w-full py-3 px-4 bg-brand-orange hover:bg-brand-orange/90 text-white font-bold rounded-xl transition-all duration-200 shadow-lg shadow-brand-orange/20"
                     >
                         Ver Meus Agendamentos
                     </button>
                     <button
-                        on:click={() => (showSuccessModal = false)}
+                        onclick={() => (showSuccessModal = false)}
                         class="w-full py-3 px-4 bg-transparent hover:bg-gray-100 dark:hover:bg-gray-800 text-gray-600 dark:text-gray-400 font-medium rounded-xl transition-colors"
                     >
                         Fechar
@@ -1336,7 +1330,7 @@
         title={errorTitle}
         message={errorMessage}
         type="error"
-        on:confirm={() => (showErrorModal = false)}
-        on:cancel={() => (showErrorModal = false)}
+        onconfirm={() => (showErrorModal = false)}
+        oncancel={() => (showErrorModal = false)}
     />
 </div>

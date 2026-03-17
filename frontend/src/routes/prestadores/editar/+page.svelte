@@ -1,6 +1,5 @@
 <script lang="ts">
   import Sidebar from "$lib/components/Sidebar.svelte";
-  import ThemeToggle from "$lib/components/ThemeToggle.svelte";
   import AlertModal from "$lib/components/AlertModal.svelte";
   import Modal from "$lib/components/Modal.svelte";
   import ImageUpload from "$lib/components/ImageUpload.svelte";
@@ -9,7 +8,7 @@
     deleteImageFromSupabase,
   } from "$lib/utils/imageUpload";
   import { onMount } from "svelte";
-    import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
+  import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
   import { fetchApi } from "$lib/utils/api";
 
   // Updated Provider Interface to match API (ID as string)
@@ -37,35 +36,35 @@
   }
 
   // State
-  let providers: Provider[] = [];
-  let availableServices: CatalogService[] = []; // Now storing full objects
-  let loadingProviders = true;
-  let loadingServices = true;
+  let providers = $state<Provider[]>([]);
+  let availableServices = $state<CatalogService[]>([]);
+  let loadingProviders = $state(true);
+  let loadingServices = $state(true);
 
   // Pagination for providers
-  let page = 1;
-  let limit = 9; // Changed to 9 as requested
-  let totalProviders = 0;
-  let totalPages = 1; // Track total pages
+  let page = $state(1);
+  let limit = $state(9);
+  let totalProviders = $state(0);
+  let totalPages = $state(1);
 
-  let searchQuery = "";
-  let statusFilter: "ativos" | "inativos" = "ativos";
+  let searchQuery = $state("");
+  let statusFilter = $state<"ativos" | "inativos">("ativos");
 
   // --- Modal Editing State ---
-  let showEditModal = false;
-  let editingProvider: Provider | null = null;
-  let isSaving = false;
+  let showEditModal = $state(false);
+  let editingProvider = $state<Provider | null>(null);
+  let isSaving = $state(false);
 
   // Form Fields
-  let editNome = "";
-  let editCpf = "";
-  let editTelefone = "";
-  let editEmail = "";
-  let editServiceIds: string[] = []; // Changed to store IDs
+  let editNome = $state("");
+  let editCpf = $state("");
+  let editTelefone = $state("");
+  let editEmail = $state("");
+  let editServiceIds = $state<string[]>([]);
 
   // Image Upload
-  let selectedImage: File | null = null;
-  let imagePreview: string | null = null;
+  let selectedImage = $state<File | null>(null);
+  let imagePreview = $state<string | null>(null);
 
   // Fetch Providers from API
   async function fetchProviders() {
@@ -77,7 +76,6 @@
       );
       if (res.ok) {
         const data = await res.json();
-        // Map API data to our Provider interface
         providers = (data.data || []).map((p: any) => ({
           id: p.ID,
           nome: p.Nome,
@@ -93,20 +91,15 @@
           reviews: 0,
           status: "disponivel",
           biografia: "Sem biografia.",
-          // Map Catalogo to local services array of names for display in card
           servicos: p.Catalogo ? p.Catalogo.map((c: any) => c.Nome) : [],
           catalogo: p.Catalogo || [],
         }));
         totalProviders = data.total || 0;
-        // Calculate total pages based on API total
         totalPages = Math.ceil(totalProviders / limit);
       } else {
-        console.log("Resposta do servidor:", await res.text());
-        console.error("Erro ao buscar prestadores:", await res.text());
         showAlert("Erro", "Falha ao carregar lista de profissionais.", "error");
       }
     } catch (error) {
-      console.error("Erro de conexão (prestadores):", error);
       showAlert("Erro", "Erro de conexão ao buscar profissionais.", "error");
     } finally {
       loadingProviders = false;
@@ -121,7 +114,6 @@
       if (res.ok) {
         const data = await res.json();
         if (data.data && Array.isArray(data.data)) {
-          // Store full objects now
           availableServices = data.data.map((s: any) => ({
             ID: s.ID,
             Nome: s.Nome,
@@ -147,26 +139,21 @@
     editTelefone = provider.telefone || "";
     editEmail = provider.email || "";
 
-    // Reset service IDs
     editServiceIds = [];
 
-    // Map existing services to IDs
     if (provider.catalogo && Array.isArray(provider.catalogo)) {
       editServiceIds = provider.catalogo.map((c: any) => c.ID);
     }
 
-    // Reset Image
     selectedImage = null;
     imagePreview = provider.foto || null;
 
     showEditModal = true;
   }
 
-  function handleImageSelect(
-    event: CustomEvent<{ file: File; preview: string }>,
-  ) {
-    selectedImage = event.detail.file;
-    imagePreview = event.detail.preview;
+  function handleImageSelect(data: { file: File; preview: string }) {
+    selectedImage = data.file;
+    imagePreview = data.preview;
   }
 
   function handleImageClear() {
@@ -185,25 +172,14 @@
   async function handleUpdate() {
     if (!editingProvider) return;
 
-    // --- Validation ---
     if (!editNome || editNome.trim().length < 3) {
-      showAlert(
-        "Atenção",
-        "O nome deve ter no mínimo 3 caracteres.",
-        "warning",
-      );
+      showAlert("Atenção", "O nome deve ter no mínimo 3 caracteres.", "warning");
       return;
     }
     if (editNome.trim().length > 100) {
-      showAlert(
-        "Atenção",
-        "O nome deve ter no máximo 100 caracteres.",
-        "warning",
-      );
+      showAlert("Atenção", "O nome deve ter no máximo 100 caracteres.", "warning");
       return;
     }
-
-    // Email
     if (!editEmail || editEmail.trim() === "") {
       showAlert("Atenção", "O email é obrigatório.", "warning");
       return;
@@ -213,44 +189,24 @@
       showAlert("Atenção", "Por favor, insira um email válido.", "warning");
       return;
     }
-
-    // Telefone
     const phoneDigits = editTelefone.replace(/\D/g, "");
     if (!phoneDigits || phoneDigits.length < 8) {
-      showAlert(
-        "Atenção",
-        "O telefone deve ter no mínimo 8 dígitos.",
-        "warning",
-      );
+      showAlert("Atenção", "O telefone deve ter no mínimo 8 dígitos.", "warning");
       return;
     }
     if (phoneDigits.length > 15) {
-      showAlert(
-        "Atenção",
-        "O telefone deve ter no máximo 15 dígitos.",
-        "warning",
-      );
+      showAlert("Atenção", "O telefone deve ter no máximo 15 dígitos.", "warning");
       return;
     }
-
-    // Validação de Serviços (Pelo menos um)
     if (editServiceIds.length === 0) {
-      showAlert(
-        "Atenção",
-        "O profissional deve ter no mínimo um serviço atribuído.",
-        "warning",
-      );
+      showAlert("Atenção", "O profissional deve ter no mínimo um serviço atribuído.", "warning");
       return;
     }
-
-    // Photo is strictly strictly required? Registration says yes. Edit might be 'keep existing'.
-    // Logic below: use existing URL unless new image uploaded.
 
     isSaving = true;
 
     let imageUrl = editingProvider.foto || "";
 
-    // Upload new image if selected
     if (selectedImage) {
       try {
         const uploadedUrl = await uploadPrestadorImageToSupabase(selectedImage);
@@ -290,23 +246,16 @@
           "success",
           false,
           () => {
-            // Check if we need to delete the old image
-            // Only delete if a new image was uploaded (selectedImage exists)
-            // AND there was an old image
-            // AND the new URL is different from the old one (to avoid deleting just-uploaded same image)
             const oldImageUrl = editingProvider?.foto;
             if (selectedImage && oldImageUrl && oldImageUrl !== imageUrl) {
-              console.log("Deleting old provider image:", oldImageUrl);
-              // Fire and forget, don't await/block UI
               deleteImageFromSupabase(oldImageUrl).then((success) => {
                 if (!success)
                   console.warn("Failed to delete old image in background");
               });
             }
-
             alertState.show = false;
             showEditModal = false;
-            fetchProviders(); // Refresh list to show changes
+            fetchProviders();
           },
         );
       } else {
@@ -336,7 +285,7 @@
   }
 
   // --- Alert Modal State ---
-  let alertState = {
+  let alertState = $state({
     show: false,
     title: "",
     message: "",
@@ -344,7 +293,7 @@
     showCancel: false,
     confirmText: "OK",
     onConfirm: () => {},
-  };
+  });
 
   function showAlert(
     title: string,
@@ -382,217 +331,186 @@
       true,
       async () => {
         try {
-          // Dismiss alert
           alertState.show = false;
-
           const res = await fetchApi(
             `/api/v1/prestadores/${provider.id}/${endpoint}`,
             { method: "PUT" },
           );
-
           if (res.ok) {
-            // Refresh list to adhere to new filter
             fetchProviders();
             const successTerm = provider.ativo ? "Inativado" : "Ativado";
-            showAlert(
-              "Sucesso",
-              `Profissional ${successTerm} com sucesso!`,
-              "success",
-            );
+            showAlert("Sucesso", `Profissional ${successTerm} com sucesso!`, "success");
           } else {
-            const text = await res.text();
-            console.error(`Erro ao ${action.toLowerCase()} prestador:`, text);
-            showAlert(
-              "Erro",
-              `Falha ao ${action.toLowerCase()} profissional.`,
-              "error",
-            );
+            showAlert("Erro", `Falha ao ${action.toLowerCase()} profissional.`, "error");
           }
         } catch (error) {
-          console.error(`Erro de conexão ao ${action.toLowerCase()}:`, error);
-          showAlert(
-            "Erro",
-            `Erro de conexão ao ${action.toLowerCase()} profissional.`,
-            "error",
-          );
+          showAlert("Erro", `Erro de conexão ao ${action.toLowerCase()} profissional.`, "error");
         }
       },
     );
   }
 </script>
 
-<div
-  class="font-body bg-[hsl(var(--bs-background))] text-text-light dark:text-text-dark antialiased h-screen flex overflow-hidden transition-colors duration-200"
->
+<div class="font-sans bg-slate-50 dark:bg-gray-950 text-slate-800 dark:text-slate-100 antialiased h-screen flex overflow-hidden">
   <Sidebar />
 
   <main class="flex-1 flex flex-col h-full overflow-hidden relative">
-    <DashboardNavbar />
+    <DashboardNavbar title="Gerenciar Profissionais" />
 
     <div class="flex-1 overflow-y-auto p-6 md:p-8">
-      <div class="max-w-6xl mx-auto space-y-8">
-        <div>
-          <nav class="flex text-sm text-gray-500 dark:text-gray-400 mb-2">
-            <a href="/" class="hover:text-primary transition-colors">Início</a>
-            <span class="mx-2">/</span>
-            <span class="text-gray-900 dark:text-white font-medium"
-              >Equipe de Profissionais</span
+      <div class="max-w-6xl mx-auto space-y-6">
+
+        <!-- Page subheader + actions -->
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div>
+            <nav class="flex items-center gap-1.5 text-xs text-slate-400 mb-1">
+              <a href="/" class="hover:text-orange-500 transition-colors cursor-pointer">Início</a>
+              <span class="material-symbols-outlined text-[12px]">chevron_right</span>
+              <span class="text-slate-600 dark:text-slate-300 font-medium">Equipe de Profissionais</span>
+            </nav>
+            <p class="text-sm text-slate-400">Adicione, edite ou gerencie membros da equipe.</p>
+          </div>
+
+          <div class="flex flex-col sm:flex-row items-center gap-3">
+            <!-- Status filter toggle -->
+            <div class="flex items-center gap-1 bg-white dark:bg-gray-900 border border-gray-100 dark:border-gray-800 shadow-sm p-1 rounded-xl">
+              <button
+                onclick={() => changeFilter("ativos")}
+                class="px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer
+                  {statusFilter === 'ativos'
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}"
+              >
+                Ativos
+              </button>
+              <button
+                onclick={() => changeFilter("inativos")}
+                class="px-4 py-1.5 text-sm font-semibold rounded-lg transition-all duration-200 cursor-pointer
+                  {statusFilter === 'inativos'
+                    ? 'bg-orange-500 text-white shadow-sm'
+                    : 'text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200'}"
+              >
+                Inativos
+              </button>
+            </div>
+
+            <a
+              href="/prestadores/cadastro"
+              class="w-full sm:w-auto px-5 py-2.5 bg-orange-500 hover:bg-orange-600 text-white rounded-xl font-semibold shadow-md shadow-orange-500/20 transition-all duration-200 active:scale-95 flex items-center justify-center gap-2 cursor-pointer"
             >
-          </nav>
-          <div
-            class="flex flex-col md:flex-row md:items-center justify-between gap-4"
-          >
-            <div>
-              <h1 class="text-3xl font-bold text-gray-900 dark:text-white">
-                Gerenciar Profissionais
-              </h1>
-              <p class="text-gray-500 dark:text-gray-400 mt-1">
-                Adicione, edite ou remova membros da equipe.
-              </p>
-            </div>
-
-            <div class="flex flex-col sm:flex-row items-center gap-3">
-              <div
-                class="flex items-center space-x-1 bg-gray-100 dark:bg-[hsl(var(--bs-muted))]/20 p-1 rounded-xl"
-              >
-                <button
-                  on:click={() => changeFilter("ativos")}
-                  class="px-4 py-1.5 text-sm font-semibold rounded-lg transition-all {statusFilter ===
-                  'ativos'
-                    ? 'bg-white dark:bg-gray-700 shadow-md text-brand-orange'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
-                >
-                  Ativos
-                </button>
-                <button
-                  on:click={() => changeFilter("inativos")}
-                  class="px-4 py-1.5 text-sm font-semibold rounded-lg transition-all {statusFilter ===
-                  'inativos'
-                    ? 'bg-white dark:bg-gray-700 shadow-md text-brand-orange'
-                    : 'text-gray-500 hover:text-gray-700 dark:hover:text-gray-300'}"
-                >
-                  Inativos
-                </button>
-              </div>
-
-              <a
-                href="/prestadores/cadastro"
-                class="w-full sm:w-auto px-6 py-2.5 bg-brand-orange hover:bg-brand-orange-hover text-white rounded-xl font-bold shadow-lg shadow-brand-orange/20 transition-all active:scale-95 flex items-center justify-center"
-              >
-                <span class="material-symbols-outlined text-xl mr-2"
-                  >person_add</span
-                >
-                Novo Profissional
-              </a>
-            </div>
+              <span class="material-symbols-outlined text-[18px]">person_add</span>
+              Novo Profissional
+            </a>
           </div>
         </div>
 
         {#if loadingProviders}
-          <div class="flex justify-center items-center h-64">
-            <span
-              class="material-symbols-outlined animate-spin text-4xl text-primary"
-              >sync</span
-            >
-            <span class="ml-2 text-gray-500 dark:text-gray-400"
-              >Carregando profissionais...</span
-            >
+          <div class="flex flex-col justify-center items-center h-64 gap-4">
+            <div class="w-14 h-14 rounded-2xl bg-orange-50 flex items-center justify-center">
+              <span class="material-symbols-outlined animate-spin text-orange-500 text-3xl">sync</span>
+            </div>
+            <p class="text-sm text-slate-400 font-medium">Carregando profissionais...</p>
           </div>
+
         {:else if providers.length === 0}
-          <div
-            class="bg-[hsl(var(--bs-card))] rounded-xl border-2 border-dashed border-border-light dark:border-border-dark p-12 text-center"
-          >
-            <span class="material-symbols-outlined text-5xl text-gray-300 mb-4"
-              >person_search</span
-            >
-            <p class="text-gray-500">Nenhum profissional encontrado.</p>
+          <div class="bg-white dark:bg-gray-900 rounded-2xl border-2 border-dashed border-slate-200 dark:border-slate-700 p-14 text-center">
+            <div class="w-16 h-16 bg-slate-50 dark:bg-slate-800 rounded-2xl flex items-center justify-center mx-auto mb-4">
+              <span class="material-symbols-outlined text-slate-300 text-4xl">person_search</span>
+            </div>
+            <p class="font-semibold text-slate-600 dark:text-slate-300">Nenhum profissional encontrado</p>
+            <p class="text-sm text-slate-400 mt-1">
+              {statusFilter === 'ativos' ? 'Não há profissionais ativos.' : 'Não há profissionais inativos.'}
+            </p>
           </div>
+
         {:else}
-          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- Provider cards grid -->
+          <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
             {#each providers as provider}
-              <div
-                class="bg-[hsl(var(--bs-card))] rounded-xl border border-border-light dark:border-border-dark overflow-hidden hover:shadow-xl transition-all duration-300 group flex flex-col"
-              >
-                <div class="p-6 flex flex-col items-center text-center">
+              <div class="bg-white dark:bg-gray-900 rounded-2xl border border-gray-100 dark:border-gray-800 overflow-hidden hover:shadow-lg transition-all duration-300 group flex flex-col shadow-sm">
+                <!-- Card body -->
+                <div class="p-6 flex flex-col items-center text-center flex-1">
+                  <!-- Avatar with status indicator -->
                   <div class="relative mb-4">
                     <img
                       src={provider.foto}
                       alt={provider.nome}
-                      class="h-24 w-24 rounded-full object-cover border-4 border-white dark:border-gray-700 shadow-sm"
+                      class="h-20 w-20 rounded-2xl object-cover ring-4 ring-white dark:ring-gray-900 shadow-md group-hover:shadow-lg transition-all duration-300"
                     />
                     <span
-                      class="absolute bottom-1 right-1 w-5 h-5 rounded-full border-2 border-white dark:border-gray-800 {provider.ativo
-                        ? 'bg-green-500'
-                        : 'bg-gray-400'}"
+                      class="absolute -bottom-0.5 -right-0.5 w-4 h-4 rounded-full border-2 border-white dark:border-gray-900 shadow-sm {provider.ativo ? 'bg-emerald-500' : 'bg-slate-300'}"
                       title={provider.ativo ? "Ativo" : "Inativo"}
                     ></span>
                   </div>
+
                   <h3
-                    class="text-lg font-bold text-gray-900 dark:text-white group-hover:text-brand-orange transition-colors"
+                    class="text-base font-bold text-slate-900 dark:text-white group-hover:text-orange-500 transition-colors duration-200 leading-tight"
+                    style="font-family: 'Cormorant', serif; font-size: 1.1rem;"
                   >
                     {provider.nome}
                   </h3>
-                  <p class="text-sm text-brand-orange font-medium mt-1">
+                  <p class="text-xs text-orange-500 font-semibold mt-1 uppercase tracking-wider">
                     {provider.especialidade}
                   </p>
 
-                  <div class="flex items-center mt-3 text-sm text-amber-500">
-                    <span class="material-icons text-sm mr-1">star</span>
-                    <span class="font-bold">{provider.rating}</span>
-                    <span class="text-gray-400 ml-1"
-                      >({provider.reviews} avaliações)</span
-                    >
+                  <!-- Rating row -->
+                  <div class="flex items-center gap-1 mt-2.5 text-sm">
+                    <span class="material-icons text-amber-400 text-sm">star</span>
+                    <span class="font-bold text-slate-700 dark:text-slate-200">{provider.rating}</span>
+                    <span class="text-slate-400 text-xs">({provider.reviews} avaliações)</span>
                   </div>
 
-                  <p
-                    class="text-sm text-gray-500 dark:text-gray-400 mt-4 line-clamp-2 italic"
-                  >
-                    "{provider.biografia}"
-                  </p>
+                  <!-- Services tags -->
+                  {#if provider.servicos && provider.servicos.length > 0}
+                    <div class="flex flex-wrap gap-1.5 justify-center mt-3">
+                      {#each provider.servicos.slice(0, 3) as servico}
+                        <span class="text-xs px-2 py-0.5 bg-orange-50 text-orange-600 rounded-full font-medium border border-orange-100">
+                          {servico}
+                        </span>
+                      {/each}
+                      {#if provider.servicos.length > 3}
+                        <span class="text-xs px-2 py-0.5 bg-slate-50 dark:bg-slate-800 text-slate-400 rounded-full font-medium">
+                          +{provider.servicos.length - 3}
+                        </span>
+                      {/if}
+                    </div>
+                  {/if}
                 </div>
 
-                <div
-                  class="mt-auto px-6 py-4 bg-gray-50 dark:bg-[hsl(var(--bs-muted))]/20 border-t border-border-light dark:border-border-dark flex items-center justify-between"
-                >
-                  <div class="flex items-center gap-2">
-                    <span
-                      class="flex h-2 w-2 rounded-full {provider.ativo
-                        ? 'bg-green-500'
-                        : 'bg-red-500'}"
-                    ></span>
-                    <span class="text-xs text-gray-400 uppercase tracking-wider"
-                      >{provider.ativo ? "Ativo" : "Inativo"}</span
-                    >
+                <!-- Card footer -->
+                <div class="px-5 py-3.5 bg-slate-50 dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 flex items-center justify-between">
+                  <div class="flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full flex-shrink-0 {provider.ativo ? 'bg-emerald-500' : 'bg-slate-300'}"></span>
+                    <span class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                      {provider.ativo ? "Ativo" : "Inativo"}
+                    </span>
                   </div>
-                  <div class="flex items-center gap-2">
+                  <div class="flex items-center gap-1">
                     <a
                       href={`/prestadores/${provider.id}`}
-                      class="p-2 text-gray-400 hover:text-blue-500 dark:hover:text-blue-500 transition-colors rounded-lg hover:bg-blue-500/5"
+                      class="p-2 text-slate-400 hover:text-blue-500 transition-all duration-200 rounded-xl hover:bg-blue-50 cursor-pointer"
                       title="Ver Detalhes"
                     >
-                      <span class="material-symbols-outlined text-[20px]"
-                        >visibility</span
-                      >
+                      <span class="material-symbols-outlined text-[18px]">visibility</span>
                     </a>
                     <button
-                      class="p-2 text-gray-400 hover:text-brand-orange dark:hover:text-brand-orange transition-colors rounded-lg hover:bg-brand-orange/5"
+                      class="p-2 text-slate-400 hover:text-orange-500 transition-all duration-200 rounded-xl hover:bg-orange-50 cursor-pointer"
                       title="Editar"
-                      on:click={() => openEditModal(provider)}
+                      onclick={() => openEditModal(provider)}
                     >
-                      <span class="material-symbols-outlined text-[20px]"
-                        >edit</span
-                      >
+                      <span class="material-symbols-outlined text-[18px]">edit</span>
                     </button>
                     <button
-                      class="p-2 text-gray-400 transition-colors rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 {provider.ativo
-                        ? 'hover:text-red-500'
-                        : 'hover:text-green-500'}"
+                      class="p-2 text-slate-400 transition-all duration-200 rounded-xl cursor-pointer
+                        {provider.ativo
+                          ? 'hover:text-red-500 hover:bg-red-50'
+                          : 'hover:text-emerald-500 hover:bg-emerald-50'}"
                       title={provider.ativo ? "Inativar" : "Ativar"}
-                      on:click={() => handleToggleStatus(provider)}
+                      onclick={() => handleToggleStatus(provider)}
                     >
-                      <span class="material-symbols-outlined text-[20px]"
-                        >{provider.ativo ? "block" : "check_circle"}</span
-                      >
+                      <span class="material-symbols-outlined text-[18px]">
+                        {provider.ativo ? "block" : "check_circle"}
+                      </span>
                     </button>
                   </div>
                 </div>
@@ -601,90 +519,73 @@
           </div>
 
           <!-- Pagination Controls -->
-          <div
-            class="flex items-center justify-between border-t border-gray-200 dark:border-border-dark bg-[hsl(var(--bs-card))] px-4 py-3 sm:px-6 mt-6 rounded-lg"
-          >
+          <div class="flex items-center justify-between bg-white dark:bg-gray-900 px-5 py-3.5 rounded-2xl border border-gray-100 dark:border-gray-800 shadow-sm mt-2">
+            <!-- Mobile -->
             <div class="flex flex-1 justify-between sm:hidden">
               <button
-                on:click={() => changePage(page - 1)}
+                onclick={() => changePage(page - 1)}
                 disabled={page === 1}
-                class="relative inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer"
               >
+                <span class="material-symbols-outlined text-[16px]">chevron_left</span>
                 Anterior
               </button>
               <button
-                on:click={() => changePage(page + 1)}
+                onclick={() => changePage(page + 1)}
                 disabled={page === totalPages}
-                class="relative ml-3 inline-flex items-center rounded-md border border-gray-300 dark:border-gray-600 bg-white dark:bg-gray-700 px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
+                class="inline-flex items-center gap-1.5 px-4 py-2 text-sm font-semibold rounded-xl border border-gray-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:bg-slate-50 dark:hover:bg-slate-800 disabled:opacity-40 transition-all cursor-pointer"
               >
                 Próximo
+                <span class="material-symbols-outlined text-[16px]">chevron_right</span>
               </button>
             </div>
-            <div
-              class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between"
-            >
-              <div>
-                <p class="text-sm text-gray-700 dark:text-gray-300">
-                  Mostrando
-                  <span class="font-medium">{(page - 1) * limit + 1}</span>
-                  a
-                  <span class="font-medium"
-                    >{Math.min(page * limit, totalProviders)}</span
-                  >
-                  de
-                  <span class="font-medium">{totalProviders}</span>
-                  resultados
-                </p>
-              </div>
-              <div>
-                <nav
-                  class="isolate inline-flex -space-x-px rounded-md shadow-sm"
-                  aria-label="Pagination"
+
+            <!-- Desktop -->
+            <div class="hidden sm:flex sm:flex-1 sm:items-center sm:justify-between">
+              <p class="text-sm text-slate-500 dark:text-slate-400">
+                Mostrando
+                <span class="font-semibold text-slate-700 dark:text-slate-200">{(page - 1) * limit + 1}</span>
+                a
+                <span class="font-semibold text-slate-700 dark:text-slate-200">{Math.min(page * limit, totalProviders)}</span>
+                de
+                <span class="font-semibold text-slate-700 dark:text-slate-200">{totalProviders}</span>
+                resultados
+              </p>
+              <nav class="flex items-center gap-1" aria-label="Pagination">
+                <button
+                  onclick={() => changePage(page - 1)}
+                  disabled={page === 1}
+                  class="p-2 rounded-xl text-slate-400 hover:text-orange-500 hover:bg-orange-50 disabled:opacity-40 transition-all duration-200 cursor-pointer"
                 >
-                  <button
-                    on:click={() => changePage(page - 1)}
-                    disabled={page === 1}
-                    class="relative inline-flex items-center rounded-l-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
-                  >
-                    <span class="sr-only">Anterior</span>
-                    <span class="material-symbols-outlined text-sm"
-                      >chevron_left</span
-                    >
-                  </button>
+                  <span class="material-symbols-outlined text-[18px]">chevron_left</span>
+                </button>
 
-                  <!-- Simple page numbers logic -->
-                  {#each Array(totalPages) as _, i}
-                    <button
-                      on:click={() => changePage(i + 1)}
-                      class="relative inline-flex items-center px-4 py-2 text-sm font-semibold {page ===
-                      i + 1
-                        ? 'z-10 bg-brand-orange text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-brand-orange'
-                        : 'text-gray-900 dark:text-gray-300 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0'}"
-                    >
-                      {i + 1}
-                    </button>
-                  {/each}
-
+                {#each Array(totalPages) as _, i}
                   <button
-                    on:click={() => changePage(page + 1)}
-                    disabled={page === totalPages}
-                    class="relative inline-flex items-center rounded-r-md px-2 py-2 text-gray-400 ring-1 ring-inset ring-gray-300 dark:ring-gray-600 hover:bg-gray-50 dark:hover:bg-gray-700 focus:z-20 focus:outline-offset-0 disabled:opacity-50"
+                    onclick={() => changePage(i + 1)}
+                    class="w-9 h-9 rounded-xl text-sm font-semibold transition-all duration-200 cursor-pointer
+                      {page === i + 1
+                        ? 'bg-orange-500 text-white shadow-sm shadow-orange-500/25'
+                        : 'text-slate-600 dark:text-slate-300 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600'}"
                   >
-                    <span class="sr-only">Próximo</span>
-                    <span class="material-symbols-outlined text-sm"
-                      >chevron_right</span
-                    >
+                    {i + 1}
                   </button>
-                </nav>
-              </div>
+                {/each}
+
+                <button
+                  onclick={() => changePage(page + 1)}
+                  disabled={page === totalPages}
+                  class="p-2 rounded-xl text-slate-400 hover:text-orange-500 hover:bg-orange-50 disabled:opacity-40 transition-all duration-200 cursor-pointer"
+                >
+                  <span class="material-symbols-outlined text-[18px]">chevron_right</span>
+                </button>
+              </nav>
             </div>
           </div>
         {/if}
 
-        <footer
-          class="mt-12 text-center text-sm text-gray-500 dark:text-gray-400 pb-6"
-        >
-          <p>© 2023 BellaVita Salon. Todos os direitos reservados.</p>
+        <footer class="mt-8 text-center text-xs text-slate-400 pb-4">
+          <p>© 2025 BellaVita. Todos os direitos reservados.</p>
         </footer>
       </div>
     </div>
@@ -697,148 +598,120 @@
     type={alertState.type}
     showCancel={alertState.showCancel}
     confirmText={alertState.confirmText}
-    on:confirm={alertState.onConfirm}
-    on:cancel={closeAlert}
+    onconfirm={alertState.onConfirm}
+    oncancel={closeAlert}
   />
 
-  <Modal
-    show={showEditModal}
-    title="Editar Profissional"
-    maxWidth="max-w-2xl"
-    on:close={() => (showEditModal = false)}
-  >
-    <div slot="body" class="space-y-4">
+  {#snippet editModalBody()}
+    <div class="space-y-4">
       <div>
-        <span
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2"
-          >Foto do Profissional</span
-        >
+        <span class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-2">Foto do Profissional</span>
         <ImageUpload
           previewUrl={imagePreview}
-          on:select={handleImageSelect}
-          on:clear={handleImageClear}
+          onselect={handleImageSelect}
+          onclear={handleImageClear}
         />
       </div>
 
       <div>
-        <label
-          for="edit-nome"
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >Nome Completo</label
-        >
+        <label for="edit-nome" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Nome Completo</label>
         <input
           id="edit-nome"
           type="text"
           bind:value={editNome}
-          class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-brand-orange focus:border-brand-orange sm:text-sm"
+          class="block w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none text-sm transition-all"
           placeholder="Ex: Ana Maria Costa"
         />
       </div>
 
       <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div>
-          <label
-            for="edit-cpf"
-            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >CPF</label
-          >
+          <label for="edit-cpf" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">CPF</label>
           <input
             id="edit-cpf"
             type="text"
             bind:value={editCpf}
             disabled
-            class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-gray-100 dark:bg-gray-700 text-gray-500 dark:text-gray-400 focus:ring-brand-orange focus:border-brand-orange sm:text-sm cursor-not-allowed"
+            class="block w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-slate-50 dark:bg-gray-800 text-slate-400 text-sm cursor-not-allowed"
             placeholder="000.000.000-00"
           />
         </div>
         <div>
-          <label
-            for="edit-telefone"
-            class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-            >Telefone / WhatsApp</label
-          >
+          <label for="edit-telefone" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Telefone / WhatsApp</label>
           <input
             id="edit-telefone"
             type="text"
             bind:value={editTelefone}
-            class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-brand-orange focus:border-brand-orange sm:text-sm"
+            class="block w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none text-sm transition-all"
             placeholder="(00) 00000-0000"
           />
         </div>
       </div>
 
       <div>
-        <label
-          for="edit-email"
-          class="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1"
-          >Endereço de Email</label
-        >
+        <label for="edit-email" class="block text-sm font-semibold text-slate-700 dark:text-slate-200 mb-1">Endereço de Email</label>
         <input
           id="edit-email"
           type="email"
           bind:value={editEmail}
-          class="block w-full px-3 py-2 border border-border-light dark:border-border-dark rounded-md bg-white dark:bg-gray-800 text-gray-900 dark:text-white focus:ring-brand-orange focus:border-brand-orange sm:text-sm"
+          class="block w-full px-3.5 py-2.5 border border-gray-200 dark:border-gray-700 rounded-xl bg-white dark:bg-gray-800 text-slate-900 dark:text-white focus:ring-2 focus:ring-orange-300 focus:border-orange-400 outline-none text-sm transition-all"
           placeholder="profissional@bellavita.com"
         />
       </div>
 
       <div>
-        <h3
-          class="flex items-center text-sm font-bold text-gray-900 dark:text-white mb-3"
-        >
-          <span class="material-symbols-outlined text-brand-orange mr-2"
-            >spa</span
-          >
+        <h3 class="flex items-center text-sm font-bold text-slate-800 dark:text-slate-100 mb-1">
+          <span class="material-symbols-outlined text-orange-500 mr-2 text-[18px]">spa</span>
           Serviços Atribuídos
         </h3>
-        <p class="text-xs text-gray-500 dark:text-gray-400 mb-3">
-          Selecione todos os serviços que este profissional está qualificado
-          para realizar.
+        <p class="text-xs text-slate-400 mb-3">
+          Selecione todos os serviços que este profissional está qualificado para realizar.
         </p>
-
-        <div
-          class="grid grid-cols-1 sm:grid-cols-2 gap-3 max-h-40 overflow-y-auto p-1"
-        >
+        <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5 max-h-44 overflow-y-auto pr-1">
           {#each availableServices as service}
             <button
               type="button"
-              class="flex items-center justify-between p-3 rounded-lg border transition-all text-left group
-                        {editServiceIds.includes(service.ID)
-                ? 'bg-brand-orange/10 border-brand-orange text-brand-orange'
-                : 'bg-gray-50 dark:bg-gray-800 border-border-light dark:border-border-dark text-gray-700 dark:text-gray-300 hover:border-brand-orange/50'}"
-              on:click={() => toggleService(service.ID)}
+              class="flex items-center justify-between p-3 rounded-xl border transition-all duration-200 text-left group cursor-pointer
+                {editServiceIds.includes(service.ID)
+                  ? 'bg-orange-50 border-orange-300 text-orange-700 shadow-sm'
+                  : 'bg-slate-50 dark:bg-gray-800 border-gray-200 dark:border-gray-700 text-slate-600 dark:text-slate-300 hover:border-orange-200 hover:bg-orange-50/50'}"
+              onclick={() => toggleService(service.ID)}
             >
               <span class="text-sm font-medium">{service.Nome}</span>
               {#if editServiceIds.includes(service.ID)}
-                <span class="material-symbols-outlined text-edit-check text-lg"
-                  >check_circle</span
-                >
+                <span class="material-symbols-outlined text-orange-500 text-lg">check_circle</span>
               {:else}
-                <span
-                  class="material-symbols-outlined text-gray-300 group-hover:text-gray-400 text-lg"
-                  >radio_button_unchecked</span
-                >
+                <span class="material-symbols-outlined text-slate-300 group-hover:text-slate-400 text-lg">radio_button_unchecked</span>
               {/if}
             </button>
           {/each}
         </div>
       </div>
     </div>
+  {/snippet}
 
-    <div slot="footer">
-      <button
-        on:click={() => (showEditModal = false)}
-        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-      >
-        Cancelar
-      </button>
-      <button
-        on:click={handleUpdate}
-        disabled={isSaving}
-        class="px-4 py-2 text-sm font-medium text-white bg-brand-orange rounded-md hover:bg-brand-orange-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
-      >
-        {isSaving ? "Salvando..." : "Salvar Alterações"}
-      </button>
-    </div>
-  </Modal>
+  {#snippet editModalFooter()}
+    <button
+      onclick={() => (showEditModal = false)}
+      class="px-4 py-2.5 text-sm font-semibold text-slate-700 dark:text-slate-200 bg-white dark:bg-gray-800 border border-gray-200 dark:border-gray-700 rounded-xl hover:bg-slate-50 dark:hover:bg-gray-700 transition-all duration-200 cursor-pointer"
+    >
+      Cancelar
+    </button>
+    <button
+      onclick={handleUpdate}
+      disabled={isSaving}
+      class="px-5 py-2.5 text-sm font-semibold text-white bg-orange-500 rounded-xl hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-orange-400 disabled:opacity-50 transition-all duration-200 shadow-sm shadow-orange-500/20 cursor-pointer"
+    >
+      {isSaving ? "Salvando..." : "Salvar Alterações"}
+    </button>
+  {/snippet}
+
+  <Modal
+    show={showEditModal}
+    title="Editar Profissional"
+    maxWidth="max-w-2xl"
+    onclose={() => (showEditModal = false)}
+    children={editModalBody}
+    footer={editModalFooter}
+  />
 </div>

@@ -4,7 +4,7 @@
     import { landingConfig } from "$lib/config/landingConfig";
     import { page } from "$app/stores";
     import { onMount } from "svelte";
-    import { isAuthenticated, user, logout } from "$lib/stores/auth";
+    import { auth, logout } from "$lib/stores/auth.svelte";
     import { goto } from "$app/navigation";
 
     function getPanelRoute(role: string | undefined): string {
@@ -30,9 +30,9 @@
         image_url?: string;
     }
 
-    let service: Service | null = null;
-    let loading = true;
-    let error = "";
+    let service = $state<Service | null>(null);
+    let loading = $state(true);
+    let error = $state("");
 
     function getCategoryColor(categoria: string): string {
         const colors: Record<string, string> = {
@@ -92,9 +92,12 @@
     }
 
     // Reactive statement that fetches data when the ID changes
-    $: if ($page.params.id) {
-        fetchServiceDetails($page.params.id);
-    }
+    $effect(() => {
+        const id = $page.params.id;
+        if (id) {
+            fetchServiceDetails(id);
+        }
+    });
 </script>
 
 <div
@@ -112,15 +115,15 @@
                 Catálogo
             </a>
             <ThemeToggle />
-            {#if $isAuthenticated}
+            {#if auth.isAuthenticated}
                 <a
-                    href={getPanelRoute($user?.role)}
+                    href={getPanelRoute(auth.user?.role)}
                     class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
                 >
                     Meu Painel
                 </a>
                 <button
-                    on:click={handleLogout}
+                    onclick={handleLogout}
                     class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                 >
                     <span class="material-icons text-[18px]">logout</span>
@@ -184,7 +187,7 @@
                                     src={service.image_url}
                                     alt={service.nome}
                                     class="w-full h-full object-cover"
-                                    on:error={(e) => {
+                                    onerror={(e) => {
                                         (e.target as HTMLImageElement).src =
                                             "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1200";
                                     }}

@@ -3,7 +3,7 @@
     import Footer from "$lib/components/Footer.svelte";
     import ThemeToggle from "$lib/components/ThemeToggle.svelte";
     import { landingConfig } from "$lib/config/landingConfig";
-    import { isAuthenticated, user, logout } from "$lib/stores/auth";
+    import { auth, logout } from "$lib/stores/auth.svelte";
     import { goto } from "$app/navigation";
 
     function getPanelRoute(role: string | undefined): string {
@@ -37,29 +37,31 @@
     }
 
     // Estado dos serviços
-    let services: Service[] = [];
-    let featuredServices: Service[] = [];
-    let loading = true;
-    let error = "";
+    let services = $state<Service[]>([]);
+    let featuredServices = $state<Service[]>([]);
+    let loading = $state(true);
+    let error = $state("");
 
     // Paginação
-    let page = 1;
+    let page = $state(1);
     let limit = 5; // Quantos serviços queremos mostrar por página
     let apiLimit = 9; // Quantos buscamos da API (5 + 4 featured que serão filtrados)
-    let totalItems = 0;
+    let totalItems = $state(0);
 
     // Calcula o total de páginas considerando que 4 serviços serão filtrados da primeira página
-    $: totalPages = Math.ceil((totalItems - 4) / limit);
-    $: hasMore = page < totalPages;
+    let totalPages = $derived(Math.ceil((totalItems - 4) / limit));
+    let hasMore = $derived(page < totalPages);
 
     // Filtra os serviços para remover os que estão em destaque
-    $: filteredServices = services.filter(
-        (service) =>
-            !featuredServices.some((featured) => featured.ID === service.ID),
+    let filteredServices = $derived(
+        services.filter(
+            (service) =>
+                !featuredServices.some((featured) => featured.ID === service.ID),
+        )
     );
 
     // Filtro de categoria
-    let selectedCategory = "Todos os Serviços";
+    let selectedCategory = $state("Todos os Serviços");
     let categories = [
         "Todos os Serviços",
         "Cabelo",
@@ -184,15 +186,15 @@
         </a>
         <div class="flex items-center gap-2">
             <ThemeToggle />
-            {#if $isAuthenticated}
+            {#if auth.isAuthenticated}
                 <a
-                    href={getPanelRoute($user?.role)}
+                    href={getPanelRoute(auth.user?.role)}
                     class="px-4 py-1.5 rounded-lg text-sm font-medium bg-orange-500 text-white hover:bg-orange-600 transition-colors"
                 >
                     Meu Painel
                 </a>
                 <button
-                    on:click={handleLogout}
+                    onclick={handleLogout}
                     class="flex items-center gap-1 px-3 py-1.5 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 transition-colors"
                 >
                     <span class="material-icons text-[18px]">logout</span>
@@ -271,7 +273,7 @@
                 >
                     {#each categories as category}
                         <button
-                            on:click={() => selectCategory(category)}
+                            onclick={() => selectCategory(category)}
                             class="whitespace-nowrap px-4 py-2 {selectedCategory ===
                             category
                                 ? 'bg-primary text-white shadow-md shadow-primary/30'
@@ -327,7 +329,7 @@
                                                 alt={service.Nome}
                                                 class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                                                 src={service.ImagemUrl}
-                                                on:error={(e) => {
+                                                onerror={(e) => {
                                                     (
                                                         e.target as HTMLImageElement
                                                     ).src =
@@ -382,7 +384,7 @@
                                                 </div>
                                             </div>
                                             <button
-                                                on:click|preventDefault|stopPropagation={() => window.location.href = `/clientes/agendamento?serviceId=${service.ID}`}
+                                                onclick={(e) => { e.preventDefault(); e.stopPropagation(); window.location.href = `/clientes/agendamento?serviceId=${service.ID}`; }}
                                                 class="w-full px-4 py-2.5 bg-brand-orange hover:bg-brand-orange-hover text-white rounded-lg font-semibold shadow-md transition-all duration-200 flex items-center justify-center gap-2 group-hover:shadow-lg active:scale-95"
                                             >
                                                 <span class="material-symbols-outlined text-[18px]">
@@ -440,7 +442,7 @@
                                                 alt={service.Nome}
                                                 class="w-full h-full object-cover"
                                                 src={service.ImagemUrl}
-                                                on:error={(e) => {
+                                                onerror={(e) => {
                                                     (
                                                         e.target as HTMLImageElement
                                                     ).src =
@@ -514,7 +516,7 @@
                                 class="mt-8 flex justify-center items-center gap-4"
                             >
                                 <button
-                                    on:click|preventDefault={() => {
+                                    onclick={() => {
                                         page--;
                                         fetchServices();
                                     }}
@@ -527,7 +529,7 @@
                                     Página {page} de {totalPages}
                                 </span>
                                 <button
-                                    on:click|preventDefault={() => {
+                                    onclick={() => {
                                         page++;
                                         fetchServices();
                                     }}

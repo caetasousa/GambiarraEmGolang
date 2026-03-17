@@ -5,39 +5,39 @@
     import AlertModal from "$lib/components/AlertModal.svelte";
     import ProfileDataAndServicesTab from "$lib/components/profile/ProfileDataAndServicesTab.svelte";
     import { fetchApi } from "$lib/utils/api";
-    import { user } from "$lib/stores/auth";
-    
-    import type { 
-        Service, 
-        ProviderProfile, 
-        ProviderData 
+    import { auth } from "$lib/stores/auth.svelte";
+
+    import type {
+        Service,
+        ProviderProfile,
+        ProviderData
     } from '$lib/types/profile';
 
     import { uploadPrestadorImageToSupabase, deleteImageFromSupabase } from "$lib/utils/imageUpload";
 
     // --- User Data ---
-    $: userId = $user?.id ?? "";
-    $: userRole = $user?.role ?? "";
-    $: isPrestadorOrAdmin = userRole === "prestador" || userRole === "admin";
-    let currentProviderData: ProviderData | null = null;
+    let userId = $derived(auth.user?.id ?? "");
+    let userRole = $derived(auth.user?.role ?? "");
+    let isPrestadorOrAdmin = $derived(userRole === "prestador" || userRole === "admin");
+    let currentProviderData = $state<ProviderData | null>(null);
 
     // --- Services Logic ---
-    let services: any[] = [];
-    let servicesLoading = false;
-    let showSelectionModal = false;
+    let services = $state<any[]>([]);
+    let servicesLoading = $state(false);
+    let showSelectionModal = $state(false);
 
     // --- Edit Mode Logic ---
-    let isEditing = false;
-    let selectedFile: File | null = null;
+    let isEditing = $state(false);
+    let selectedFile = $state<File | null>(null);
 
     // --- Form Data ---
-    let profile: ProviderProfile = {
+    let profile = $state<ProviderProfile>({
         name: "",
         cpf: "",
         phone: "",
         email: "",
         avatarUrl: "",
-    };
+    });
 
     async function fetchUserData() {
         try {
@@ -70,7 +70,6 @@
                     console.error("Failed to fetch prestador data");
                 }
             } else {
-                // admin ou cliente
                 const response = await fetchApi(`/api/v1/clientes/${userId}`);
                 if (response.ok) {
                     const data = await response.json();
@@ -91,7 +90,9 @@
         }
     }
 
-    $: if (userId && userRole) fetchUserData();
+    $effect(() => {
+        if (userId && userRole) fetchUserData();
+    });
 
     function toggleEdit() {
         isEditing = true;
@@ -103,9 +104,9 @@
         fetchUserData(); // Reset data
     }
 
-    function handleImageSelect(event: CustomEvent<{ file: File; preview: string }>) {
-        selectedFile = event.detail.file;
-        profile.avatarUrl = event.detail.preview;
+    function handleImageSelect(data: { file: File; preview: string }) {
+        selectedFile = data.file;
+        profile.avatarUrl = data.preview;
     }
 
     function handleImageClear() {
@@ -193,7 +194,7 @@
 
                 currentProviderData = { ...currentProviderData, ...updatedProvider };
                 isEditing = false;
-                
+
                 alertConfig = {
                     title: "Sucesso",
                     message: "Dados atualizados com sucesso!",
@@ -201,12 +202,12 @@
                     confirmText: "OK",
                     showCancel: false,
                 };
-                onConfirmAction = () => { showAlert = false; };
-                showAlert = true;
+                onConfirmAction = () => { showAlertModal = false; };
+                showAlertModal = true;
             } else {
                 const errorText = await response.text();
                 console.error("Failed to update profile", response.status, errorText);
-                
+
                 alertConfig = {
                     title: "Erro",
                     message: `Erro ao atualizar dados: ${errorText}`,
@@ -214,7 +215,7 @@
                     confirmText: "Fechar",
                     showCancel: false,
                 };
-                showAlert = true;
+                showAlertModal = true;
             }
         } catch (e) {
             console.error("Error saving profile:", e);
@@ -225,28 +226,27 @@
                 confirmText: "Fechar",
                 showCancel: false,
             };
-            showAlert = true;
+            showAlertModal = true;
         }
     }
 
     // --- Alert Modal Logic ---
-    let showAlert = false;
-    let alertConfig = {
+    let showAlertModal = $state(false);
+    let alertConfig = $state({
         title: "",
         message: "",
         type: "info" as "info" | "success" | "warning" | "error" | "primary",
         confirmText: "Confirmar",
         showCancel: true,
-    };
-    let onConfirmAction: () => void = () => {};
+    });
+    let onConfirmAction = $state<() => void>(() => {});
 
     function handleConfirmAction() {
         if (onConfirmAction) onConfirmAction();
-        showAlert = false;
+        showAlertModal = false;
     }
 
-    function handleAddService(event: CustomEvent) {
-        const newService = event.detail;
+    function handleAddService(newService: Record<string, unknown>) {
         if (!services.find((s) => s.ID === (newService.ID || newService.id))) {
             alertConfig = {
                 title: "Confirmar Adição",
@@ -268,12 +268,12 @@
                 const updatedServices = [...services, serviceToAdd];
                 saveProviderCatalog(updatedServices);
             };
-            showAlert = true;
+            showAlertModal = true;
         }
     }
 
-    function handleRemoveService(event: CustomEvent<{ service: any}>) {
-        const service = event.detail.service;
+    function handleRemoveService(data: { service: Record<string, unknown> }) {
+        const service = data.service;
         alertConfig = {
             title: "Remover Serviço",
             message: `Tem certeza que deseja remover "${service.Nome}"?`,
@@ -285,7 +285,7 @@
             const updatedServices = services.filter((s) => s.ID !== service.ID);
             saveProviderCatalog(updatedServices);
         };
-        showAlert = true;
+        showAlertModal = true;
     }
 </script>
 
@@ -310,18 +310,18 @@
                 </div>
 
                 <!-- Content -->
-                <ProfileDataAndServicesTab 
-                    {profile} 
+                <ProfileDataAndServicesTab
+                    {profile}
                     {isEditing}
                     {services}
                     {servicesLoading}
-                    on:toggleEdit={toggleEdit}
-                    on:cancelEdit={cancelEdit}
-                    on:save={saveProfileData}
-                    on:imageSelect={handleImageSelect}
-                    on:imageClear={handleImageClear}
-                    on:addService={openSelectionModal}
-                    on:removeService={handleRemoveService}
+                    ontoggleEdit={toggleEdit}
+                    oncancelEdit={cancelEdit}
+                    onsave={saveProfileData}
+                    onimageSelect={handleImageSelect}
+                    onimageClear={handleImageClear}
+                    onaddService={openSelectionModal}
+                    onremoveService={handleRemoveService}
                 />
             </div>
         </div>
@@ -331,17 +331,17 @@
             bind:show={showSelectionModal}
             providerId={userId}
             existingServiceIds={services.map(s => s.ID)}
-            on:add={handleAddService}
+            onadd={handleAddService}
         />
 
         <AlertModal
-            bind:show={showAlert}
+            bind:show={showAlertModal}
             title={alertConfig.title}
             message={alertConfig.message}
             type={alertConfig.type}
             confirmText={alertConfig.confirmText}
             showCancel={alertConfig.showCancel}
-            on:confirm={handleConfirmAction}
+            onconfirm={handleConfirmAction}
         />
     </main>
 </div>

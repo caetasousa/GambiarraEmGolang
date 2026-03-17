@@ -1,6 +1,8 @@
-<script>
+<script lang="ts">
   import '../app.css';
-  import { theme } from '$lib/stores/theme';
+  import { theme } from '$lib/stores/theme.svelte';
+
+  let { children } = $props();
 </script>
 
-<slot />
+{@render children()}

@@ -19,10 +19,10 @@
   // ========================================
 
   /** Nome do serviço */
-  let nome: string = "";
+  let nome = $state<string>("");
 
   /** Lista de categorias disponíveis */
-  let categories: string[] = [
+  let categories = $state<string[]>([
     "Cabelo",
     "Unhas",
     "Estética Facial",
@@ -31,57 +31,57 @@
     "Maquiagem",
     "Massagem",
     "Tratamentos",
-  ];
+  ]);
 
   /** Categoria selecionada */
-  let categoria: string = "";
+  let categoria = $state<string>("");
 
   /** Duração padrão em minutos */
-  let duracao_padrao: number = 60;
+  let duracao_padrao = $state<number>(60);
 
   /** Preço em formato string */
-  let preco: string = "";
+  let preco = $state<string>("");
 
   /** Descrição do serviço */
-  let description: string = "";
+  let description = $state<string>("");
 
   /** Indica se está enviando */
-  let loading: boolean = false;
+  let loading = $state<boolean>(false);
 
   /** Mensagem de feedback */
-  let message: string = "";
+  let message = $state<string>("");
 
   /** Tipo da mensagem */
-  let messageType: "success" | "error" | "" = "";
+  let messageType = $state<"success" | "error" | "">("");
 
   /** Erros de validação */
-  let errors: ValidationErrors = {};
+  let errors = $state<ValidationErrors>({});
 
   // ========================================
   // VARIÁVEIS DO MODAL DE CATEGORIA
   // ========================================
 
   /** Controla visibilidade do modal */
-  let showCategoryModal: boolean = false;
+  let showCategoryModal = $state<boolean>(false);
 
   // ========================================
   // VARIÁVEIS DE UPLOAD DE IMAGEM
   // ========================================
 
   /** Arquivo selecionado */
-  let selectedImage: File | null = null;
+  let selectedImage = $state<File | null>(null);
 
   /** URL de preview */
-  let imagePreview: string | null = null;
+  let imagePreview = $state<string | null>(null);
 
   /** Indica se está fazendo upload */
-  let uploadingImage: boolean = false;
+  let uploadingImage = $state<boolean>(false);
 
   /** URL pública da imagem */
-  let uploadedImageUrl: string | null = null;
+  let uploadedImageUrl = $state<string | null>(null);
 
   /** Erro de imagem */
-  let imageError: string = "";
+  let imageError = $state<string>("");
 
   // ========================================
   // FUNÇÕES
@@ -97,8 +97,7 @@
   /**
    * Adiciona nova categoria
    */
-  function handleAddCategory(event: CustomEvent<string>): void {
-    const newCategory = event.detail;
+  function handleAddCategory(newCategory: string): void {
     categories = [...categories, newCategory];
     categoria = newCategory;
   }
@@ -106,11 +105,9 @@
   /**
    * Manipula seleção de imagem
    */
-  function handleImageSelect(
-    event: CustomEvent<{ file: File; preview: string }>,
-  ): void {
-    selectedImage = event.detail.file;
-    imagePreview = event.detail.preview;
+  function handleImageSelect(file: File, preview: string): void {
+    selectedImage = file;
+    imagePreview = preview;
     imageError = "";
   }
 
@@ -223,17 +220,6 @@
             uploadedImageUrl,
           );
           await deleteImageFromSupabase(uploadedImageUrl);
-          // Opcional: limpar a URL da imagem do estado se desejar forçar re-upload,
-          // mas talvez o usuário queira tentar salvar de novo sem reupar.
-          // Por garantia de consistência com o backend "não salvo", vamos manter
-          // a imagem no estado para o usuário tentar de novo,
-          // MAS a imagem foi deletada do bucket.
-          // Para evitar confusão, melhor limpar o estado da imagem também
-          // E pedir para o usuário selecionar de novo (ou reupar automaticamente na proxima tentativa).
-          // Vamos simplificar: se deletou, deletou. O usuário terá que selecionar de novo?
-          // Não, se ele clicar em salvar de novo, o uploadedImageUrl ainda está lá.
-          // Então precisamos limpar 'uploadedImageUrl' para que o próximo submit faça upload de novo.
-          // Mas 'selectedImage' ainda está lá.
           uploadedImageUrl = null;
         }
 
@@ -283,7 +269,7 @@
           <div class="lg:col-span-2 space-y-6">
             <form
               class="bg-[hsl(var(--bs-card))] rounded-lg shadow-sm border border-border-light dark:border-border-dark p-6 md:p-8"
-              on:submit={handleSubmit}
+              onsubmit={handleSubmit}
             >
               <div class="space-y-6">
                 <div>
@@ -340,7 +326,7 @@
                       </select>
                     </div>
                     <button
-                      on:click={openCategoryModal}
+                      onclick={openCategoryModal}
                       type="button"
                       class="h-[42px] w-[42px] flex items-center justify-center border border-border-light dark:border-border-dark rounded-md bg-gray-50 dark:bg-[hsl(var(--bs-muted))]/20 text-gray-500 hover:text-brand-orange hover:bg-brand-orange/5 hover:border-brand-orange transition-all duration-200 group active:scale-95 shadow-sm"
                       title="Nova Categoria"
@@ -369,7 +355,7 @@
                         type="number"
                         step="1"
                         min="0"
-                        on:keypress={(e) => {
+                        onkeypress={(e) => {
                           if (e.key === "." || e.key === ",")
                             e.preventDefault();
                         }}
@@ -490,8 +476,8 @@
 
               <ImageUpload
                 previewUrl={imagePreview}
-                on:select={handleImageSelect}
-                on:clear={handleImageClear}
+                onselect={({ file, preview }) => handleImageSelect(file, preview)}
+                onclear={handleImageClear}
               />
               {#if imageError}
                 <p class="mt-2 text-xs text-red-500">{imageError}</p>
@@ -534,7 +520,7 @@
 <CategoryModal
   bind:show={showCategoryModal}
   existingCategories={categories}
-  on:add={handleAddCategory}
+  onadd={handleAddCategory}
 />
 
 <style>

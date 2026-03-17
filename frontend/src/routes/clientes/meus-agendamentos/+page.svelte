@@ -3,7 +3,7 @@
     import Sidebar from "$lib/components/Sidebar.svelte";
     import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
     import { fetchApi } from "$lib/utils/api";
-    import { user } from "$lib/stores/auth";
+    import { auth } from "$lib/stores/auth.svelte";
 
     interface ServicoInfo {
         id: string;
@@ -29,17 +29,19 @@
         notas?: string;
     }
 
-    $: clienteId = $user?.id ?? "";
+    let clienteId = $derived(auth.user?.id ?? "");
 
-    let agendamentos: Agendamento[] = [];
-    let loading = true;
-    let erro = "";
+    let agendamentos = $state<Agendamento[]>([]);
+    let loading = $state(true);
+    let erro = $state("");
 
     // Filtro por status
-    let filtroStatus = "todos";
-    $: agendamentosFiltrados = filtroStatus === "todos"
-        ? agendamentos
-        : agendamentos.filter(a => a.status === filtroStatus);
+    let filtroStatus = $state("todos");
+    let agendamentosFiltrados = $derived(
+        filtroStatus === "todos"
+            ? agendamentos
+            : agendamentos.filter(a => a.status === filtroStatus)
+    );
 
     function formatarData(isoStr: string): string {
         if (!isoStr) return "";
@@ -175,7 +177,7 @@
                         { value: "cancelado", label: "Cancelados" },
                     ] as filtro}
                         <button
-                            on:click={() => (filtroStatus = filtro.value)}
+                            onclick={() => (filtroStatus = filtro.value)}
                             class="px-3 py-1.5 rounded-full text-sm font-medium transition-colors {filtroStatus === filtro.value
                                 ? 'bg-brand-orange text-white'
                                 : 'bg-white dark:bg-[hsl(var(--bs-card))] text-gray-600 dark:text-gray-300 border border-border-light dark:border-border-dark hover:bg-gray-50 dark:hover:bg-gray-800'}"
@@ -195,7 +197,7 @@
                         <span class="material-symbols-outlined text-red-500 text-4xl mb-2">error</span>
                         <p class="text-red-600 dark:text-red-400">{erro}</p>
                         <button
-                            on:click={carregarAgendamentos}
+                            onclick={carregarAgendamentos}
                             class="mt-4 px-4 py-2 bg-brand-orange text-white rounded-lg text-sm hover:bg-brand-orange/90 transition-colors"
                         >
                             Tentar novamente

@@ -28,40 +28,40 @@
         total: number;
     }
 
-    let services: Service[] = [];
-    let loading = true;
-    let error = "";
+    let services = $state<Service[]>([]);
+    let loading = $state(true);
+    let error = $state("");
 
     // Paginação
-    let page = 1;
-    let limit = 12;
-    let totalItems = 0;
+    let page = $state(1);
+    let limit = $state(12);
+    let totalItems = $state(0);
 
-    $: totalPages = Math.ceil(totalItems / limit);
+    let totalPages = $derived(Math.ceil(totalItems / limit));
 
     // Edição
-    let showEditModal = false;
-    let editingService: Service | null = null;
-    let isUpdating = false;
+    let showEditModal = $state(false);
+    let editingService = $state<Service | null>(null);
+    let isUpdating = $state(false);
 
     // Campos do formulário de edição
-    let editNome = "";
-    let editCategoria = "";
-    let editDuracao = 60;
-    let editPreco = ""; // Preço visual em Reais ("120,00")
+    let editNome = $state("");
+    let editCategoria = $state("");
+    let editDuracao = $state(60);
+    let editPreco = $state(""); // Preço visual em Reais ("120,00")
 
     // Imagem do modal de edição
-    let selectedImage: File | null = null;
-    let imagePreview: string | null = null;
+    let selectedImage = $state<File | null>(null);
+    let imagePreview = $state<string | null>(null);
 
     // Erros de validação
-    let editErrors: Record<string, string> = {};
+    let editErrors = $state<Record<string, string>>({});
 
     // Cache busting para imagens (timestamp por serviço)
-    let imageTimestamps: Map<string, number> = new Map();
+    let imageTimestamps = $state(new Map<string, number>());
 
     // Estado do AlertModal
-    let alertState = {
+    let alertState = $state({
         show: false,
         title: "",
         message: "",
@@ -69,7 +69,7 @@
         showCancel: false,
         confirmText: "OK",
         onConfirm: () => {},
-    };
+    });
 
     function showAlert(
         title: string,
@@ -99,31 +99,22 @@
         loading = true;
         error = "";
         try {
-            console.log(`Fetching services: page=${page}, limit=${limit}`);
             const response = await fetch(
                 `/api/v1/catalogos?page=${page}&limit=${limit}`,
             );
 
-            console.log("Response status:", response.status);
-
             if (response.ok) {
                 const data: ApiResponse = await response.json();
-                console.log("API Data received:", data);
-
-                // Garantir que services seja sempre um array
                 services = data.data || [];
                 totalItems = data.total || 0;
             } else {
                 const text = await response.text();
-                console.error("API Error:", text);
                 error = "Erro ao carregar serviços: " + response.statusText;
             }
         } catch (err) {
-            console.error("Erro na requisição:", err);
             error = "Serviço indisponível no momento.";
         } finally {
             loading = false;
-            console.log("Loading set to false. Items:", services.length);
         }
     }
 
@@ -157,11 +148,9 @@
         showEditModal = true;
     }
 
-    function handleImageSelect(
-        event: CustomEvent<{ file: File; preview: string }>,
-    ) {
-        selectedImage = event.detail.file;
-        imagePreview = event.detail.preview;
+    function handleImageSelect(data: { file: File; preview: string }) {
+        selectedImage = data.file;
+        imagePreview = data.preview;
     }
 
     function handleImageClear() {
@@ -201,8 +190,6 @@
             if (selectedImage) {
                 const newImageUrl = await uploadImageToSupabase(selectedImage);
                 if (newImageUrl) {
-                    // Deletar antiga se for diferente (e se não for nula, mas a interface diz string)
-                    // Verificar se a antiga era do supabase para deletar
                     if (
                         editingService.ImagemUrl &&
                         editingService.ImagemUrl !== newImageUrl
@@ -220,7 +207,6 @@
                     return;
                 }
             } else if (!imagePreview) {
-                // Caso o usuário tenha limpado a imagem e não selecionado outra (já validado, mas segurança extra)
                 showAlert("Erro", "A imagem é obrigatória.", "error");
                 isUpdating = false;
                 return;
@@ -245,8 +231,9 @@
             if (response.ok) {
                 // Atualiza timestamp da imagem se foi alterada
                 if (selectedImage) {
-                    imageTimestamps.set(editingService!.ID, Date.now());
-                    imageTimestamps = imageTimestamps; // Trigger reactivity
+                    const newMap = new Map(imageTimestamps);
+                    newMap.set(editingService!.ID, Date.now());
+                    imageTimestamps = newMap;
                 }
 
                 // Atualiza lista localmente (Otimista)
@@ -265,16 +252,14 @@
                 });
                 showEditModal = false;
             } else {
-                // Se falhar e tiver subido imagem nova, talvez devessemos deletar?
-                // Por simplicidade, deixamos lá ou o user tenta de novo.
                 showAlert(
                     "Erro",
                     "Erro ao atualizar serviço: " + response.statusText,
                     "error",
                 );
             }
-        } catch (error) {
-            console.error(error);
+        } catch (err) {
+            console.error(err);
             showAlert("Erro", "Erro de conexão ao atualizar.", "error");
         } finally {
             isUpdating = false;
@@ -288,16 +273,13 @@
             "warning",
             true, // showCancel
             async () => {
-                // Lógica de exclusão executada ao confirmar
                 try {
-                    // 1. Deletar registro do banco via API PRIMEIRO
                     const response = await fetchApi(
                         `/api/v1/catalogos/${service.ID}`,
                         { method: "DELETE" },
                     );
 
                     if (response.ok) {
-                        // 2. Deletar imagem do Supabase apenas se o registro no banco foi removido com sucesso
                         if (service.ImagemUrl) {
                             const deleted = await deleteImageFromSupabase(
                                 service.ImagemUrl,
@@ -309,21 +291,19 @@
                             }
                         }
 
-                        // 3. Atualizar UI
                         services = services.filter((s) => s.ID !== service.ID);
                         totalItems--;
                         if (services.length === 0 && page > 1) {
                             page--;
                             fetchServices();
                         }
-                        alertState.show = false; // Fecha o modal de confirmação
+                        alertState.show = false;
                     } else {
                         const errorData = await response.json().catch(() => ({}));
                         const errorMessage = errorData.error || await response.text();
 
                         let friendlyMessage = `Erro ao excluir serviço: ${errorMessage}`;
-                        
-                        // Tratamento específico para erro de infraestrutura (geralmente chave estrangeira)
+
                         if (errorMessage.includes("falha na infraestrutura")) {
                             friendlyMessage = "Este serviço não pode ser excluído porque está vinculado a profissionais ou agendamentos.";
                         }
@@ -446,7 +426,7 @@
                                                 : service.ImagemUrl}
                                             alt={service.Nome}
                                             class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700"
-                                            on:error={(e) => {
+                                            onerror={(e) => {
                                                 (
                                                     e.target as HTMLImageElement
                                                 ).src =
@@ -550,7 +530,7 @@
                                             <button
                                                 class="p-2 text-gray-400 hover:text-brand-orange dark:hover:text-brand-orange transition-colors rounded-lg hover:bg-brand-orange/5"
                                                 title="Editar"
-                                                on:click={() =>
+                                                onclick={() =>
                                                     openEditModal(service)}
                                             >
                                                 <span
@@ -561,7 +541,7 @@
                                             <button
                                                 class="p-2 text-gray-400 hover:text-red-500 dark:hover:text-red-500 transition-colors rounded-lg hover:bg-red-500/5"
                                                 title="Excluir"
-                                                on:click={() =>
+                                                onclick={() =>
                                                     handleDelete(service)}
                                             >
                                                 <span
@@ -583,7 +563,7 @@
                         >
                             <button
                                 class="px-4 py-2 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                on:click={prevPage}
+                                onclick={prevPage}
                                 disabled={page === 1}
                             >
                                 Anterior
@@ -593,7 +573,7 @@
                             </span>
                             <button
                                 class="px-4 py-2 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-md text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                on:click={nextPage}
+                                onclick={nextPage}
                                 disabled={page === totalPages}
                             >
                                 Próxima
@@ -604,12 +584,8 @@
             </div>
 
             <!-- Modal de Edição -->
-            <Modal
-                show={showEditModal}
-                title="Editar Serviço"
-                on:close={() => (showEditModal = false)}
-            >
-                <div slot="body" class="space-y-4">
+            {#snippet editModalBody()}
+                <div class="space-y-4">
                     <div>
                         <div class="mb-4">
                             <span
@@ -619,8 +595,8 @@
                             </span>
                             <ImageUpload
                                 previewUrl={imagePreview}
-                                on:select={handleImageSelect}
-                                on:clear={handleImageClear}
+                                onselect={handleImageSelect}
+                                onclear={handleImageClear}
                             />
                             {#if editErrors.imagem}
                                 <p class="mt-1 text-xs text-red-500">
@@ -726,23 +702,31 @@
                         </div>
                     </div>
                 </div>
+            {/snippet}
 
-                <div slot="footer">
-                    <button
-                        on:click={() => (showEditModal = false)}
-                        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-                    >
-                        Cancelar
-                    </button>
-                    <button
-                        on:click={handleUpdate}
-                        disabled={isUpdating}
-                        class="px-4 py-2 text-sm font-medium text-white bg-brand-orange rounded-md hover:bg-brand-orange-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
-                    >
-                        {isUpdating ? "Salvando..." : "Salvar Alterações"}
-                    </button>
-                </div>
-            </Modal>
+            {#snippet editModalFooter()}
+                <button
+                    onclick={() => (showEditModal = false)}
+                    class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-border-light dark:border-border-dark rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+                >
+                    Cancelar
+                </button>
+                <button
+                    onclick={handleUpdate}
+                    disabled={isUpdating}
+                    class="px-4 py-2 text-sm font-medium text-white bg-brand-orange rounded-md hover:bg-brand-orange-hover focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-brand-orange disabled:opacity-50 transition-colors"
+                >
+                    {isUpdating ? "Salvando..." : "Salvar Alterações"}
+                </button>
+            {/snippet}
+
+            <Modal
+                show={showEditModal}
+                title="Editar Serviço"
+                onclose={() => (showEditModal = false)}
+                children={editModalBody}
+                footer={editModalFooter}
+            />
 
             <!-- Alert Modal -->
             <AlertModal
@@ -752,8 +736,8 @@
                 type={alertState.type}
                 showCancel={alertState.showCancel}
                 confirmText={alertState.confirmText}
-                on:confirm={alertState.onConfirm}
-                on:cancel={closeAlert}
+                onconfirm={alertState.onConfirm}
+                oncancel={closeAlert}
             />
 
             <footer

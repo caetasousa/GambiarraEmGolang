@@ -3,7 +3,6 @@
     import { goto } from "$app/navigation";
     import Sidebar from "$lib/components/Sidebar.svelte";
     import DashboardNavbar from "$lib/components/DashboardNavbar.svelte";
-    import ThemeToggle from "$lib/components/ThemeToggle.svelte";
     import AlertModal from "$lib/components/AlertModal.svelte";
     import ImageUpload from "$lib/components/ImageUpload.svelte";
     import { uploadPrestadorImageToSupabase } from "$lib/utils/imageUpload";
@@ -14,7 +13,6 @@
         Nome: string;
         Categoria: string;
         DuracaoPadrao: number;
-        // Outros campos se necessário
     }
 
     interface CatalogResponse {
@@ -23,28 +21,28 @@
     }
 
     // Estado do formulário
-    let nome = "";
-    let cpf = "";
-    let phone = "";
-    let email = "";
-    let selectedCatalogIds: string[] = [];
+    let nome = $state("");
+    let cpf = $state("");
+    let phone = $state("");
+    let email = $state("");
+    let selectedCatalogIds = $state<string[]>([]);
 
     // Estado da imagem
-    let selectedImage: File | null = null;
-    let imagePreview: string | null = null;
+    let selectedImage = $state<File | null>(null);
+    let imagePreview = $state<string | null>(null);
 
     // Estado da lista de serviços
-    let services: CatalogService[] = [];
-    let loadingServices = true;
-    let page = 1;
-    let limit = 12;
-    let totalServices = 0;
+    let services = $state<CatalogService[]>([]);
+    let loadingServices = $state(true);
+    let page = $state(1);
+    let limit = $state(12);
+    let totalServices = $state(0);
 
     // Estado de envio
-    let isSubmitting = false;
+    let isSubmitting = $state(false);
 
     // Alert Modal
-    let alertState = {
+    let alertState = $state({
         show: false,
         title: "",
         message: "",
@@ -52,7 +50,7 @@
         onConfirm: () => {
             alertState.show = false;
         },
-    };
+    });
 
     function showAlert(
         title: string,
@@ -229,8 +227,6 @@
             senha: "admin123",
         };
 
-        console.log("Payload de cadastro:", payload);
-
         try {
             const res = await fetch("/api/v1/prestadores", {
                 method: "POST",
@@ -256,10 +252,8 @@
                 );
             } else {
                 const text = await res.text();
-                // Mensagem mais amigável para erro de CPF
                 let errorMessage = text;
-                
-                // Tratamento de erro de duplicidade de email (segurança)
+
                 if (text.includes('duplicate key value violates unique constraint "uq_prestadores_email"')) {
                      errorMessage = "Não foi possível realizar o cadastro. Verifique os dados informados.";
                 } else if (
@@ -274,12 +268,6 @@
                 ) {
                     errorMessage =
                         "O profissional deve ter pelo menos um serviço cadastrado.";
-                }
-                
-                // Se ainda for a mensagem original e parecer erro técnico, mostra algo genérico se não for um dos casos acima
-                if (errorMessage === text && text.includes("error")) {
-                     // Opção: manter a mensagem técnica se não for de segurança, ou limpar todas.
-                     // Como o user pediu especificamente da constraint, mantemos assim.
                 }
 
                 showAlert("Erro", errorMessage, "error");
@@ -303,12 +291,9 @@
         window.scrollTo(0, 0);
     }
 
-    async function handleImageSelect(
-        event: CustomEvent<{ file: File; preview: string }>,
-    ) {
-        const { file, preview } = event.detail;
-        selectedImage = file;
-        imagePreview = preview;
+    function handleImageSelect(data: { file: File; preview: string }) {
+        selectedImage = data.file;
+        imagePreview = data.preview;
     }
 
     function handleImageClear() {
@@ -437,8 +422,8 @@
                                     </div>
                                     <ImageUpload
                                         previewUrl={imagePreview}
-                                        on:select={handleImageSelect}
-                                        on:clear={handleImageClear}
+                                        onselect={handleImageSelect}
+                                        onclear={handleImageClear}
                                     />
                                 </div>
                             </div>
@@ -521,7 +506,7 @@
                                 <div class="mt-4 text-center">
                                     <button
                                         type="button"
-                                        on:click={loadMore}
+                                        onclick={loadMore}
                                         class="text-sm text-primary hover:underline hover:text-primary-hover font-medium"
                                     >
                                         Carregar mais serviços
@@ -535,14 +520,14 @@
                     >
                         <button
                             type="button"
-                            on:click={() => window.history.back()}
+                            onclick={() => window.history.back()}
                             class="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-gray-700 dark:text-gray-300 font-medium hover:bg-white dark:hover:bg-gray-700 transition-colors focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500"
                         >
                             Cancelar
                         </button>
                         <button
                             type="button"
-                            on:click={handleSubmit}
+                            onclick={handleSubmit}
                             disabled={isSubmitting}
                             class="px-6 py-2 bg-primary hover:bg-primary-hover text-white rounded-md font-medium shadow-md transition-colors flex items-center focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-primary disabled:opacity-50"
                         >
@@ -608,8 +593,8 @@
     title={alertState.title}
     message={alertState.message}
     type={alertState.type}
-    on:confirm={alertState.onConfirm}
-    on:cancel={() => (alertState.show = false)}
+    onconfirm={alertState.onConfirm}
+    oncancel={() => (alertState.show = false)}
 />
 
 <style>

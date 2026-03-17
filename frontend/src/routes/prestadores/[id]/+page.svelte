@@ -32,8 +32,8 @@
         email: string;
         telefone: string;
         ativo: boolean;
-        foto?: string; // Adding optional fields for UI
-        image_url?: string; // Field returned by API
+        foto?: string;
+        image_url?: string;
         biografia?: string;
         especialidade?: string;
         rating?: number;
@@ -42,21 +42,18 @@
         agenda: AgendaItem[];
     }
 
-    let provider: Provider | null = null;
-    let loading = true;
-    let error: string | null = null;
-
-    $: id = $page.params.id;
+    let provider = $state<Provider | null>(null);
+    let loading = $state(true);
+    let error = $state<string | null>(null);
 
     onMount(async () => {
+        const id = $page.params.id;
         try {
             const res = await fetchApi(`/api/v1/prestadores/${id}`);
             if (res.ok) {
                 provider = await res.json();
 
-                // Add default values for UI fields not present in API
                 if (provider) {
-                    // Map image_url to foto if necessary
                     console.log("Provider Data:", provider);
 
                     provider.foto =
@@ -67,10 +64,9 @@
                         provider.biografia || "Sem biografia disponível.";
                     provider.especialidade =
                         provider.especialidade || "Profissional BellaVita";
-                    provider.rating = 5.0; // Default
-                    provider.reviews = 0; // Default
+                    provider.rating = 5.0;
+                    provider.reviews = 0;
 
-                    // Ensure agenda is an array
                     if (!provider.agenda) {
                         provider.agenda = [];
                     }

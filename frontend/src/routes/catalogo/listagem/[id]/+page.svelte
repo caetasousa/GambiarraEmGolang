@@ -2,7 +2,6 @@
     import Sidebar from "$lib/components/Sidebar.svelte";
     import ThemeToggle from "$lib/components/ThemeToggle.svelte";
     import { page } from "$app/stores";
-    import { onMount } from "svelte";
 
     interface Service {
         id: string;
@@ -13,9 +12,9 @@
         image_url?: string;
     }
 
-    let service: Service | null = null;
-    let loading = true;
-    let error = "";
+    let service = $state<Service | null>(null);
+    let loading = $state(true);
+    let error = $state("");
 
     function getCategoryColor(categoria: string): string {
         const colors: Record<string, string> = {
@@ -44,7 +43,7 @@
             console.log("Request URL:", url);
             const response = await fetch(url);
             console.log("Response status:", response.status);
-            
+
             if (response.ok) {
                 const data = await response.json();
                 console.log("Service data received:", data);
@@ -66,9 +65,12 @@
     }
 
     // Reactive statement that fetches data when the ID changes
-    $: if ($page.params.id) {
-        fetchServiceDetails($page.params.id);
-    }
+    $effect(() => {
+        const id = $page.params.id;
+        if (id) {
+            fetchServiceDetails(id);
+        }
+    });
 </script>
 
 <div
@@ -141,7 +143,7 @@
                                     src={service.image_url}
                                     alt={service.nome}
                                     class="w-full h-full object-cover"
-                                    on:error={(e) => {
+                                    onerror={(e) => {
                                         (e.target as HTMLImageElement).src = "https://images.unsplash.com/photo-1560066984-138dadb4c035?auto=format&fit=crop&q=80&w=1200";
                                     }}
                                 />
@@ -186,7 +188,7 @@
                                         <p
                                             class="text-gray-600 dark:text-gray-300 leading-relaxed text-lg"
                                         >
-                                            Serviço de {service.categoria.toLowerCase()} profissional com duração de {service.duracao_padrao} minutos. 
+                                            Serviço de {service.categoria.toLowerCase()} profissional com duração de {service.duracao_padrao} minutos.
                                             Oferecemos atendimento de qualidade com profissionais especializados para garantir a melhor experiência.
                                         </p>
                                     </section>
