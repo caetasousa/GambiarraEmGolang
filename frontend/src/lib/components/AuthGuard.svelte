@@ -1,18 +1,16 @@
 <script lang="ts">
-    import { isAuthenticated } from "$lib/stores/auth";
+    import { auth } from "$lib/stores/auth.svelte";
     import { goto } from "$app/navigation";
-    import { onMount } from "svelte";
 
-    onMount(() => {
-        const unsubscribe = isAuthenticated.subscribe((auth) => {
-            if (!auth) {
-                goto("/login");
-            }
-        });
-        return unsubscribe;
+    let { children } = $props();
+
+    $effect(() => {
+        if (!auth.isAuthenticated) {
+            goto("/login");
+        }
     });
 </script>
 
-{#if $isAuthenticated}
-    <slot />
+{#if auth.isAuthenticated}
+    {@render children()}
 {/if}

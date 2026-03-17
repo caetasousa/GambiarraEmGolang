@@ -1,19 +1,19 @@
 <script lang="ts">
   import type { FooterData } from '$lib/config/landingConfig';
 
-  export let data: FooterData;
+  let { data }: { data: FooterData } = $props();
 </script>
 
-<footer class="bg-gray-900 dark:bg-black border-t border-gray-700 dark:border-white/5 pt-28 pb-12">
+<footer class="bg-gradient-to-b from-slate-800 to-slate-900 border-t border-slate-700/50 dark:border-white/5 pt-28 pb-12">
   <div class="container mx-auto px-4">
     <div class="grid grid-cols-1 md:grid-cols-[2fr_1fr_1.5fr_1.5fr] gap-16 mb-24">
       <!-- Brand -->
       <div class="flex flex-col gap-8">
-        <a href="#home" class="flex items-center gap-3">
-          <div class="w-10 h-10 bg-orange-500 rounded-xl flex items-center justify-center text-black font-bold text-xl shadow-[0_10px_15px_-3px_rgba(251,146,60,0.2)]">
+        <a href="#home" class="flex items-center gap-3 cursor-pointer group">
+          <div class="w-10 h-10 bg-gradient-to-br from-orange-500 to-pink-500 rounded-xl flex items-center justify-center text-white font-bold text-xl shadow-[0_10px_15px_-3px_rgba(249,115,22,0.35)] transition-transform duration-300 group-hover:scale-105">
             B
           </div>
-          <span class="text-2xl font-black text-white uppercase italic tracking-tight font-serif-bs">
+          <span class="text-2xl font-bold text-white tracking-wide font-cormorant">
             BellaVita
           </span>
         </a>

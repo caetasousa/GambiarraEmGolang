@@ -1,49 +1,38 @@
 <script lang="ts">
     import ThemeToggle from "$lib/components/ThemeToggle.svelte";
-    import { goto } from "$app/navigation";
-    import { logout, isAuthenticated } from "$lib/stores/auth";
-    import { openSidebar } from "$lib/stores/sidebar";
+    import { openSidebar } from "$lib/stores/sidebar.svelte";
 
-    export let title: string = "Dashboard";
-    export let onMenuClick: () => void = openSidebar;
-
-    async function handleLogout() {
-        logout();
-        await goto("/login");
-    }
+    let { title = "Dashboard", onMenuClick = openSidebar }: { title?: string; onMenuClick?: () => void } = $props();
 </script>
 
 <header
-    class="h-16 bg-[hsl(var(--bs-card))] border-b border-border-light dark:border-border-dark flex items-center justify-between px-6 z-10 flex-shrink-0"
+    class="h-16 bg-white dark:bg-gray-900 border-b border-gray-100 dark:border-gray-800 shadow-sm flex items-center justify-between px-6 z-10 flex-shrink-0"
 >
-    <div class="flex items-center flex-1 gap-3">
+    <div class="flex items-center flex-1 gap-4">
         <button
-            class="md:hidden p-2 rounded-lg text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors"
-            on:click={onMenuClick}
+            class="md:hidden p-2 rounded-xl text-slate-500 dark:text-slate-400 hover:bg-orange-50 dark:hover:bg-orange-900/20 hover:text-orange-600 transition-all duration-200 cursor-pointer"
+            onclick={onMenuClick}
             aria-label="Abrir menu"
         >
-            <span class="material-icons">menu</span>
+            <span class="material-icons text-[22px]">menu</span>
         </button>
-        <h2 class="text-xl font-semibold text-gray-900 dark:text-white">
-            {title}
-        </h2>
+        <div>
+            <h2
+                class="text-2xl font-bold text-slate-900 dark:text-white leading-tight"
+                style="font-family: 'Cormorant', serif;"
+            >
+                {title}
+            </h2>
+        </div>
     </div>
-    <div class="flex items-center space-x-2">
+
+    <div class="flex items-center gap-2">
         <button
-            class="p-2 rounded-full text-gray-400 hover:text-gray-500 dark:hover:text-gray-300 focus:outline-none transition-colors"
+            class="p-2 rounded-xl text-slate-400 dark:text-slate-500 hover:text-orange-500 hover:bg-orange-50 dark:hover:bg-orange-900/20 transition-all duration-200 cursor-pointer focus:outline-none"
+            aria-label="Notificações"
         >
-            <span class="material-icons">notifications</span>
+            <span class="material-icons text-[22px]">notifications_none</span>
         </button>
         <ThemeToggle />
-        {#if $isAuthenticated}
-            <button
-                on:click={handleLogout}
-                class="flex items-center gap-1 px-3 py-2 rounded-lg text-sm font-medium text-gray-600 dark:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900/20 hover:text-red-600 dark:hover:text-red-400 transition-colors"
-                title="Sair"
-            >
-                <span class="material-icons text-[18px]">logout</span>
-                <span class="hidden sm:inline">Sair</span>
-            </button>
-        {/if}
     </div>
 </header>

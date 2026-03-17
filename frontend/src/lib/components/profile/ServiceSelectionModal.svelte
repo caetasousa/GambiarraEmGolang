@@ -1,81 +1,82 @@
 <script lang="ts">
-    import { createEventDispatcher, onMount } from "svelte";
     import Modal from "$lib/components/Modal.svelte";
+    import { fetchApi } from "$lib/utils/api";
+    import type { Snippet } from "svelte";
 
-    export let show = false;
-    export let providerId: string;
-    export let existingServiceIds: string[] = []; // IDs of services the provider already has
+    let {
+        show = $bindable(false),
+        providerId,
+        existingServiceIds = [],
+        onadd,
+        onclose,
+    }: {
+        show?: boolean;
+        providerId: string;
+        existingServiceIds?: string[];
+        onadd?: (service: Record<string, unknown>) => void;
+        onclose?: () => void;
+    } = $props();
 
-    const dispatch = createEventDispatcher();
-
-    let catalogServices: any[] = [];
-    let loading = false;
-    let error = "";
-    let searchTerm = "";
+    let catalogServices = $state<Record<string, unknown>[]>([]);
+    let loading = $state(false);
+    let error = $state("");
+    let searchTerm = $state("");
 
     async function fetchCatalog() {
         loading = true;
         error = "";
         try {
-            const response = await fetch("/api/v1/catalogos?limit=100");
+            const response = await fetchApi("/api/v1/catalogos?limit=100");
             if (response.ok) {
                 const data = await response.json();
                 catalogServices = data.data || [];
             } else {
                 error = "Erro ao carregar catálogo.";
             }
-        } catch (e) {
-            console.error(e);
+        } catch {
             error = "Erro de conexão.";
         } finally {
             loading = false;
         }
     }
 
-    // Fetch catalog when modal opens
-    $: if (show && catalogServices.length === 0) {
-        fetchCatalog();
-    }
+    $effect(() => {
+        if (show && catalogServices.length === 0) {
+            fetchCatalog();
+        }
+    });
 
     function close() {
         show = false;
         searchTerm = "";
-        dispatch("close");
+        onclose?.();
     }
 
-    async function addService(service: any) {
-        // Optimistic update handled by parent or re-fetch?
-        // Let's assume we call API here.
+    async function addService(service: Record<string, unknown>) {
         try {
-            // Check if endpoint exists, otherwise mock or adapt
-            const response = await fetch(`/api/v1/prestadores/${providerId}/servicos`, {
+            const response = await fetchApi(`/api/v1/prestadores/${providerId}/servicos`, {
                 method: "POST",
-                headers: { "Content-Type": "application/json" },
-                body: JSON.stringify({ servico_id: service.ID }) // Adjust payload as needed
+                body: JSON.stringify({ servico_id: service.ID }),
             });
-
             if (!response.ok) {
-                // Determine if error or just mock success
                 console.warn("API add service failed or not implemented");
             }
-            
-            dispatch("add", service);
-        } catch (e) {
-            console.error(e);
+            onadd?.(service);
+        } catch {
+            // silently handled
         }
     }
 
-    $: filteredServices = catalogServices.filter(s => {
-        const matchesSearch = s.Nome.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                              s.Categoria.toLowerCase().includes(searchTerm.toLowerCase());
-        const isNotOwned = !existingServiceIds.includes(s.ID);
+    let filteredServices = $derived(catalogServices.filter(s => {
+        const matchesSearch = (s.Nome as string).toLowerCase().includes(searchTerm.toLowerCase()) ||
+                              (s.Categoria as string).toLowerCase().includes(searchTerm.toLowerCase());
+        const isNotOwned = !existingServiceIds.includes(s.ID as string);
         return matchesSearch && isNotOwned;
-    });
+    }));
 </script>
 
-<Modal {show} title="Adicionar Serviço" on:close={close} maxWidth="max-w-2xl">
-    <div slot="body" class="space-y-4">
-        <!-- Search -->
+{#snippet bodyContent()}
+    <div class="space-y-4">
         <div class="relative">
             <span class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
                 <span class="material-symbols-outlined text-gray-400">search</span>
@@ -88,7 +89,6 @@
             />
         </div>
 
-        <!-- List -->
         <div class="max-h-96 overflow-y-auto space-y-2">
             {#if loading}
                 <div class="flex justify-center py-4">
@@ -103,7 +103,7 @@
                     <div class="flex items-center justify-between p-3 rounded-lg border border-gray-200 dark:border-gray-700 hover:border-brand-orange/50 transition-colors">
                         <div class="flex items-center space-x-3">
                             {#if service.ImagemUrl}
-                                <img src={service.ImagemUrl} alt={service.Nome} class="w-10 h-10 rounded-md object-cover bg-gray-100" />
+                                <img src={service.ImagemUrl as string} alt={service.Nome as string} class="w-10 h-10 rounded-md object-cover bg-gray-100" />
                             {:else}
                                 <div class="w-10 h-10 rounded-md bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-gray-400">
                                     <span class="material-symbols-outlined font-size-20">spa</span>
@@ -111,11 +111,11 @@
                             {/if}
                             <div>
                                 <h4 class="text-sm font-semibold text-gray-900 dark:text-white">{service.Nome}</h4>
-                                <p class="text-xs text-gray-500">{service.Categoria} • R$ {(service.Preco / 100).toFixed(2).replace('.', ',')}</p>
+                                <p class="text-xs text-gray-500">{service.Categoria} • R$ {((service.Preco as number) / 100).toFixed(2).replace('.', ',')}</p>
                             </div>
                         </div>
                         <button
-                            on:click={() => addService(service)}
+                            onclick={() => addService(service)}
                             class="text-sm font-medium text-brand-orange hover:bg-orange-50 dark:hover:bg-orange-900/10 px-3 py-1.5 rounded-md transition-colors"
                         >
                             Adicionar
@@ -125,12 +125,15 @@
             {/if}
         </div>
     </div>
-    <div slot="footer">
-        <button
-            on:click={close}
-            class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
-        >
-            Fechar
-        </button>
-    </div>
-</Modal>
+{/snippet}
+
+{#snippet footerContent()}
+    <button
+        onclick={close}
+        class="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-800 border border-gray-300 dark:border-gray-600 rounded-md hover:bg-gray-50 dark:hover:bg-gray-700 transition-colors"
+    >
+        Fechar
+    </button>
+{/snippet}
+
+<Modal {show} title="Adicionar Serviço" onclose={close} maxWidth="max-w-2xl" children={bodyContent} footer={footerContent} />

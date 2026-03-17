@@ -1,17 +1,16 @@
 <script lang="ts">
-  import { user } from '$lib/stores/auth';
+  import { auth } from '$lib/stores/auth.svelte';
   import { goto } from '$app/navigation';
-  import { onMount } from 'svelte';
 
-  export let allowedRoles: string[] = [];
+  let { allowedRoles = [], children }: { allowedRoles?: string[]; children: import('svelte').Snippet } = $props();
 
-  onMount(() => {
-    if ($user && allowedRoles.length > 0 && !allowedRoles.includes($user.role)) {
+  $effect(() => {
+    if (auth.user && allowedRoles.length > 0 && !allowedRoles.includes(auth.user.role)) {
       goto('/');
     }
   });
 </script>
 
-{#if !$user || allowedRoles.length === 0 || allowedRoles.includes($user.role)}
-  <slot />
+{#if !auth.user || allowedRoles.length === 0 || allowedRoles.includes(auth.user.role)}
+  {@render children()}
 {/if}
