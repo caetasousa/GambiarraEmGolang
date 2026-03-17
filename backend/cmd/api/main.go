@@ -108,8 +108,8 @@ func main() {
 		)
 
 		// ========== PRESTADORES ==========
-		// GET /prestadores/ - Todos podem ver (Cliente, Prestador, Admin)
-		protected.GET("/prestadores/", prestadorController.GetPrestadores)
+		// GET /prestadores - Todos podem ver (Cliente, Prestador, Admin)
+		protected.GET("/prestadores", prestadorController.GetPrestadores)
 
 		// GET /prestadores/disponiveis - Todos podem ver
 		protected.GET("/prestadores/disponiveis", prestadorController.GetPrestadoresPorData)
