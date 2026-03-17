@@ -1,11 +1,2 @@
-import { writable } from 'svelte/store';
-
-export const sidebarOpen = writable(false);
-
-export function openSidebar() {
-    sidebarOpen.set(true);
-}
-
-export function closeSidebar() {
-    sidebarOpen.set(false);
-}
+// Re-exporta do novo store Svelte 5
+export * from './sidebar.svelte';

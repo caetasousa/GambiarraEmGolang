@@ -1,23 +1,2 @@
-import { writable } from 'svelte/store';
-import { browser } from '$app/environment';
-
-// Get initial theme from localStorage or default to light
-const initialTheme = browser ? (localStorage.getItem('theme') || 'light') : 'light';
-
-export const theme = writable(initialTheme);
-
-// Subscribe to changes and update localStorage and document class
-if (browser) {
-    theme.subscribe((value) => {
-        localStorage.setItem('theme', value);
-        if (value === 'dark') {
-            document.documentElement.classList.add('dark');
-        } else {
-            document.documentElement.classList.remove('dark');
-        }
-    });
-}
-
-export function toggleTheme() {
-    theme.update((current) => (current === 'light' ? 'dark' : 'light'));
-}
+// Re-exporta do novo store Svelte 5
+export * from './theme.svelte';
